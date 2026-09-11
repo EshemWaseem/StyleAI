@@ -1,3 +1,7 @@
+// ======================================================
+// Prisma Setup
+// ======================================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -6,7 +10,6 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
 
 // ======================================================
 // ENUMS
@@ -20,9 +23,25 @@ enum RoleName {
   AGENCY
 }
 
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
 
 // ======================================================
 // USER
+// SUPER_ADMIN & INFLUENCER   → organizationId = null
+// BRAND_OWNER, TEAM_MEMBER, AGENCY → organizationId required
 // ======================================================
 
 model User {
@@ -30,18 +49,19 @@ model User {
   name     String
   email    String  @unique
   password String
-
   isActive Boolean @default(true)
 
-  // Relationships
-  userRoles           UserRole[]
-  organizationMembers OrganizationMember[]
-  teamMembers         TeamMember[]
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  userRoles   UserRole[]
+  teamMembers TeamMember[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
 
+  @@index([organizationId])
+}
 
 // ======================================================
 // ROLE
@@ -52,14 +72,12 @@ model Role {
   name        RoleName @unique
   description String?
 
-  // Relationships
   userRoles       UserRole[]
   rolePermissions RolePermission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
 
 // ======================================================
 // PERMISSION
@@ -70,17 +88,14 @@ model Permission {
   name        String  @unique
   description String?
 
-  // Relationships
   rolePermissions RolePermission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-
 // ======================================================
 // USER ↔ ROLE
-// Many-to-Many
 // ======================================================
 
 model UserRole {
@@ -88,17 +103,8 @@ model UserRole {
   userId String
   roleId String
 
-  user User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
-
-  role Role @relation(
-    fields: [roleId],
-    references: [id],
-    onDelete: Cascade
-  )
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -107,10 +113,8 @@ model UserRole {
   @@index([roleId])
 }
 
-
 // ======================================================
 // ROLE ↔ PERMISSION
-// Many-to-Many
 // ======================================================
 
 model RolePermission {
@@ -118,17 +122,8 @@ model RolePermission {
   roleId       String
   permissionId String
 
-  role Role @relation(
-    fields: [roleId],
-    references: [id],
-    onDelete: Cascade
-  )
-
-  permission Permission @relation(
-    fields: [permissionId],
-    references: [id],
-    onDelete: Cascade
-  )
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -137,76 +132,41 @@ model RolePermission {
   @@index([permissionId])
 }
 
-
 // ======================================================
 // ORGANIZATION
 // ======================================================
 
 model Organization {
-  id          String  @id @default(uuid())
-  name        String
-  slug        String  @unique
-  description String?
+  id       String  @id @default(uuid())
+  name     String
+  slug     String  @unique
+  logoUrl  String?
+  website  String?
+  country  String?
+  currency String?
 
-  // Relationships
-  members OrganizationMember[]
-  teams   Team[]
-  brands  Brand[]
+  users         User[]
+  brands        Brand[]
+  teams         Team[]
+  subscriptions Subscription[]
+  payments      Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-
-// ======================================================
-// USER ↔ ORGANIZATION
-// Many-to-Many
-// ======================================================
-
-model OrganizationMember {
-  id             String @id @default(uuid())
-  userId         String
-  organizationId String
-
-  user User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
-
-  organization Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, organizationId])
-  @@index([userId])
-  @@index([organizationId])
-}
-
 
 // ======================================================
 // TEAM
 // ======================================================
 
 model Team {
-  id             String @id @default(uuid())
+  id             String  @id @default(uuid())
   organizationId String
+  name           String
+  description    String?
 
-  name        String
-  description String?
-
-  organization Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
-
-  // Relationships
-  members TeamMember[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -214,28 +174,13 @@ model Team {
   @@index([organizationId])
 }
 
-
-// ======================================================
-// USER ↔ TEAM
-// Many-to-Many
-// ======================================================
-
 model TeamMember {
   id     String @id @default(uuid())
   userId String
   teamId String
 
-  user User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
-
-  team Team @relation(
-    fields: [teamId],
-    references: [id],
-    onDelete: Cascade
-  )
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -244,77 +189,121 @@ model TeamMember {
   @@index([teamId])
 }
 
-
 // ======================================================
 // BRAND
 // ======================================================
 
 model Brand {
-  id             String @id @default(uuid())
+  id             String  @id @default(uuid())
   organizationId String
+  name           String
+  slug           String
+  description    String?
+  logoUrl        String?
+  website        String?
+  country        String?
+  currency       String?
 
-  name        String
-  slug        String
-  description String?
-  logoUrl     String?
-  website     String?
-  country     String?
-  currency    String?
+  brandVoice   String?
+  brandStyle   String?
+  targetAge    String?
+  targetGender String?
 
-  organization Organization @relation(
-    fields: [organizationId],
-    references: [id],
-    onDelete: Cascade
-  )
-
-  // Relationships
-  products Product[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  products     Product[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Same slug can exist in different organizations
   @@unique([organizationId, slug])
   @@index([organizationId])
 }
-
 
 // ======================================================
 // PRODUCT
 // ======================================================
 
 model Product {
-  id      String @id @default(uuid())
-  brandId String
-
+  id          String  @id @default(uuid())
+  brandId     String
   name        String
   sku         String?
   description String?
-
   category    String?
-  subcategory String?
+  price       Decimal?
+  currency    String?
+  gender      String?
+  season      String?
+  occasion    String?
+  inventory   Int?
 
-  price    Decimal?
-  currency String?
+  aiContent  Json?
+  aiAnalysis Json?
 
-  gender   String?
-  season   String?
-  occasion String?
-
-  inventory Int?
-
-  // Relationship
-  brand Brand @relation(
-    fields: [brandId],
-    references: [id],
-    onDelete: Cascade
-  )
+  brand  Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  images ProductImage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([brandId])
-
-  // SKU unique within a brand
   @@unique([brandId, sku])
+  @@index([brandId])
+}
+
+model ProductImage {
+  id        String @id @default(uuid())
+  productId String
+  url       String
+  position  Int    @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+// ======================================================
+// SUBSCRIPTION
+// ======================================================
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  organizationId     String
+  plan               String
+  status             SubscriptionStatus @default(TRIALING)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  externalId         String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+// ======================================================
+// PAYMENT
+// ======================================================
+
+model Payment {
+  id             String        @id @default(uuid())
+  organizationId String
+  amount         Decimal
+  currency       String
+  status         PaymentStatus @default(PENDING)
+  provider       String        @default("stripe")
+  externalId     String?
+  description    String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
 }

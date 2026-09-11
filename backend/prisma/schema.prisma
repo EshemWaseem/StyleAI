@@ -1,0 +1,320 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// ======================================================
+// ENUMS
+// ======================================================
+
+enum RoleName {
+  SUPER_ADMIN
+  BRAND_OWNER
+  BRAND_TEAM_MEMBER
+  INFLUENCER
+  AGENCY
+}
+
+
+// ======================================================
+// USER
+// ======================================================
+
+model User {
+  id       String  @id @default(uuid())
+  name     String
+  email    String  @unique
+  password String
+
+  isActive Boolean @default(true)
+
+  // Relationships
+  userRoles           UserRole[]
+  organizationMembers OrganizationMember[]
+  teamMembers         TeamMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// ======================================================
+// ROLE
+// ======================================================
+
+model Role {
+  id          String   @id @default(uuid())
+  name        RoleName @unique
+  description String?
+
+  // Relationships
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// ======================================================
+// PERMISSION
+// ======================================================
+
+model Permission {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+
+  // Relationships
+  rolePermissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// ======================================================
+// USER ↔ ROLE
+// Many-to-Many
+// ======================================================
+
+model UserRole {
+  id     String @id @default(uuid())
+  userId String
+  roleId String
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  role Role @relation(
+    fields: [roleId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+
+// ======================================================
+// ROLE ↔ PERMISSION
+// Many-to-Many
+// ======================================================
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role Role @relation(
+    fields: [roleId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  permission Permission @relation(
+    fields: [permissionId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+
+// ======================================================
+// ORGANIZATION
+// ======================================================
+
+model Organization {
+  id          String  @id @default(uuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  // Relationships
+  members OrganizationMember[]
+  teams   Team[]
+  brands  Brand[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// ======================================================
+// USER ↔ ORGANIZATION
+// Many-to-Many
+// ======================================================
+
+model OrganizationMember {
+  id             String @id @default(uuid())
+  userId         String
+  organizationId String
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  organization Organization @relation(
+    fields: [organizationId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+
+// ======================================================
+// TEAM
+// ======================================================
+
+model Team {
+  id             String @id @default(uuid())
+  organizationId String
+
+  name        String
+  description String?
+
+  organization Organization @relation(
+    fields: [organizationId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  // Relationships
+  members TeamMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+
+// ======================================================
+// USER ↔ TEAM
+// Many-to-Many
+// ======================================================
+
+model TeamMember {
+  id     String @id @default(uuid())
+  userId String
+  teamId String
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  team Team @relation(
+    fields: [teamId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, teamId])
+  @@index([userId])
+  @@index([teamId])
+}
+
+
+// ======================================================
+// BRAND
+// ======================================================
+
+model Brand {
+  id             String @id @default(uuid())
+  organizationId String
+
+  name        String
+  slug        String
+  description String?
+  logoUrl     String?
+  website     String?
+  country     String?
+  currency    String?
+
+  organization Organization @relation(
+    fields: [organizationId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  // Relationships
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Same slug can exist in different organizations
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+}
+
+
+// ======================================================
+// PRODUCT
+// ======================================================
+
+model Product {
+  id      String @id @default(uuid())
+  brandId String
+
+  name        String
+  sku         String?
+  description String?
+
+  category    String?
+  subcategory String?
+
+  price    Decimal?
+  currency String?
+
+  gender   String?
+  season   String?
+  occasion String?
+
+  inventory Int?
+
+  // Relationship
+  brand Brand @relation(
+    fields: [brandId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brandId])
+
+  // SKU unique within a brand
+  @@unique([brandId, sku])
+}

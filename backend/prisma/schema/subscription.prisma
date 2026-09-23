@@ -1,0 +1,40 @@
+// ======================================================
+// SUBSCRIPTION + PAYMENT
+// ======================================================
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  organizationId     String
+  plan               String
+  status             SubscriptionStatus @default(TRIALING)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  externalId         String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  organizationId String
+  amount         Decimal
+  currency       String
+  status         PaymentStatus @default(PENDING)
+  provider       String        @default("stripe")
+  externalId     String?
+  description    String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
+}

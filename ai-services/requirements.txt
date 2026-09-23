@@ -1,0 +1,64 @@
+# # Web framework
+# fastapi==0.141.1
+# uvicorn[standard]==0.52.4
+
+# # Validation + settings
+# pydantic==2.13.5
+# pydantic-settings==2.6.1
+
+# # HTTP client (for Ollama, HF)
+# httpx==0.28.1
+
+# # Image processing
+# Pillow==11.1.0
+
+# # Environment
+# python-dotenv==1.0.1
+
+
+
+
+
+
+
+
+
+# # # Web framework
+# # fastapi==0.141.1
+# # uvicorn[standard]==0.52.4
+
+# # # Validation
+# # pydantic==2.13.5
+# # pydantic-settings==2.6.1
+
+# # # HTTP client
+# # httpx==0.28.1
+
+# # # Image processing
+# # Pillow==11.1.0
+
+# # # Environment
+# # python-dotenv==1.0.1
+
+
+# Web framework
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+
+# Validation + settings
+pydantic==2.13.5
+pydantic-settings==2.6.1
+
+# HTTP client (for Ollama)
+httpx==0.28.1
+
+# Multipart (needed for /analyze later)
+python-multipart==0.0.20
+
+# Image processing (needed for /enhance later)
+pillow>=11.0.0
+rembg>=2.0.62
+onnxruntime>=1.20.1
+
+# Env
+python-dotenv==1.0.1

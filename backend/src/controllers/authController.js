@@ -2,11 +2,29 @@ const bcrypt = require('bcryptjs');
 const prisma = require('../config/prisma');
 const { signToken } = require('../utils/jwt');
 
+// ======================================================
+// Roles allowed for PUBLIC self-registration.
+// SUPER_ADMIN must be assigned manually (via seed or by another admin).
+// ======================================================
+const PUBLIC_SIGNUP_ROLES = [
+  'BRAND_OWNER',
+  'BRAND_TEAM_MEMBER',
+  'INFLUENCER',
+  'AGENCY',
+  'SHOPPER'
+];
+
+// Roles that require an organization name at signup
+const ROLES_REQUIRING_ORG = ['BRAND_OWNER', 'AGENCY'];
+
+// ======================================================
 // POST /api/auth/register
+// ======================================================
 async function register(req, res, next) {
   try {
     const { name, email, password, organizationName, role } = req.body;
 
+    // ---- Validate required fields ----
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'name, email, password required' });
     }
@@ -17,14 +35,22 @@ async function register(req, res, next) {
         .json({ message: 'Password must be at least 6 characters' });
     }
 
+    // ---- Check duplicate email ----
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return res.status(409).json({ message: 'Email already registered' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+    // ---- Validate role ----
     const roleName = role || 'BRAND_OWNER';
+
+    if (!PUBLIC_SIGNUP_ROLES.includes(roleName)) {
+      return res.status(403).json({
+        message:
+          'This role cannot be self-registered. Contact an administrator.',
+      });
+    }
+
     const roleRecord = await prisma.role.findUnique({
       where: { name: roleName },
     });
@@ -32,16 +58,21 @@ async function register(req, res, next) {
       return res.status(400).json({ message: `Role ${roleName} not found` });
     }
 
+    // ---- Require organization name for certain roles ----
+    if (ROLES_REQUIRING_ORG.includes(roleName) && !organizationName) {
+      return res
+        .status(400)
+        .json({ message: 'organizationName required for this role' });
+    }
+
+    // ---- Hash password ----
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ---- Create user (+ organization if needed) in a transaction ----
     const result = await prisma.$transaction(async (tx) => {
       let organizationId = null;
 
-      if (roleName === 'BRAND_OWNER' || roleName === 'AGENCY') {
-        if (!organizationName) {
-          throw Object.assign(
-            new Error('organizationName required for this role'),
-            { status: 400 }
-          );
-        }
+      if (ROLES_REQUIRING_ORG.includes(roleName)) {
         const slug = organizationName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
@@ -58,8 +89,8 @@ async function register(req, res, next) {
 
       const user = await tx.user.create({
         data: {
-          name,
-          email,
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
           password: hashedPassword,
           organizationId,
         },
@@ -72,6 +103,7 @@ async function register(req, res, next) {
       return user;
     });
 
+    // ---- Issue JWT ----
     const token = signToken({ userId: result.id });
 
     res.status(201).json({
@@ -82,7 +114,7 @@ async function register(req, res, next) {
         name: result.name,
         email: result.email,
         organizationId: result.organizationId,
-        role: roleName,
+        roles: [roleName],
       },
     });
   } catch (err) {
@@ -90,17 +122,30 @@ async function register(req, res, next) {
   }
 }
 
+// ======================================================
 // POST /api/auth/login
+// ======================================================
 async function login(req, res, next) {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
       return res.status(400).json({ message: 'email and password required' });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email },
-      include: { userRoles: { include: { role: true } } },
+      where: { email: email.trim().toLowerCase() },
+      include: {
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                rolePermissions: { include: { permission: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user || !user.isActive) {
@@ -114,6 +159,15 @@ async function login(req, res, next) {
 
     const token = signToken({ userId: user.id });
 
+    const roles = user.userRoles.map((ur) => ur.role.name);
+    const permissions = Array.from(
+      new Set(
+        user.userRoles.flatMap((ur) =>
+          ur.role.rolePermissions.map((rp) => rp.permission.name)
+        )
+      )
+    );
+
     res.json({
       message: 'Logged in',
       token,
@@ -122,7 +176,8 @@ async function login(req, res, next) {
         name: user.name,
         email: user.email,
         organizationId: user.organizationId,
-        roles: user.userRoles.map((ur) => ur.role.name),
+        roles,
+        permissions,
       },
     });
   } catch (err) {
@@ -130,7 +185,9 @@ async function login(req, res, next) {
   }
 }
 
+// ======================================================
 // GET /api/auth/me
+// ======================================================
 async function me(req, res) {
   res.json({
     user: {

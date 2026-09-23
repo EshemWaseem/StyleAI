@@ -1,0 +1,89 @@
+// ======================================================
+// USER + ROLES + PERMISSIONS
+// ======================================================
+
+model User {
+  id       String  @id @default(uuid())
+  name     String
+  email    String  @unique
+  password String
+  isActive Boolean @default(true)
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  userRoles   UserRole[]
+  teamMembers TeamMember[]
+
+  cart   Cart?
+  orders Order[]
+
+  joinRequests        BrandJoinRequest[] @relation("JoinRequests")
+  joinReviews         BrandJoinRequest[] @relation("JoinReviews")
+  sentInvitations     BrandInvitation[]  @relation("SentInvitations")
+  receivedInvitations BrandInvitation[]  @relation("ReceivedInvitations")
+
+  brandTeamMemberships BrandTeamMember[] @relation("BrandTeamMemberUser")
+  brandTeamInvitesSent BrandTeamMember[] @relation("BrandTeamMemberInviter")
+
+  // NEW: influencer profile link (set when user has INFLUENCER role)
+  influencerProfile    Influencer?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        RoleName @unique
+  description String?
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+
+  rolePermissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserRole {
+  id     String @id @default(uuid())
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}

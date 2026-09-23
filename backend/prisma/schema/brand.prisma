@@ -1,0 +1,138 @@
+// ======================================================
+// BRAND + TEAM ROLES + MEMBERS + JOIN/INVITE
+// ======================================================
+
+model Brand {
+  id             String  @id @default(uuid())
+  organizationId String
+  name           String
+  slug           String
+  description    String?
+  logoUrl        String?
+  website        String?
+  country        String?
+  currency       String?
+
+  brandVoice   String?
+  brandStyle   String?
+  targetAge    String?
+  targetGender String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  products     Product[]
+
+  joinRequests BrandJoinRequest[]
+  invitations  BrandInvitation[]
+
+  teamRoles    BrandTeamRole[]
+  teamMembers  BrandTeamMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+}
+
+model BrandTeamRole {
+  id          String   @id @default(uuid())
+  brandId     String
+  name        String
+  description String?
+  permissions Json
+  color       String?
+  isDefault   Boolean  @default(false)
+  isOwnerRole Boolean  @default(false)
+
+  brand            Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  members          BrandTeamMember[]
+  requestedIn      BrandJoinRequest[] @relation("RequestedRole")
+  approvedIn       BrandJoinRequest[] @relation("ApprovedRole")
+  invitations      BrandInvitation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([brandId, name])
+  @@index([brandId])
+  @@index([isDefault])
+}
+
+model BrandTeamMember {
+  id         String           @id @default(uuid())
+  brandId    String
+  userId     String
+  teamRoleId String
+  status     TeamMemberStatus @default(ACTIVE)
+  invitedBy  String?
+  joinedAt   DateTime         @default(now())
+
+  brand      Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  user       User          @relation("BrandTeamMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  teamRole   BrandTeamRole @relation(fields: [teamRoleId], references: [id], onDelete: Restrict)
+  inviter    User?         @relation("BrandTeamMemberInviter", fields: [invitedBy], references: [id])
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([brandId, userId])
+  @@index([brandId])
+  @@index([userId])
+  @@index([teamRoleId])
+  @@index([status])
+}
+
+model BrandJoinRequest {
+  id         String            @id @default(uuid())
+  userId     String
+  brandId    String
+  status     JoinRequestStatus @default(PENDING)
+  message    String?
+  reviewedBy String?
+  reviewedAt DateTime?
+
+  requestedRoleId String?
+  approvedRoleId  String?
+
+  user          User           @relation("JoinRequests", fields: [userId], references: [id], onDelete: Cascade)
+  brand         Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  reviewer      User?          @relation("JoinReviews", fields: [reviewedBy], references: [id])
+  requestedRole BrandTeamRole? @relation("RequestedRole", fields: [requestedRoleId], references: [id])
+  approvedRole  BrandTeamRole? @relation("ApprovedRole",  fields: [approvedRoleId],  references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, brandId])
+  @@index([brandId, status])
+  @@index([userId])
+  @@index([requestedRoleId])
+  @@index([approvedRoleId])
+}
+
+model BrandInvitation {
+  id          String           @id @default(uuid())
+  brandId     String
+  invitedById String
+  email       String
+  role        RoleName         @default(BRAND_TEAM_MEMBER)
+  teamRoleId  String?
+  token       String           @unique
+  status      InvitationStatus @default(PENDING)
+  message     String?
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  acceptedBy  String?
+
+  brand          Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  invitedBy      User           @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
+  acceptedByUser User?          @relation("ReceivedInvitations", fields: [acceptedBy], references: [id])
+  teamRole       BrandTeamRole? @relation(fields: [teamRoleId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email, status])
+  @@index([brandId, status])
+  @@index([token])
+  @@index([teamRoleId])
+}

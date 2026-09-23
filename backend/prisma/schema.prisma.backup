@@ -1,0 +1,623 @@
+// ======================================================
+// Prisma Setup
+// ======================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ======================================================
+// ENUMS
+// ======================================================
+
+enum RoleName {
+  SUPER_ADMIN
+  BRAND_OWNER
+  BRAND_TEAM_MEMBER
+  INFLUENCER
+  AGENCY
+  SHOPPER
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CANCELLED
+}
+
+// ← NEW: brand team member status
+enum TeamMemberStatus {
+  ACTIVE
+  SUSPENDED
+  REMOVED
+}
+
+// ======================================================
+// USER
+// ======================================================
+
+model User {
+  id       String  @id @default(uuid())
+  name     String
+  email    String  @unique
+  password String
+  isActive Boolean @default(true)
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  userRoles   UserRole[]
+  teamMembers TeamMember[]   // legacy org-level team members (kept for compat)
+
+  cart   Cart?
+  orders Order[]
+
+  joinRequests        BrandJoinRequest[] @relation("JoinRequests")
+  joinReviews         BrandJoinRequest[] @relation("JoinReviews")
+  sentInvitations     BrandInvitation[]  @relation("SentInvitations")
+  receivedInvitations BrandInvitation[]  @relation("ReceivedInvitations")
+
+  // ← NEW: brand team memberships
+  brandTeamMemberships BrandTeamMember[] @relation("BrandTeamMemberUser")
+  brandTeamInvitesSent BrandTeamMember[] @relation("BrandTeamMemberInviter")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+// ======================================================
+// ROLE (global system roles — unchanged)
+// ======================================================
+
+model Role {
+  id          String   @id @default(uuid())
+  name        RoleName @unique
+  description String?
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ======================================================
+// PERMISSION
+// ======================================================
+
+model Permission {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+
+  rolePermissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ======================================================
+// USER ↔ ROLE
+// ======================================================
+
+model UserRole {
+  id     String @id @default(uuid())
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+// ======================================================
+// ROLE ↔ PERMISSION
+// ======================================================
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+// ======================================================
+// ORGANIZATION
+// ======================================================
+
+model Organization {
+  id       String  @id @default(uuid())
+  name     String
+  slug     String  @unique
+  logoUrl  String?
+  website  String?
+  country  String?
+  currency String?
+
+  users         User[]
+  brands        Brand[]
+  teams         Team[]
+  subscriptions Subscription[]
+  payments      Payment[]
+
+  agencyOf AgencyClient[] @relation("AgencyClients")
+  clientOf AgencyClient[] @relation("ClientOfAgency")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ======================================================
+// TEAM (legacy — kept for backward compat, unused going forward)
+// ======================================================
+
+model Team {
+  id             String  @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model TeamMember {
+  id     String @id @default(uuid())
+  userId String
+  teamId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, teamId])
+  @@index([userId])
+  @@index([teamId])
+}
+
+// ======================================================
+// BRAND
+// ======================================================
+
+model Brand {
+  id             String  @id @default(uuid())
+  organizationId String
+  name           String
+  slug           String
+  description    String?
+  logoUrl        String?
+  website        String?
+  country        String?
+  currency       String?
+
+  brandVoice   String?
+  brandStyle   String?
+  targetAge    String?
+  targetGender String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  products     Product[]
+
+  joinRequests BrandJoinRequest[]
+  invitations  BrandInvitation[]
+
+  // ← NEW: brand team
+  teamRoles    BrandTeamRole[]
+  teamMembers  BrandTeamMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+}
+
+// ======================================================
+// PRODUCT
+// ======================================================
+
+model Product {
+  id          String  @id @default(uuid())
+  brandId     String
+  name        String
+  sku         String
+  description String?
+  category    String?
+  price       Decimal?
+  currency    String?
+  gender      String?
+  season      String?
+  occasion    String?
+  inventory   Int?
+
+  aiContent  Json?
+  aiAnalysis Json?
+
+  brand  Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  images ProductImage[]
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([brandId, sku])
+  @@index([brandId])
+}
+
+model ProductImage {
+  id        String @id @default(uuid())
+  productId String
+  url       String
+  position  Int    @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+// ======================================================
+// SUBSCRIPTION
+// ======================================================
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  organizationId     String
+  plan               String
+  status             SubscriptionStatus @default(TRIALING)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  externalId         String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+// ======================================================
+// PAYMENT
+// ======================================================
+
+model Payment {
+  id             String        @id @default(uuid())
+  organizationId String
+  amount         Decimal
+  currency       String
+  status         PaymentStatus @default(PENDING)
+  provider       String        @default("stripe")
+  externalId     String?
+  description    String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+// ======================================================
+// CART
+// ======================================================
+
+model Cart {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items CartItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model CartItem {
+  id        String @id @default(uuid())
+  cartId    String
+  productId String
+  quantity  Int    @default(1)
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@index([productId])
+}
+
+// ======================================================
+// ORDER
+// ======================================================
+
+model Order {
+  id       String      @id @default(uuid())
+  userId   String
+  status   OrderStatus @default(PENDING)
+  total    Decimal     @db.Decimal(10, 2)
+  currency String      @default("USD")
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// ======================================================
+// AGENCY
+// ======================================================
+
+enum AgencyClientStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  AT_RISK
+}
+
+enum AgencyTaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+model AgencyClient {
+  id                   String             @id @default(uuid())
+  agencyOrganizationId String
+  clientOrganizationId String
+  status               AgencyClientStatus @default(ACTIVE)
+  contractStart        DateTime?
+  contractEnd          DateTime?
+  notes                String?
+
+  agencyOrganization Organization @relation("AgencyClients", fields: [agencyOrganizationId], references: [id], onDelete: Cascade)
+  clientOrganization Organization @relation("ClientOfAgency", fields: [clientOrganizationId], references: [id], onDelete: Cascade)
+
+  tasks AgencyTask[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agencyOrganizationId, clientOrganizationId])
+  @@index([agencyOrganizationId])
+  @@index([clientOrganizationId])
+  @@index([status])
+}
+
+model AgencyTask {
+  id             String           @id @default(uuid())
+  agencyClientId String
+  title          String
+  description    String?
+  status         AgencyTaskStatus @default(PENDING)
+  dueDate        DateTime?
+  completedAt    DateTime?
+
+  agencyClient AgencyClient @relation(fields: [agencyClientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyClientId])
+  @@index([status])
+}
+
+// ======================================================
+// BRAND TEAM ROLE (custom roles per brand) — NEW
+// ======================================================
+
+model BrandTeamRole {
+  id          String   @id @default(uuid())
+  brandId     String
+  name        String
+  description String?
+  permissions Json     // array of permission strings
+  color       String?  // UI badge color (e.g. "emerald", "blue")
+  isDefault   Boolean  @default(false)  // seeded default — cannot delete
+  isOwnerRole Boolean  @default(false)  // "Full Access" — special
+
+  brand            Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  members          BrandTeamMember[]
+  requestedIn      BrandJoinRequest[] @relation("RequestedRole")
+  approvedIn       BrandJoinRequest[] @relation("ApprovedRole")
+  invitations      BrandInvitation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([brandId, name])
+  @@index([brandId])
+  @@index([isDefault])
+}
+
+// ======================================================
+// BRAND TEAM MEMBER — NEW
+// ======================================================
+
+model BrandTeamMember {
+  id         String           @id @default(uuid())
+  brandId    String
+  userId     String
+  teamRoleId String
+  status     TeamMemberStatus @default(ACTIVE)
+  invitedBy  String?
+  joinedAt   DateTime         @default(now())
+
+  brand      Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  user       User          @relation("BrandTeamMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  teamRole   BrandTeamRole @relation(fields: [teamRoleId], references: [id], onDelete: Restrict)
+  inviter    User?         @relation("BrandTeamMemberInviter", fields: [invitedBy], references: [id])
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([brandId, userId])
+  @@index([brandId])
+  @@index([userId])
+  @@index([teamRoleId])
+  @@index([status])
+}
+
+// ======================================================
+// BRAND JOIN REQUEST — UPDATED with role selection
+// ======================================================
+
+model BrandJoinRequest {
+  id         String            @id @default(uuid())
+  userId     String
+  brandId    String
+  status     JoinRequestStatus @default(PENDING)
+  message    String?
+  reviewedBy String?
+  reviewedAt DateTime?
+
+  // ← NEW: requested/approved role
+  requestedRoleId String?
+  approvedRoleId  String?
+
+  user          User           @relation("JoinRequests", fields: [userId], references: [id], onDelete: Cascade)
+  brand         Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  reviewer      User?          @relation("JoinReviews", fields: [reviewedBy], references: [id])
+  requestedRole BrandTeamRole? @relation("RequestedRole", fields: [requestedRoleId], references: [id])
+  approvedRole  BrandTeamRole? @relation("ApprovedRole",  fields: [approvedRoleId],  references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, brandId])
+  @@index([brandId, status])
+  @@index([userId])
+  @@index([requestedRoleId])
+  @@index([approvedRoleId])
+}
+
+// ======================================================
+// BRAND INVITATION — UPDATED with role assignment
+// ======================================================
+
+model BrandInvitation {
+  id          String           @id @default(uuid())
+  brandId     String
+  invitedById String
+  email       String
+  role        RoleName         @default(BRAND_TEAM_MEMBER)  // legacy global role
+  teamRoleId  String?                                       // ← NEW: brand-specific custom role
+  token       String           @unique
+  status      InvitationStatus @default(PENDING)
+  message     String?
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  acceptedBy  String?
+
+  brand          Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  invitedBy      User           @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
+  acceptedByUser User?          @relation("ReceivedInvitations", fields: [acceptedBy], references: [id])
+  teamRole       BrandTeamRole? @relation(fields: [teamRoleId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email, status])
+  @@index([brandId, status])
+  @@index([token])
+  @@index([teamRoleId])
+}
+
+
+
+
+
+
+
+
+

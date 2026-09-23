@@ -1,0 +1,46 @@
+// ======================================================
+// PRODUCT
+// ======================================================
+
+model Product {
+  id          String  @id @default(uuid())
+  brandId     String
+  name        String
+  sku         String
+  description String?
+  category    String?
+  price       Decimal?
+  currency    String?
+  gender      String?
+  season      String?
+  occasion    String?
+  inventory   Int?
+
+  aiContent  Json?
+  aiAnalysis Json?
+
+  brand  Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  images ProductImage[]
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([brandId, sku])
+  @@index([brandId])
+}
+
+model ProductImage {
+  id        String @id @default(uuid())
+  productId String
+  url       String
+  position  Int    @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}

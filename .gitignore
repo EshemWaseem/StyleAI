@@ -7,3 +7,20 @@ frontend/node_modules/
 .env.production
 dist/
 build/
+
+
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+myAIenv/
+venv/
+env/
+.venv/
+
+# Environment
+.env
+.env.local
+.env.*.local

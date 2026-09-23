@@ -1,0 +1,105 @@
+// ======================================================
+// ENUMS — all in one place for easy reference
+// ======================================================
+
+enum RoleName {
+  SUPER_ADMIN
+  BRAND_OWNER
+  BRAND_TEAM_MEMBER
+  INFLUENCER
+  AGENCY
+  SHOPPER
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CANCELLED
+}
+
+enum TeamMemberStatus {
+  ACTIVE
+  SUSPENDED
+  REMOVED
+}
+
+enum AgencyClientStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  AT_RISK
+}
+
+enum AgencyTaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum InfluencerPlatform {
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  FACEBOOK
+  PINTEREST
+  LINKEDIN
+  SNAPCHAT
+  TWITTER
+  THREADS
+  OTHER
+}
+
+//    23-09-12:40   ---------- Influencer — NEW ----------
+// enum InfluencerPlatform {
+//   INSTAGRAM
+//   TIKTOK
+//   YOUTUBE
+//   FACEBOOK
+//   PINTEREST
+// }
+
+enum InfluencerStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum InfluencerAvailability {
+  AVAILABLE
+  BOOKED
+  UNAVAILABLE
+}

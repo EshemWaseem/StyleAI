@@ -1,0 +1,58 @@
+// ======================================================
+// ORGANIZATION + TEAM (legacy)
+// ======================================================
+
+model Organization {
+  id       String  @id @default(uuid())
+  name     String
+  slug     String  @unique
+  logoUrl  String?
+  website  String?
+  country  String?
+  currency String?
+
+  users         User[]
+  brands        Brand[]
+  teams         Team[]
+  subscriptions Subscription[]
+  payments      Payment[]
+
+  agencyOf AgencyClient[] @relation("AgencyClients")
+  clientOf AgencyClient[] @relation("ClientOfAgency")
+
+  // NEW: saved influencers (bookmarks)
+  savedInfluencers OrganizationInfluencer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Team {
+  id             String  @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model TeamMember {
+  id     String @id @default(uuid())
+  userId String
+  teamId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, teamId])
+  @@index([userId])
+  @@index([teamId])
+}

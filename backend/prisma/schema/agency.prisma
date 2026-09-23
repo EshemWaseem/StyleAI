@@ -1,0 +1,44 @@
+// ======================================================
+// AGENCY
+// ======================================================
+
+model AgencyClient {
+  id                   String             @id @default(uuid())
+  agencyOrganizationId String
+  clientOrganizationId String
+  status               AgencyClientStatus @default(ACTIVE)
+  contractStart        DateTime?
+  contractEnd          DateTime?
+  notes                String?
+
+  agencyOrganization Organization @relation("AgencyClients", fields: [agencyOrganizationId], references: [id], onDelete: Cascade)
+  clientOrganization Organization @relation("ClientOfAgency", fields: [clientOrganizationId], references: [id], onDelete: Cascade)
+
+  tasks AgencyTask[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agencyOrganizationId, clientOrganizationId])
+  @@index([agencyOrganizationId])
+  @@index([clientOrganizationId])
+  @@index([status])
+}
+
+model AgencyTask {
+  id             String           @id @default(uuid())
+  agencyClientId String
+  title          String
+  description    String?
+  status         AgencyTaskStatus @default(PENDING)
+  dueDate        DateTime?
+  completedAt    DateTime?
+
+  agencyClient AgencyClient @relation(fields: [agencyClientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyClientId])
+  @@index([status])
+}

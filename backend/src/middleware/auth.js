@@ -23,6 +23,20 @@ async function authenticate(req, res, next) {
             },
           },
         },
+        brandTeamMemberships: {
+          where: { status: 'ACTIVE' },
+          include: {
+            teamRole: true,
+            brand: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                organizationId: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -31,13 +45,52 @@ async function authenticate(req, res, next) {
     }
 
     const roles = user.userRoles.map((ur) => ur.role.name);
-    const permissions = Array.from(
-      new Set(
-        user.userRoles.flatMap((ur) =>
-          ur.role.rolePermissions.map((rp) => rp.permission.name)
-        )
-      )
-    );
+
+    // ======================================================
+    // PERMISSION RESOLUTION — STRICT MODE
+    // ======================================================
+    // Owner-type roles → use GLOBAL role permissions
+    // Team members    → use ONLY brand team role permissions
+    // ======================================================
+
+    const ownerRoles = ['SUPER_ADMIN', 'BRAND_OWNER', 'AGENCY'];
+    const isOwner = roles.some((r) => ownerRoles.includes(r));
+    const isTeamMember = roles.includes('BRAND_TEAM_MEMBER') && !isOwner;
+
+    let resolvedPermissions = [];
+
+    if (isTeamMember) {
+      //  STRICT: team member gets ONLY their brand team role's permissions.
+      // Global role permissions are completely ignored.
+      const brandTeamRole = user.brandTeamMemberships[0]?.teamRole;
+      resolvedPermissions = brandTeamRole?.permissions ?? [];
+    } else {
+      // Owner / Admin / Influencer / Shopper → global role permissions
+      const globalPermissions = new Set();
+      for (const ur of user.userRoles) {
+        for (const rp of ur.role.rolePermissions) {
+          globalPermissions.add(rp.permission.name);
+        }
+      }
+      resolvedPermissions = Array.from(globalPermissions);
+    }
+
+    // Brand team role context
+    const brandTeamRole = user.brandTeamMemberships[0]?.teamRole;
+    const primaryBrand = user.brandTeamMemberships[0]?.brand ?? null;
+
+    // ======================================================
+    // PENDING APPROVAL DETECTION
+    // ======================================================
+    const pendingRequest = await prisma.brandJoinRequest.findFirst({
+      where: { userId: user.id, status: 'PENDING' },
+      include: { brand: { select: { id: true, name: true } } },
+    });
+
+    const hasActiveBrandRole = user.brandTeamMemberships.length > 0;
+    const pendingApproval =
+      !!pendingRequest ||
+      (roles.includes('BRAND_TEAM_MEMBER') && !isOwner && !hasActiveBrandRole);
 
     req.user = {
       id: user.id,
@@ -45,7 +98,28 @@ async function authenticate(req, res, next) {
       name: user.name,
       organizationId: user.organizationId,
       roles,
-      permissions,
+      permissions: resolvedPermissions,
+
+      brandTeamRole: brandTeamRole
+        ? {
+            id: brandTeamRole.id,
+            name: brandTeamRole.name,
+            permissions: brandTeamRole.permissions,
+            isOwnerRole: brandTeamRole.isOwnerRole,
+          }
+        : null,
+      brandId: primaryBrand?.id ?? null,
+      brandName: primaryBrand?.name ?? null,
+
+      pendingApproval,
+      pendingRequest: pendingRequest
+        ? {
+            id: pendingRequest.id,
+            brandId: pendingRequest.brandId,
+            brandName: pendingRequest.brand?.name ?? null,
+            requestedRoleId: pendingRequest.requestedRoleId,
+          }
+        : null,
     };
 
     next();
@@ -91,4 +165,35 @@ function requirePermission(...requiredPermissions) {
   };
 }
 
-module.exports = { authenticate, authorize, requirePermission };
+function requireBrandContext(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Not authenticated' });
+  }
+  if (!req.user.organizationId && !req.user.brandId) {
+    return res.status(403).json({
+      message: 'You must belong to a brand to do this',
+    });
+  }
+  next();
+}
+
+function requireApproved(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Not authenticated' });
+  }
+  if (req.user.pendingApproval) {
+    return res.status(403).json({
+      message: 'Your account is pending approval.',
+      code: 'PENDING_APPROVAL',
+    });
+  }
+  next();
+}
+
+module.exports = {
+  authenticate,
+  authorize,
+  requirePermission,
+  requireBrandContext,
+  requireApproved,
+};

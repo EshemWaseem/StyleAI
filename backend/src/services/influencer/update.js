@@ -1,3 +1,4 @@
+//update.js
 const prisma = require('../../config/prisma');
 const {
   shapeInfluencer,
@@ -8,6 +9,8 @@ const {
   validateFloatField,
   validatePriceField,
 } = require('./helpers');
+const { validatePricingTiers } = require('../pricing');
+const matchingCache = require('../matching/cache');
 
 const STRING_FIELDS = [
   'displayName', 'bio', 'avatarUrl', 'email', 'phone',
@@ -17,16 +20,22 @@ const STRING_FIELDS = [
 
 function checkPermission(user, influencer) {
   const isSelf = influencer.userId === user.id;
-  const isAdmin = user.roles.includes('SUPER_ADMIN');
-  const hasPermission = user.permissions.includes('influencer.update');
 
-  if (!hasPermission && !isAdmin) {
-    throw httpError('Forbidden: missing influencer.update permission', 403);
+  // STRICT: only the owning user can edit their own profile.
+  // Admins moderate via /api/admin/influencers/:id/* — never via this endpoint.
+  if (!isSelf) {
+    throw httpError(
+      'Forbidden: only the influencer owner can edit this profile',
+      403,
+      'NOT_OWNER'
+    );
   }
-  if (!isSelf && !isAdmin && !hasPermission) {
-    throw httpError('Forbidden: cannot edit this influencer', 403);
+
+  if (!user.permissions?.includes('influencer.update')) {
+    throw httpError('Forbidden: missing influencer.update permission', 403, 'FORBIDDEN');
   }
 }
+
 
 function buildUpdateData(data) {
   const update = {};
@@ -62,8 +71,28 @@ function buildUpdateData(data) {
   if (data.audienceFavorites !== undefined) {
     update.audienceFavorites = Array.isArray(data.audienceFavorites) ? data.audienceFavorites : [];
   }
-  if (data.pricingTiers !== undefined) update.pricingTiers = data.pricingTiers;
+  // if (data.pricingTiers !== undefined) update.pricingTiers = data.pricingTiers;
+  // if (data.portfolio !== undefined) update.portfolio = data.portfolio;
+    if (data.pricingTiers !== undefined) {
+    update.pricingTiers = validatePricingTiers(data.pricingTiers);
+  }
   if (data.portfolio !== undefined) update.portfolio = data.portfolio;
+
+  // ---- NEW: pricing opt-ins (no defaults — explicit only) ----
+  if (data.minBudget !== undefined) {
+    update.minBudget = data.minBudget === null
+      ? null
+      : validatePriceField(data.minBudget, 'Minimum budget', 0);
+  }
+  if (data.acceptsBundles !== undefined) {
+    if (data.acceptsBundles === null) {
+      update.acceptsBundles = null;
+    } else if (typeof data.acceptsBundles === 'boolean') {
+      update.acceptsBundles = data.acceptsBundles;
+    } else {
+      throw httpError('acceptsBundles must be true, false, or null', 400, 'INVALID_ACCEPTS_BUNDLES');
+    }
+  }
 
   return update;
 }
@@ -135,16 +164,23 @@ async function updateInfluencer(user, influencerId, data = {}) {
     await upsertAudienceMetrics(influencerId, data.audienceMetrics);
   }
 
-  const influencer = await prisma.influencer.update({
+    const influencer = await prisma.influencer.update({
     where: { id: influencerId },
     data: updateData,
     include: { socialAccounts: true, audienceMetrics: true },
   });
 
+  // Invalidate matching caches that included this influencer
+  matchingCache.invalidateInfluencer(influencerId);
+
   return shapeInfluencer(influencer);
 }
 
 module.exports = { updateInfluencer };
+
+
+
+
 
 
 //update.js

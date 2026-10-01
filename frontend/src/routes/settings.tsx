@@ -549,7 +549,7 @@ function SettingsPage() {
               <ExternalLink className="size-4 text-muted-foreground" />
             </Link>
             <Link
-              to="/users"
+              to="/admin/users"
               className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
             >
               <div className="flex items-center gap-3">

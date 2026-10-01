@@ -1,14 +1,11 @@
 // influencers.$slug.tsx
-// // 23-09-2026 
-// 2:14
-
-
 import {
   createFileRoute,
   Link,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -19,6 +16,8 @@ import {
   Mail,
   Bookmark,
   BookmarkCheck,
+  Sparkles,
+  BadgeDollarSign,
 } from "lucide-react";
 import {
   PolarAngleAxis,
@@ -38,11 +37,12 @@ import {
   type Influencer,
 } from "@/lib/influencers";
 import { InfluencerFormModal } from "@/components/influencer/InfluencerFormModal";
+import { PricingCard } from "@/components/pricing/PricingCard";
+import { MessageCircle } from "lucide-react";
+import { chatApi } from "@/lib/chat";
 
 export const Route = createFileRoute("/influencers/$slug")({
-  head: () => ({
-    meta: [{ title: "Influencer — StyleAI" }],
-  }),
+  head: () => ({ meta: [{ title: "Influencer — StyleAI" }] }),
   component: InfluencerDetailPage,
 });
 
@@ -55,9 +55,19 @@ function InfluencerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showEdit, setShowEdit] = useState(false);
+  const [openingChat, setOpeningChat] = useState(false);
 
-  const canEdit = !!user?.permissions.includes("influencer.update");
-  const canSave = !!user?.permissions.includes("influencer.save");
+  // Owner-only edit — admins see public view only
+  const isOwner = !!user && !!influencer && influencer.userId === user.id;
+  const canEdit = isOwner && !!user?.permissions.includes("influencer.update");
+  const canSave = !!user?.permissions.includes("influencer.save") && !isOwner;
+  const canCreateOffer =
+    !!user &&
+    !isOwner &&
+    ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].some((r) =>
+      user.roles.includes(r as any)
+    );
+  const isAdmin = !!user?.roles.includes("SUPER_ADMIN" as any);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -97,6 +107,19 @@ function InfluencerDetailPage() {
     }
   }
 
+  async function openChat() {
+  if (!influencer) return;
+  setOpeningChat(true);
+  try {
+    const r = await chatApi.openWith("INFLUENCER", influencer.id);
+    navigate({ to: "/messages", search: { c: r.conversation.id } as any });
+  } catch (e: any) {
+    alert(e?.message || "Failed to open chat");
+  } finally {
+    setOpeningChat(false);
+  }
+}
+
   if (authLoading || loading) {
     return (
       <AppShell breadcrumb={["Influencer intelligence", "Discover", "Profile"]}>
@@ -125,7 +148,6 @@ function InfluencerDetailPage() {
 
   const inf = influencer;
 
-  // Build radar data from AI scores if present
   const affinity = [
     { label: "Fashion", value: Math.round((inf.fashionScore ?? 0) * 100) },
     { label: "Luxury", value: Math.round((inf.luxuryScore ?? 0) * 100) },
@@ -144,6 +166,28 @@ function InfluencerDetailPage() {
         description={inf.bio || `@${inf.username}`}
         actions={
           <div className="flex flex-wrap gap-2">
+              {canCreateOffer && (
+              <Button
+                variant="outline"
+                disabled={openingChat}
+                onClick={openChat}
+              >
+                {openingChat ? <Loader2 className="size-4 animate-spin" /> : <MessageCircle />}
+                Message
+              </Button>
+            )}
+            {canCreateOffer && (
+              <Button
+                onClick={() =>
+                  navigate({
+                    to: "/offers/new",
+                    search: { influencerId: inf.id } as any,
+                  })
+                }
+              >
+                <Sparkles /> Create offer
+              </Button>
+            )}
             {canSave && (
               <Button variant="outline" onClick={toggleSave}>
                 {inf.isSaved ? (
@@ -155,6 +199,14 @@ function InfluencerDetailPage() {
                     <Bookmark /> Save
                   </>
                 )}
+              </Button>
+            )}
+            {isOwner && (
+              <Button
+                variant="outline"
+                onClick={() => navigate({ to: "/influencer/pricing" })}
+              >
+                <BadgeDollarSign /> Manage pricing
               </Button>
             )}
             {canEdit && (
@@ -210,6 +262,34 @@ function InfluencerDetailPage() {
         </div>
       </section>
 
+      {/* ========== PRICING CARD — visible to brands, admins ========== */}
+      <Panel className="mt-6">
+        <SectionTitle
+          title="Pricing"
+          description={
+            isOwner
+              ? "This is what brands see. Edit from My Pricing."
+              : "Published rates per platform and content type."
+          }
+          action={
+            <BadgeDollarSign className="size-4 text-muted-foreground" />
+          }
+        />
+        <PricingCard
+          pricing={{
+            influencerId: inf.id,
+            username: inf.username,
+            slug: inf.slug,
+            displayName: inf.displayName,
+            avatarUrl: inf.avatarUrl,
+            currency: inf.currency,
+            pricingTiers: (inf.pricingTiers as any) || {},
+            minBudget: (inf as any).minBudget ?? null,
+            acceptsBundles: (inf as any).acceptsBundles ?? null,
+          }}
+        />
+      </Panel>
+
       {/* About + location */}
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Panel>
@@ -258,56 +338,7 @@ function InfluencerDetailPage() {
             </p>
           )}
 
-          {/* {inf.categories.length > 0 && (
-            <div className="mt-5">
-              <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
-                Categories
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {inf.categories.map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
-                  >
-                    {c}
-                  </span>
-                ))}
-
-                {inf.audienceFavorites && inf.audienceFavorites.length > 0 && (
-  <Panel>
-    <h3 className="font-display text-base font-medium">Audience favorites</h3>
-    <p className="mt-1 text-xs text-muted-foreground">
-      Personalities this creator's audience loves.
-    </p>
-    <div className="mt-3 flex flex-wrap gap-2">
-      {inf.audienceFavorites.map((name) => (
-        <span
-          key={name}
-          className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
-        >
-          {name}
-        </span>
-      ))}
-    </div>
-  </Panel>
-)}
-              </div>
-            </div>
-          )}
-
-          {inf.pricePerPost != null && (
-            <div className="mt-5 rounded-lg bg-muted/40 p-4 text-center">
-              <p className="text-xs text-muted-foreground">Starting from</p>
-              <p className="mt-1 font-display text-2xl font-medium">
-                {inf.currency} {inf.pricePerPost}
-              </p>
-              <p className="text-[11px] text-muted-foreground">per post</p>
-            </div>
-          )}
-        </Panel> */}
-
-
-                  {inf.categories.length > 0 && (
+          {inf.categories.length > 0 && (
             <div className="mt-5">
               <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
                 Categories
@@ -356,7 +387,6 @@ function InfluencerDetailPage() {
             </div>
           )}
         </Panel>
-
 
         {hasScores && (
           <Panel>
@@ -416,11 +446,11 @@ function InfluencerDetailPage() {
                   Gender
                 </p>
                 <div className="mt-3 space-y-3">
-                  {Object.entries(
-                    inf.audienceMetrics.genderDistribution
-                  ).map(([k, v]) => (
-                    <ScoreBar key={k} label={k} value={Number(v)} />
-                  ))}
+                  {Object.entries(inf.audienceMetrics.genderDistribution).map(
+                    ([k, v]) => (
+                      <ScoreBar key={k} label={k} value={Number(v)} />
+                    )
+                  )}
                 </div>
               </div>
             )}
@@ -459,18 +489,7 @@ function InfluencerDetailPage() {
                 key={s.id}
                 className="flex items-center justify-between rounded-lg border border-border p-4"
               >
-                {/* <div>
-                  {/* <p className="text-sm font-medium">
-                    {s.platform} · @{s.handle}
-                  </p> */
-                  }
-
-                  {/* <p className="text-sm font-medium">
-                      {s.platform === "OTHER" && s.platformCustom ? s.platformCustom : s.platform} · @{s.handle}
-                  </p> */} 
-
-
-                                  <div>
+                <div>
                   <p className="text-sm font-medium">
                     {s.platform === "OTHER" && s.platformCustom
                       ? s.platformCustom

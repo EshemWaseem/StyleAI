@@ -1,4 +1,4 @@
-
+// productform.tsx
 
 
 
@@ -32,6 +32,7 @@ import {
   type ProductInput,
 } from "@/lib/products";
 import { aiApi, type AIResult } from "@/lib/ai";
+import { AngleGenerator } from "@/components/product/AngleGenerator";
 
 interface Props {
   mode?: "create" | "edit";
@@ -107,6 +108,7 @@ export function ProductFormModal({
   const [aiError, setAiError] = useState("");
   const [aiResult, setAiResult] = useState<AIResult | null>(null);
   const aiFileRef = useRef<HTMLInputElement>(null);
+  const [showAngleGen, setShowAngleGen] = useState(false);
 
   const remainingSlots = MAX_PRODUCT_IMAGES - images.length;
 
@@ -684,9 +686,34 @@ export function ProductFormModal({
                 </div>
               )}
 
-              {/* IMAGES */}
+                            {/* IMAGES */}
               {!isRestricted && (
                 <div>
+                  {/* AI ANGLES — shows when at least 1 new file exists */}
+                  {images.some((i) => i.file) && images.length < MAX_PRODUCT_IMAGES && (
+                    <div className="mb-3 rounded-lg border border-accent/30 bg-accent/5 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-medium text-foreground">
+                            <Sparkles className="mr-1 inline size-3.5 text-accent" />
+                            Generate more angles with AI
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            Creates side / 3-4 / detail views of the SAME product (30–90s).
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowAngleGen(true)}
+                        >
+                          Generate
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-baseline justify-between">
                     <Label>
                       Product images{" "}
@@ -977,6 +1004,31 @@ export function ProductFormModal({
             </div>
           )}
         </div>
+
+                {/* AI ANGLE GENERATOR MODAL */}
+        {showAngleGen && (() => {
+          const sourceFile = images.find((i) => i.file)?.file;
+          if (!sourceFile) return null;
+          return (
+            <AngleGenerator
+              file={sourceFile}
+              onUseAngles={(picked) => {
+                setImages((prev) => [
+                  ...prev,
+                  ...picked.map((p) => ({
+                    id: `ai-angle-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                    url: p.url,
+                    // Mark as "existing" so they don't re-upload — Cloudinary already has them
+                    isExisting: true,
+                  })),
+                ]);
+                setShowAngleGen(false);
+              }}
+              onClose={() => setShowAngleGen(false)}
+            />
+          );
+        })()}
+
 
         {/* FOOTER */}
         <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">

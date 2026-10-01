@@ -1,4 +1,5 @@
 const prisma = require('../../config/prisma');
+const matchingCache = require('../matching/cache');
 const { httpError } = require('./helpers');
 
 async function deleteInfluencer(user, influencerId) {
@@ -11,6 +12,8 @@ async function deleteInfluencer(user, influencerId) {
     where: { id: influencerId },
     data: { status: 'ARCHIVED' },
   });
+
+   matchingCache.invalidateInfluencer(influencerId);
 
   return { id: influencerId };
 }

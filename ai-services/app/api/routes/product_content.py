@@ -1,3 +1,4 @@
+# ai-services/app/api/routes/product_content.py
 """
 AI Product Content endpoint.
 

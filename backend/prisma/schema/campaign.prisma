@@ -1,0 +1,236 @@
+// campaign.prisma
+// ======================================================
+// CAMPAIGN — auto-created when an offer is accepted
+// Multi-party workflow:
+//   Influencer SHOOTS raw → Agency EDITS → Brand APPROVES
+//   → Agency PUBLISHES → Metrics entered → Complete
+// ======================================================
+
+model Campaign {
+  id      String      @id @default(uuid())
+  offerId String      @unique
+  offer   CustomOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  brandId      String
+  influencerId String
+  productId    String?
+  agencyId     String?
+
+  brand      Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  influencer Influencer    @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  product    Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  agency     Organization? @relation("AgencyManagedCampaigns", fields: [agencyId], references: [id], onDelete: SetNull)
+
+  title       String
+  description String?
+  currency    String
+  totalAmount Decimal @db.Decimal(12, 2)
+
+  brief    String?
+  hashtags String[]
+  mentions String[]
+
+  startDate   DateTime  @default(now())
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  status CampaignStatus @default(ACTIVE)
+
+  // Aggregate metrics (denormalized from DeliverableMetric)
+  reach       Int     @default(0)
+  impressions Int     @default(0)
+  clicks      Int     @default(0)
+  conversions Int     @default(0)
+  revenue     Decimal @default(0) @db.Decimal(12, 2)
+
+  deliverables    CampaignDeliverable[]
+  messages        CampaignMessage[]
+  metricSnapshots CampaignMetricSnapshot[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brandId, status])
+  @@index([influencerId, status])
+  @@index([status, createdAt])
+  @@index([productId])
+  @@index([agencyId])
+}
+
+enum CampaignStatus {
+  ACTIVE
+  IN_REVIEW
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+model CampaignDeliverable {
+  id         String   @id @default(uuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  platform    String
+  contentType String
+  quantity    Int    @default(1)
+
+  status  DeliverableStatus @default(PENDING)
+  dueDate DateTime?
+
+  submissions ContentSubmission[]
+  publishes   ContentPublish[]
+  metrics     DeliverableMetric[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([campaignId, status])
+}
+
+enum DeliverableStatus {
+  PENDING
+  // Agency multi-party workflow stages
+  RAW_UPLOADED
+  AGENCY_EDITING
+  FINAL_UPLOADED
+  BRAND_REVIEW
+  BRAND_APPROVED
+  BRAND_REJECTED
+  PUBLISHED
+  METRICS_ENTERED
+  COMPLETED
+  // Legacy / simple-mode stages
+  IN_PROGRESS
+  SUBMITTED
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+}
+
+model ContentSubmission {
+  id            String              @id @default(uuid())
+  deliverableId String
+  deliverable   CampaignDeliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  files   Json
+  caption String?
+  notes   String?
+
+  stage SubmissionStage @default(RAW) // RAW (influencer) | FINAL (agency)
+
+  status     SubmissionStatus @default(PENDING)
+  feedback   String?
+  reviewedBy String?
+  reviewedAt DateTime?
+
+  submittedBy         String
+  submittedByRole     String? // "INFLUENCER" | "AGENCY" | "BRAND"
+  submittedByAgencyId String?
+  submittedByAgency   Organization? @relation("AgencyContentSubmissions", fields: [submittedByAgencyId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deliverableId, status])
+  @@index([stage])
+  @@index([submittedByAgencyId])
+}
+
+enum SubmissionStage {
+  RAW
+  FINAL
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+model ContentPublish {
+  id            String              @id @default(uuid())
+  deliverableId String
+  deliverable   CampaignDeliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  platform         String
+  postUrl          String
+  postId           String?
+  postedAt         DateTime      @default(now())
+  postedByUserId   String
+  postedByAgencyId String?
+  postedByAgency   Organization? @relation("AgencyPublications", fields: [postedByAgencyId], references: [id], onDelete: SetNull)
+
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  @@index([deliverableId])
+  @@index([postedByAgencyId])
+}
+
+model DeliverableMetric {
+  id            String              @id @default(uuid())
+  deliverableId String
+  deliverable   CampaignDeliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  reach       Int     @default(0)
+  impressions Int     @default(0)
+  likes       Int     @default(0)
+  comments    Int     @default(0)
+  shares      Int     @default(0)
+  clicks      Int     @default(0)
+  conversions Int     @default(0)
+  revenue     Decimal @default(0) @db.Decimal(12, 2)
+
+  source            String        @default("MANUAL") // "MANUAL" | "API"
+  enteredByUserId   String
+  enteredByAgencyId String?
+  enteredByAgency   Organization? @relation("AgencyMetrics", fields: [enteredByAgencyId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([deliverableId, createdAt])
+  @@index([enteredByAgencyId])
+}
+
+model CampaignMessage {
+  id         String   @id @default(uuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  senderUserId   String
+  sender         User    @relation("CampaignMessageSender", fields: [senderUserId], references: [id], onDelete: Cascade)
+  senderRole     String
+  senderAgencyId String?
+  body           String
+  attachments    Json?
+
+  readByBrand      Boolean @default(false)
+  readByInfluencer Boolean @default(false)
+  readByAgency     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([campaignId, createdAt])
+  @@index([senderUserId])
+  @@index([senderAgencyId])
+}
+
+model CampaignMetricSnapshot {
+  id         String   @id @default(uuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  date        DateTime @default(now())
+  reach       Int      @default(0)
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  conversions Int      @default(0)
+  revenue     Decimal  @default(0) @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
+
+  @@index([campaignId, date])
+}

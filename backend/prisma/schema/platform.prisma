@@ -1,0 +1,43 @@
+// platform.prisma
+// ======================================================
+// Platform-wide settings + audit log
+// ======================================================
+// Consumed by services/admin/helpers.js (getSetting, setSetting,
+// writeAudit) and services/offers/helpers.js (getFinanceRules).
+//
+// `value` is JSON so any shape works:
+//   finance → { brandCommissionPct: 2, bulkDiscountThreshold: 5, ... }
+//   limits  → { maxProductImages: 5, ... }
+//   features→ { enableAIMatching: true, ... }
+// ======================================================
+
+model PlatformSetting {
+  id          String  @id @default(uuid())
+  key         String  @unique
+  value       Json
+  category    String // "finance" | "limits" | "features"
+  description String?
+  updatedBy   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+}
+
+model AuditLog {
+  id         String  @id @default(uuid())
+  actorId    String
+  action     String // e.g. "offer.approve", "user.deactivate"
+  targetType String // e.g. "CustomOffer", "User"
+  targetId   String
+  meta       Json?
+  ipAddress  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([action])
+  @@index([createdAt])
+}

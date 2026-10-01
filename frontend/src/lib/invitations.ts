@@ -1,3 +1,4 @@
+// invitation.ts
 import { http } from "./api";
 
 export type InvitationStatus =

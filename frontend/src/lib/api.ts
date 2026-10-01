@@ -1,4 +1,5 @@
-//api.ts /lib frontend
+// frontend/src/lib/api.ts
+// //api.ts /lib frontend
 
 
 
@@ -33,10 +34,14 @@ export async function api<T = any>(
     headers["Content-Type"] = "application/json";
   }
 
-  if (!skipAuth && typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-  }
+ if (!skipAuth && typeof window !== "undefined") {
+  const token = localStorage.getItem("token");
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  // Agency acting-as-brand header
+  const actingBrand = localStorage.getItem("agency.activeBrand");
+  if (actingBrand) headers["X-Acting-Brand"] = actingBrand;
+}
 
   const res = await fetch(`${BASE_URL}${path}`, { ...rest, headers });
 

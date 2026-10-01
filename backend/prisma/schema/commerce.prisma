@@ -1,3 +1,4 @@
+// commerce.prisma 30-09
 // ======================================================
 // CART + ORDER
 // ======================================================
@@ -33,20 +34,34 @@ model CartItem {
 }
 
 model Order {
-  id       String      @id @default(uuid())
-  userId   String
-  status   OrderStatus @default(PENDING)
-  total    Decimal     @db.Decimal(10, 2)
-  currency String      @default("USD")
+  id          String      @id @default(uuid())
+  orderNumber String      @unique
+  userId      String      // shopper
+  brandId     String?     // seller brand (nullable — multi-brand orders future)
+  status      OrderStatus @default(PENDING)
+  total       Decimal     @db.Decimal(10, 2)
+  currency    String      @default("USD")
 
-  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items OrderItem[]
+  // ---- Payments (Sprint 24) ----
+  paymentProvider PaymentProvider?
+  paymentStatus   PaymentStatus   @default(PENDING)
+  paymentRef      String?
+  codConfirmedAt  DateTime?
+  codConfirmedBy  String?
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brand    Brand?      @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+  payments Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([brandId])
   @@index([status])
+  @@index([paymentStatus])
+  @@index([paymentProvider])
 }
 
 model OrderItem {

@@ -1,3 +1,4 @@
+// user.prisma   24-9
 // ======================================================
 // USER + ROLES + PERMISSIONS
 // ======================================================
@@ -27,7 +28,17 @@ model User {
   brandTeamInvitesSent BrandTeamMember[] @relation("BrandTeamMemberInviter")
 
   // NEW: influencer profile link (set when user has INFLUENCER role)
-  influencerProfile    Influencer?
+  influencerProfile Influencer?
+  // Custom offer audit relations
+  offersCreated     CustomOffer[]     @relation("OfferCreator")
+  offersReviewed    CustomOffer[]     @relation("OfferReviewer")
+  notifications     Notification[]
+  // campaignMessages  CampaignMessage[]
+  campaignMessages  CampaignMessage[] @relation("CampaignMessageSender")
+  directMessages    DirectMessage[]   @relation("DirectMessageSender")
+  wallet            Wallet?
+
+  assistantConversations AssistantConversation[] @relation("AssistantConversations")   // ← ADD THIS LINE
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

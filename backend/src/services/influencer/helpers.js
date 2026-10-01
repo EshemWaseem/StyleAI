@@ -1,3 +1,4 @@
+// influencer/helper.js
 const prisma = require('../../config/prisma');
 
 // ======================================================
@@ -45,6 +46,8 @@ function shapeInfluencer(i, savedSet = null) {
     avgLikes: i.avgLikes,
     avgComments: i.avgComments,
     pricePerPost: i.pricePerPost != null ? Number(i.pricePerPost) : null,
+    minBudget: i.minBudget != null ? Number(i.minBudget) : null,
+    acceptsBundles: i.acceptsBundles ?? null,
     currency: i.currency,
     availability: i.availability,
     status: i.status,

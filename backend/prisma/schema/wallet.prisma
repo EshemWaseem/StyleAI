@@ -1,0 +1,80 @@
+// wallet.prisma
+// ======================================================
+// WALLET + LEDGER — every rupee tracked, nothing silent
+// ======================================================
+// Balance is DERIVED (sum of ledger). Never stored as source of truth.
+// `Wallet.balanceCache` is a fast-read cache — always rebuildable
+// via walletService.recalculateBalance(walletId).
+// ======================================================
+
+model Wallet {
+  id String @id @default(uuid())
+
+  // One wallet per owner (exactly one of these is set)
+  userId         String? @unique
+  organizationId String? @unique
+  influencerId   String? @unique
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  influencer   Influencer?   @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  currency     String // ISO code — set at wallet creation, IMMUTABLE
+  balanceCache Decimal @default(0) @db.Decimal(14, 2)
+
+  transactions WalletTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum WalletTxType {
+  DEPOSIT // brand funds wallet
+  WITHDRAWAL // influencer/owner cashes out
+  OFFER_HOLD // brand funds escrow when offer submitted
+  OFFER_RELEASE // escrow → influencer wallet (minus fee)
+  OFFER_REFUND // escrow → brand wallet (offer rejected/cancelled)
+  PLATFORM_FEE // platform revenue from offer
+  ADJUSTMENT // admin correction
+}
+
+enum WalletTxStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+model WalletTransaction {
+  id String @id @default(uuid())
+
+  walletId String
+  wallet   Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  type   WalletTxType
+  status WalletTxStatus @default(PENDING)
+
+  amount       Decimal @db.Decimal(14, 2) // signed: + credit, − debit
+  balanceAfter Decimal @db.Decimal(14, 2) // snapshot for audit
+  currency     String
+
+  // Cross-links
+  offerId   String?
+  offer     CustomOffer? @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  paymentId String?
+  payment   Payment?     @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  // Audit
+  reference String? // e.g. Stripe charge ID
+  note      String?
+  meta      Json?
+  createdBy String? // admin user id if ADJUSTMENT
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([walletId, createdAt])
+  @@index([type, status])
+  @@index([offerId])
+  @@index([reference])
+}

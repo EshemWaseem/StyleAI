@@ -1,3 +1,4 @@
+// organization.prisma
 // ======================================================
 // ORGANIZATION + TEAM (legacy)
 // ======================================================
@@ -20,8 +21,22 @@ model Organization {
   agencyOf AgencyClient[] @relation("AgencyClients")
   clientOf AgencyClient[] @relation("ClientOfAgency")
 
-  // NEW: saved influencers (bookmarks)
+  // Saved influencers (bookmarks)
   savedInfluencers OrganizationInfluencer[]
+  wallet           Wallet?
+
+  // ---- Agency relations (multi-brand management) ----
+  createdOffers      CustomOffer[]       @relation("AgencyCreatedOffers")
+  managedCampaigns   Campaign[]          @relation("AgencyManagedCampaigns")
+  contentSubmissions ContentSubmission[] @relation("AgencyContentSubmissions")
+  publications       ContentPublish[]    @relation("AgencyPublications")
+  metricEntries      DeliverableMetric[] @relation("AgencyMetrics")
+
+  // ---- Knowledge base (Sprint 21) ----
+  documents Document[]
+
+  // ---- AI Assistant (Sprint 22) ----
+  assistantConversations AssistantConversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

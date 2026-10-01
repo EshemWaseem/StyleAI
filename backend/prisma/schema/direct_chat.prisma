@@ -1,0 +1,60 @@
+// direct_chat.prisma
+// ======================================================
+// DIRECT CHAT — any two parties (org <-> org, org <-> influencer)
+// Supports: Brand↔Influencer, Brand↔Agency, Agency↔Influencer
+// ======================================================
+
+model Conversation {
+  id String @id @default(uuid())
+
+  // Party A — always stored with canonical ordering (A < B alphabetically)
+  partyAType String // "ORG" | "INFLUENCER"
+  partyAId   String
+
+  // Party B
+  partyBType String
+  partyBId   String
+
+  // Context — what is this chat about?
+  contextType String @default("DIRECT") // "DIRECT" | "SERVICE_INQUIRY"
+
+  // Denorm for fast list rendering
+  lastMessageAt    DateTime?
+  lastMessageBody  String?
+  lastSenderUserId String?
+
+  unreadForA Int @default(0)
+  unreadForB Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages DirectMessage[]
+
+  @@unique([partyAType, partyAId, partyBType, partyBId])
+  @@index([partyAType, partyAId, lastMessageAt])
+  @@index([partyBType, partyBId, lastMessageAt])
+}
+
+model DirectMessage {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderUserId    String
+  sender          User   @relation("DirectMessageSender", fields: [senderUserId], references: [id], onDelete: Cascade)
+  senderRole      String // "BRAND" | "AGENCY" | "INFLUENCER" | "ADMIN"
+  senderPartyType String // "ORG" | "INFLUENCER" — which party sent this
+  senderPartyId   String
+
+  body        String
+  attachments Json?
+
+  readByA Boolean @default(false)
+  readByB Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderUserId])
+}

@@ -1,0 +1,81 @@
+// offer.prisma
+// ======================================================
+// CUSTOM OFFER — brand bundles items for an influencer
+// Lifecycle: DRAFT → PENDING_ADMIN → ADMIN_APPROVED
+//         → INFLUENCER_ACCEPTED  (or DECLINED / EXPIRED)
+// ======================================================
+// NO DEFAULTS on money fields — every value is computed
+// at creation time from PlatformSetting (admin-editable)
+// and the influencer's chosen currency.
+// ======================================================
+//
+// items JSON shape (validated in services/offers):
+// [
+//   {
+//     "platform":    "INSTAGRAM",     // matches InfluencerPlatform enum
+//     "contentType": "reel",          // validated against platformCatalog
+//     "quantity":    1,
+//     "unitPrice":   300,             // snapshot from influencer pricing at create time
+//     "lineTotal":   300,
+//     "label":       "Instagram Reel" // display snapshot
+//   }
+// ]
+// ======================================================
+
+model CustomOffer {
+  id String @id @default(uuid())
+
+  brandId           String
+  influencerId      String
+  productId         String?
+  createdByAgencyId String?
+
+  brand           Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  influencer      Influencer    @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  product         Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  createdByAgency Organization? @relation("AgencyCreatedOffers", fields: [createdByAgencyId], references: [id], onDelete: SetNull)
+
+  title String?
+
+  // Line items + financials — ALL required, NO defaults
+  items            Json
+  subtotal         Decimal   @db.Decimal(12, 2)
+  discountPct      Float
+  discountAmount   Decimal   @db.Decimal(12, 2)
+  adminFeePct      Float
+  adminFee         Decimal   @db.Decimal(12, 2)
+  total            Decimal   @db.Decimal(12, 2)
+  escrowHeldAt     DateTime?
+  escrowReleasedAt DateTime?
+  currency         String
+
+  status OfferStatus @default(DRAFT)
+
+  // Notes per actor
+  brandNote      String?
+  adminNote      String?
+  influencerNote String?
+
+  // Actor audit trail
+  createdBy String
+  creator   User   @relation("OfferCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  reviewedBy String?
+  reviewer   User?     @relation("OfferReviewer", fields: [reviewedBy], references: [id])
+  reviewedAt DateTime?
+
+  expiresAt DateTime?
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  walletTransactions WalletTransaction[]
+  campaign           Campaign?
+
+  @@index([brandId, status])
+  @@index([influencerId, status])
+  @@index([status, createdAt])
+  @@index([createdBy])
+  @@index([reviewedBy])
+  @@index([productId])
+  @@index([createdByAgencyId])
+}

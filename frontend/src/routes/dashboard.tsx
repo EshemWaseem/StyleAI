@@ -1,4 +1,4 @@
-// dashboard.tsx 12:57 
+// frontend/src/routes/dashboard.tsx 
 
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -34,9 +34,11 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle, StatusPill } from "@/components/ui-kit";
-import { campaigns, revenueSeries } from "@/lib/styleai-data";
+// import { campaigns, revenueSeries } from "@/lib/styleai-data";
 import { useRole, roleLabels, type RoleName } from "@/lib/role";
 // import { productsApi, type Product as RealProduct } from "@/lib/products";
+import { analyticsApi, type BrandAnalytics } from "@/lib/analytics";
+import { recommendationsApi, type Recommendation } from "@/lib/recommendations";
 import {
   productsApi,
   publicProductsApi,
@@ -172,10 +174,63 @@ const roleStats: Record<WorkspaceKey, Stat[]> = {
 // Shared sub-components
 // ======================================================
 
-function StatStrip({ role }: { role: WorkspaceKey }) {
+// function StatStrip({ role }: { role: WorkspaceKey }) {
+//   return (
+//     <section className="mt-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
+//       {roleStats[role].map((stat) => (
+//         <article key={stat.label} className="bg-card p-5">
+//           <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+//             {stat.label}
+//           </p>
+//           <p className="mt-3 font-display text-3xl text-foreground">{stat.value}</p>
+//           <p
+//             className={`mt-2 text-xs ${
+//               stat.tone === "success"
+//                 ? "text-success"
+//                 : stat.tone === "warning"
+//                 ? "text-warning"
+//                 : "text-muted-foreground"
+//             }`}
+//           >
+//             {stat.note}
+//           </p>
+//         </article>
+//       ))}
+//     </section>
+//   );
+// }
+function StatStrip({ role, analytics }: { role: WorkspaceKey; analytics?: BrandAnalytics | null }) {
+  // For owner, use real analytics; for other roles, keep placeholder for now
+  const stats: Stat[] = role === "owner" && analytics
+    ? [
+        {
+          label: "Attributed revenue",
+          value: `$${(analytics.summary.revenue || 0).toLocaleString()}`,
+          note: analytics.roi >= 1 ? `ROI ${analytics.roi.toFixed(2)}×` : "Below break-even",
+          tone: analytics.roi >= 1 ? "success" : "warning",
+        },
+        {
+          label: "Campaign ROI",
+          value: `${analytics.roi.toFixed(2)}×`,
+          note: analytics.roi >= 1 ? "Profitable" : "Not yet profitable",
+          tone: analytics.roi >= 1 ? "success" : "warning",
+        },
+        {
+          label: "Conversions",
+          value: (analytics.summary.conversions || 0).toLocaleString(),
+          note: `${analytics.activeCampaigns} active campaigns`,
+        },
+        {
+          label: "Creator reach",
+          value: (analytics.summary.reach || 0).toLocaleString(),
+          note: `${analytics.campaignCount} campaigns total`,
+        },
+      ]
+    : roleStats[role];
+
   return (
     <section className="mt-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
-      {roleStats[role].map((stat) => (
+      {stats.map((stat) => (
         <article key={stat.label} className="bg-card p-5">
           <p className="text-[10px] font-semibold uppercase text-muted-foreground">
             {stat.label}
@@ -243,7 +298,16 @@ function ProductLoop() {
   );
 }
 
-function TrendPanel({ title, description }: { title: string; description: string }) {
+function TrendPanel({
+  title,
+  description,
+  series,
+}: {
+  title: string;
+  description: string;
+  series: Array<{ day: string; revenue: number; conversions: number }>;
+}) {
+  const hasData = series.length > 0;
   return (
     <Panel>
       <SectionTitle
@@ -252,40 +316,26 @@ function TrendPanel({ title, description }: { title: string; description: string
         action={<span className="text-xs text-muted-foreground">Last 6 weeks</span>}
       />
       <div className="h-56 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={revenueSeries} margin={{ left: 0, right: 8, top: 12 }}>
-            <defs>
-              <linearGradient id="roleTrend" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.32} />
-                <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="var(--color-border)" vertical={false} />
-            <XAxis
-              dataKey="day"
-              tickLine={false}
-              axisLine={false}
-              fontSize={11}
-              stroke="var(--color-muted-foreground)"
-            />
-            <Tooltip
-              contentStyle={{
-                borderRadius: 8,
-                border: "1px solid var(--color-border)",
-                background: "var(--color-card)",
-                color: "var(--color-foreground)",
-                fontSize: 12,
-              }}
-            />
-            <Area
-              type="monotone"
-              dataKey="revenue"
-              stroke="var(--color-accent)"
-              strokeWidth={2}
-              fill="url(#roleTrend)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        {!hasData ? (
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            No revenue data yet — launch a campaign to see performance.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={series} margin={{ left: 0, right: 8, top: 12 }}>
+              <defs>
+                <linearGradient id="roleTrend" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.32} />
+                  <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="var(--color-border)" vertical={false} />
+              <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
+              <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-card)", color: "var(--color-foreground)", fontSize: 12 }} />
+              <Area type="monotone" dataKey="revenue" stroke="var(--color-accent)" strokeWidth={2} fill="url(#roleTrend)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </Panel>
   );
@@ -615,6 +665,276 @@ function AdminWorkspace() {
 
 
 
+// function InfluencerWorkspace() {
+//   const [profile, setProfile] = useState<Influencer | null>(null);
+//   const [matchedProducts, setMatchedProducts] = useState<PublicProduct[]>([]);
+//   const [productsLoading, setProductsLoading] = useState(false);
+//   const [loading, setLoading] = useState(true);
+
+//   // 1. Load influencer profile
+//   useEffect(() => {
+//     influencersApi
+//       .getMe()
+//       .then((res) => setProfile(res.influencer))
+//       .catch(() => setProfile(null))
+//       .finally(() => setLoading(false));
+//   }, []);
+
+//   // 2. Load products matching influencer's niche
+//   useEffect(() => {
+//     if (!profile || !profile.categories?.length) {
+//       setMatchedProducts([]);
+//       return;
+//     }
+
+//     setProductsLoading(true);
+//     publicProductsApi
+//       .list({ limit: 40 })
+//       .then((res) => {
+//         const lowerCats = profile.categories.map((c) => c.toLowerCase());
+//         const matched = res.products.filter((p) => {
+//           if (!p.category) return false;
+//           const pc = p.category.toLowerCase();
+//           return (
+//             lowerCats.includes(pc) ||
+//             lowerCats.some((lc) => pc.includes(lc) || lc.includes(pc))
+//           );
+//         });
+//         setMatchedProducts(matched);
+//       })
+//       .catch(() => setMatchedProducts([]))
+//       .finally(() => setProductsLoading(false));
+//   }, [profile]);
+
+//   if (loading) {
+//     return (
+//       <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
+//         <p className="text-sm text-muted-foreground">Loading your profile…</p>
+//       </div>
+//     );
+//   }
+
+//   if (!profile) {
+//     return (
+//       <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
+//         <p className="text-sm text-muted-foreground">
+//           Could not load your profile. Please try again.
+//         </p>
+//       </div>
+//     );
+//   }
+
+//   const needsSetup = !profile.profileCompleted;
+
+//   return (
+//     <>
+//       {needsSetup && (
+//         <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
+//           <div className="flex items-start justify-between gap-4">
+//             <div>
+//               <p className="text-sm font-medium">Complete your profile</p>
+//               <p className="mt-1 text-xs text-muted-foreground">
+//                 Add your bio, social accounts, and categories so brands can
+//                 discover you.
+//               </p>
+//             </div>
+//             <Button asChild size="sm">
+//               <Link to="/influencers/$slug" params={{ slug: profile.slug }}>
+//                 Setup profile
+//               </Link>
+//             </Button>
+//           </div>
+//         </div>
+//       )}
+
+//       <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+//         {/* ---------- Matched products from your niche ---------- */}
+//         <Panel>
+//                    <SectionTitle
+//             title="Products that match your niche"
+//             description={
+//               matchedProducts.length > 0
+//                 ? `Top ${Math.min(2, matchedProducts.length)} of ${matchedProducts.length} products in ${profile.categories.join(", ")}`
+//                 : "No products in your niche yet — explore or adjust your categories."
+//             }
+//             action={
+//               matchedProducts.length > 0 ? (
+//                 <Button asChild variant="outline" size="sm">
+//                   <Link to="/matched-products">Browse all</Link>
+//                 </Button>
+//               ) : null
+//             }
+//           />
+
+//           {productsLoading ? (
+//             <p className="py-10 text-center text-sm text-muted-foreground">
+//               Finding products in your niche…
+//             </p>
+//           ) : matchedProducts.length > 0 ? (
+//             <div className="grid gap-4 sm:grid-cols-2">
+//               {matchedProducts.slice(0, 2).map((p) => (
+//                 <Link
+//                   key={p.id}
+//                   to="/products/$slug"
+//                   params={{ slug: p.id }}
+//                   className="group overflow-hidden rounded-lg border border-border bg-background transition-shadow hover:shadow-lift"
+//                 >
+//                   {p.primaryImage ? (
+//                     <img
+//                       src={p.primaryImage}
+//                       alt={p.name}
+//                       className="h-32 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+//                     />
+//                   ) : (
+//                     <div className="grid h-32 w-full place-items-center bg-muted/30 text-xs text-muted-foreground">
+//                       No image
+//                     </div>
+//                   )}
+//                   <div className="p-4">
+//                     {p.category && (
+//                       <p className="text-xs text-accent">{p.category}</p>
+//                     )}
+//                     <h3 className="mt-1 font-display text-lg leading-snug">
+//                       {p.name}
+//                     </h3>
+//                     <p className="text-xs text-muted-foreground">
+//                       {p.brand.name}
+//                     </p>
+//                     {p.price != null && (
+//                       <p className="mt-2 text-sm font-medium tabular-nums">
+//                         {p.currency} {p.price}
+//                       </p>
+//                     )}
+//                   </div>
+//                 </Link>
+//               ))}
+//             </div>
+//           ) : (
+//             <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
+//               <Sparkles className="mx-auto size-6 text-muted-foreground" />
+//               <p className="mt-3 text-sm font-medium">
+//                 No matching products yet
+//               </p>
+//               <p className="mt-1 text-xs text-muted-foreground">
+//                 {profile.categories.length === 0
+//                   ? "Add categories to your profile so we can find products in your niche."
+//                   : "No live products match your niche right now. Check back later."}
+//               </p>
+//               {profile.categories.length === 0 && (
+//                 <Button asChild size="sm" className="mt-4">
+//                   <Link
+//                     to="/influencers/$slug"
+//                     params={{ slug: profile.slug }}
+//                   >
+//                     Add categories
+//                   </Link>
+//                 </Button>
+//               )}
+//             </div>
+//           )}
+//         </Panel>
+
+//         {/* ---------- Deliverables (unchanged) ---------- */}
+//         <Panel>
+//           <SectionTitle
+//             title="Deliverables"
+//             description="Your next committed actions."
+//           />
+//           <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
+//             <FileCheck2 className="mx-auto size-6 text-muted-foreground" />
+//             <p className="mt-3 text-sm font-medium">No deliverables</p>
+//             <p className="mt-1 text-xs text-muted-foreground">
+//               Accepted campaigns will show their tasks here.
+//             </p>
+//           </div>
+//         </Panel>
+
+//         {/* ---------- Your profile (unchanged) ---------- */}
+//         <Panel className="xl:col-span-2">
+//           <SectionTitle
+//             title="Your profile"
+//             description="Live data from your creator profile."
+//           />
+//           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+//             <div className="rounded-lg border border-border p-4">
+//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+//                 Followers
+//               </p>
+//               <p className="mt-2 font-display text-2xl font-medium tabular-nums">
+//                 {profile.followerCount.toLocaleString()}
+//               </p>
+//             </div>
+//             <div className="rounded-lg border border-border p-4">
+//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+//                 Engagement
+//               </p>
+//               <p className="mt-2 font-display text-2xl font-medium tabular-nums">
+//                 {(profile.engagementRate * 100).toFixed(2)}%
+//               </p>
+//             </div>
+//             <div className="rounded-lg border border-border p-4">
+//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+//                 Starting rate
+//               </p>
+//               <p className="mt-2 font-display text-2xl font-medium tabular-nums">
+//                 {profile.pricePerPost != null
+//                   ? `${profile.currency} ${profile.pricePerPost}`
+//                   : "—"}
+//               </p>
+//             </div>
+//             <div className="rounded-lg border border-border p-4">
+//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+//                 Status
+//               </p>
+//               <p className="mt-2 font-display text-2xl font-medium">
+//                 {profile.availability === "AVAILABLE"
+//                   ? "Available"
+//                   : profile.availability}
+//               </p>
+//             </div>
+//           </div>
+
+//           {profile.categories.length > 0 && (
+//             <div className="mt-5">
+//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+//                 Categories
+//               </p>
+//               <div className="mt-2 flex flex-wrap gap-2">
+//                 {profile.categories.map((c) => (
+//                   <span
+//                     key={c}
+//                     className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
+//                   >
+//                     {c}
+//                   </span>
+//                 ))}
+//               </div>
+//             </div>
+//           )}
+
+//           {profile.audienceFavorites && profile.audienceFavorites.length > 0 && (
+//             <div className="mt-5">
+//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+//                 Audience favorites
+//               </p>
+//               <div className="mt-2 flex flex-wrap gap-2">
+//                 {profile.audienceFavorites.map((name) => (
+//                   <span
+//                     key={name}
+//                     className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
+//                   >
+//                     {name}
+//                   </span>
+//                 ))}
+//               </div>
+//             </div>
+//           )}
+//         </Panel>
+//       </div>
+//     </>
+//   );
+// }
+
 function InfluencerWorkspace() {
   const [profile, setProfile] = useState<Influencer | null>(null);
   const [matchedProducts, setMatchedProducts] = useState<PublicProduct[]>([]);
@@ -676,6 +996,15 @@ function InfluencerWorkspace() {
 
   const needsSetup = !profile.profileCompleted;
 
+  // Count total tiers set
+  const pricingTiers = (profile.pricingTiers as any) || {};
+  const platformCount = Object.keys(pricingTiers).length;
+  const totalTiers = Object.values(pricingTiers).reduce(
+    (sum: number, p: any) => sum + Object.keys(p || {}).length,
+    0
+  );
+  const hasPricing = totalTiers > 0;
+
   return (
     <>
       {needsSetup && (
@@ -697,10 +1026,74 @@ function InfluencerWorkspace() {
         </div>
       )}
 
+      {/* ========== PRICING SUMMARY ========== */}
+      <Panel className="mt-6">
+        <SectionTitle
+          title="Your pricing"
+          description={
+            hasPricing
+              ? `${totalTiers} price${totalTiers === 1 ? "" : "s"} across ${platformCount} platform${platformCount === 1 ? "" : "s"} — what brands see when they create offers.`
+              : "You haven't set any prices yet. Brands can't send offers without pricing."
+          }
+          action={
+            <Button asChild size="sm" variant={hasPricing ? "outline" : "default"}>
+              <Link to="/influencer/pricing">
+                <BadgeDollarSign className="mr-1 size-4" />
+                {hasPricing ? "Edit pricing" : "Set pricing"}
+              </Link>
+            </Button>
+          }
+        />
+
+        {!hasPricing ? (
+          <div className="rounded-lg border border-dashed border-border bg-muted/10 p-8 text-center">
+            <BadgeDollarSign className="mx-auto size-6 text-muted-foreground" />
+            <p className="mt-3 text-sm font-medium">No prices set yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Set per-platform rates (Instagram, TikTok, YouTube…) so brands can
+              build custom offers.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Object.entries(pricingTiers).map(([platform, tiers]: any) => (
+              <div
+                key={platform}
+                className="rounded-lg border border-border bg-card p-4"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {platform}
+                </p>
+                <div className="mt-2 space-y-1">
+                  {Object.entries(tiers).map(([ct, price]: any) => (
+                    <div key={ct} className="flex justify-between text-xs">
+                      <span className="capitalize text-muted-foreground">
+                        {ct.replace(/-/g, " ")}
+                      </span>
+                      <span className="tabular-nums font-medium">
+                        {profile.currency} {Number(price).toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(profile as any).minBudget != null && (
+          <p className="mt-4 text-xs text-muted-foreground">
+            Minimum campaign budget:{" "}
+            <span className="font-medium text-foreground">
+              {profile.currency} {Number((profile as any).minBudget).toFixed(2)}
+            </span>
+          </p>
+        )}
+      </Panel>
+
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        {/* ---------- Matched products from your niche ---------- */}
         <Panel>
-                   <SectionTitle
+          <SectionTitle
             title="Products that match your niche"
             description={
               matchedProducts.length > 0
@@ -747,9 +1140,7 @@ function InfluencerWorkspace() {
                     <h3 className="mt-1 font-display text-lg leading-snug">
                       {p.name}
                     </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {p.brand.name}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{p.brand.name}</p>
                     {p.price != null && (
                       <p className="mt-2 text-sm font-medium tabular-nums">
                         {p.currency} {p.price}
@@ -762,9 +1153,7 @@ function InfluencerWorkspace() {
           ) : (
             <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
               <Sparkles className="mx-auto size-6 text-muted-foreground" />
-              <p className="mt-3 text-sm font-medium">
-                No matching products yet
-              </p>
+              <p className="mt-3 text-sm font-medium">No matching products yet</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {profile.categories.length === 0
                   ? "Add categories to your profile so we can find products in your niche."
@@ -772,10 +1161,7 @@ function InfluencerWorkspace() {
               </p>
               {profile.categories.length === 0 && (
                 <Button asChild size="sm" className="mt-4">
-                  <Link
-                    to="/influencers/$slug"
-                    params={{ slug: profile.slug }}
-                  >
+                  <Link to="/influencers/$slug" params={{ slug: profile.slug }}>
                     Add categories
                   </Link>
                 </Button>
@@ -784,12 +1170,8 @@ function InfluencerWorkspace() {
           )}
         </Panel>
 
-        {/* ---------- Deliverables (unchanged) ---------- */}
         <Panel>
-          <SectionTitle
-            title="Deliverables"
-            description="Your next committed actions."
-          />
+          <SectionTitle title="Deliverables" description="Your next committed actions." />
           <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
             <FileCheck2 className="mx-auto size-6 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium">No deliverables</p>
@@ -799,7 +1181,6 @@ function InfluencerWorkspace() {
           </div>
         </Panel>
 
-        {/* ---------- Your profile (unchanged) ---------- */}
         <Panel className="xl:col-span-2">
           <SectionTitle
             title="Your profile"
@@ -843,48 +1224,11 @@ function InfluencerWorkspace() {
               </p>
             </div>
           </div>
-
-          {profile.categories.length > 0 && (
-            <div className="mt-5">
-              <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-                Categories
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {profile.categories.map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {profile.audienceFavorites && profile.audienceFavorites.length > 0 && (
-            <div className="mt-5">
-              <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-                Audience favorites
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {profile.audienceFavorites.map((name) => (
-                  <span
-                    key={name}
-                    className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
-                  >
-                    {name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </Panel>
       </div>
     </>
   );
 }
-
 
 // ======================================================
 // Agency
@@ -1054,135 +1398,29 @@ function MemberWorkspace() {
   );
 }
 
-// ======================================================
-// Brand Owner — REAL products
-// ======================================================
 
-// function BrandWorkspace({
-//   products,
-//   loading,
-// }: {
-//   products: RealProduct[];
-//   loading: boolean;
-// }) {
-//   const displayed = products.slice(0, 4);
-
-//   return (
-//     <>
-//       <ProductLoop />
-//       <div className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-//         <TrendPanel
-//           title="Revenue and conversions"
-//           description="Attributed to creator campaigns."
-//         />
-//         <Panel>
-//           <SectionTitle
-//             title="AI decision brief"
-//             description="The highest-impact action now."
-//           />
-//           <div className="rounded-md border border-border bg-brand-soft p-4">
-//             <p className="text-xs font-semibold text-accent">92% confidence</p>
-//             <h3 className="mt-2 font-display text-2xl">
-//               Increase Maya Khan's allocation.
-//             </h3>
-//             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-//               Her audience overlaps 96% with eveningwear buyers and converts 2.4×
-//               above similar creators.
-//             </p>
-//             <Button asChild size="sm" className="mt-5">
-//               <Link to="/recommendations">
-//                 Review recommendation <ArrowRight />
-//               </Link>
-//             </Button>
-//           </div>
-//         </Panel>
-//       </div>
-
-//       <section className="mt-8">
-//         <SectionTitle
-//           title="Products in motion"
-//           description="Your real catalog — live from your brand."
-//           action={
-//             <Button asChild variant="outline" size="sm">
-//               <Link to="/products">Open catalog</Link>
-//             </Button>
-//           }
-//         />
-
-//         {loading ? (
-//           <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-//             Loading your products…
-//           </div>
-//         ) : displayed.length === 0 ? (
-//           <div className="rounded-xl border border-dashed border-border p-12 text-center">
-//             <p className="text-sm text-muted-foreground">
-//               No products yet. Add your first product to see it here.
-//             </p>
-//             <Button asChild className="mt-4">
-//               <Link to="/products">
-//                 <Plus /> Add product
-//               </Link>
-//             </Button>
-//           </div>
-//         ) : (
-//           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-//             {displayed.map((product) => (
-//               <Link
-//                 key={product.id}
-//                 to="/products/$slug"
-//                 params={{ slug: product.id }}
-//                 className="group overflow-hidden rounded-lg border border-border bg-card"
-//               >
-//                 {product.primaryImage ? (
-//                   <img
-//                     src={product.primaryImage}
-//                     alt={product.name}
-//                     className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-//                   />
-//                 ) : (
-//                   <div className="grid h-40 w-full place-items-center bg-muted/30 text-xs text-muted-foreground">
-//                     No image
-//                   </div>
-//                 )}
-//                 <div className="p-4">
-//                   <StatusPill
-//                     status={
-//                       product.inventory != null && product.inventory > 0
-//                         ? "Active"
-//                         : "Draft"
-//                     }
-//                   />
-//                   <h3 className="mt-3 font-display text-xl">{product.name}</h3>
-//                   <p className="mt-1 text-xs text-muted-foreground">
-//                     {product.category ?? "Uncategorised"} ·{" "}
-//                     {product.inventory ?? 0} in stock
-//                   </p>
-//                 </div>
-//               </Link>
-//             ))}
-//           </div>
-//         )}
-//       </section>
-//     </>
-//   );
-// }
 
 function BrandWorkspace({
   products,
   loading,
+  analytics, 
 }: {
   products: RealProduct[];
   loading: boolean;
+  analytics: BrandAnalytics | null; 
 }) {
   const displayed = products.slice(0, 4);
 
-  // ======================================================
-  // MATCHED INFLUENCERS — based on brand's product categories
-  // ======================================================
+  // ===== REAL analytics for trend + stats =====
+  // const [analytics, setAnalytics] = useState<BrandAnalytics | null>(null);
+
+  // ===== REAL top recommendation =====
+  const [topRec, setTopRec] = useState<Recommendation | null>(null);
+
+  // ===== Matched influencers =====
   const [matchedInfluencers, setMatchedInfluencers] = useState<Influencer[]>([]);
   const [influencersLoading, setInfluencersLoading] = useState(false);
 
-  // Extract unique categories from brand's products
   const brandCategories = Array.from(
     new Set(
       products
@@ -1191,17 +1429,33 @@ function BrandWorkspace({
     )
   ).sort();
 
+  // ---- fetch brand analytics ----
+  // useEffect(() => {
+  //   if (loading) return;
+  //   analyticsApi
+  //     .brand()
+  //     .then((r) => setAnalytics(r))
+  //     .catch(() => setAnalytics(null));
+  // }, [loading]);
+
+  // ---- fetch top recommendation ----
+  useEffect(() => {
+    recommendationsApi
+      .list()
+      .then((r) => setTopRec(r.recommendations?.[0] ?? null))
+      .catch(() => setTopRec(null));
+  }, []);
+
+  // ---- fetch matched influencers ----
   useEffect(() => {
     if (loading || brandCategories.length === 0) {
       setMatchedInfluencers([]);
       return;
     }
-
     setInfluencersLoading(true);
     influencersApi
       .list({ categories: brandCategories.join(","), limit: 40 })
       .then((res) => {
-        // Secondary filter — verify overlap (case-insensitive)
         const matched = res.influencers.filter((inf) => {
           if (!inf.categories?.length) return false;
           const lowerInfCats = inf.categories.map((c) => c.toLowerCase());
@@ -1216,6 +1470,15 @@ function BrandWorkspace({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products, loading]);
 
+  // Build trend series from analytics
+  const trendSeries = analytics
+    ? Array.from({ length: 6 }, (_, i) => ({
+        day: `Wk ${i + 1}`,
+        revenue: Math.round((analytics.summary.revenue || 0) / 6),
+        conversions: Math.round((analytics.summary.conversions || 0) / 6),
+      }))
+    : [];
+
   return (
     <>
       <ProductLoop />
@@ -1225,32 +1488,34 @@ function BrandWorkspace({
         <TrendPanel
           title="Revenue and conversions"
           description="Attributed to creator campaigns."
+          series={trendSeries}
         />
         <Panel>
-          <SectionTitle
-            title="AI decision brief"
-            description="The highest-impact action now."
-          />
-          <div className="rounded-md border border-border bg-brand-soft p-4">
-            <p className="text-xs font-semibold text-accent">92% confidence</p>
-            <h3 className="mt-2 font-display text-2xl">
-              Increase Maya Khan's allocation.
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Her audience overlaps 96% with eveningwear buyers and converts 2.4×
-              above similar creators.
-            </p>
-            <Button asChild size="sm" className="mt-5">
-              <Link to="/recommendations">
-                Review recommendation <ArrowRight />
-              </Link>
-            </Button>
-          </div>
+          <SectionTitle title="AI decision brief" description="The highest-impact action now." />
+          {topRec ? (
+            <div className="rounded-md border border-border bg-brand-soft p-4">
+              <p className="text-xs font-semibold text-accent">{topRec.confidence}% confidence</p>
+              <h3 className="mt-2 font-display text-2xl">{topRec.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{topRec.reason}</p>
+              <Button asChild size="sm" className="mt-5">
+                <Link to="/recommendations">
+                  Review recommendation <ArrowRight />
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed border-border p-6 text-center">
+              <Sparkles className="mx-auto size-5 text-muted-foreground" />
+              <p className="mt-2 text-xs text-muted-foreground">
+                No recommendations yet. Complete a campaign to unlock AI guidance.
+              </p>
+            </div>
+          )}
         </Panel>
       </div>
 
       {/* ======================================================
-          MATCHED INFLUENCERS — from brand's niche
+          MATCHED INFLUENCERS
       ====================================================== */}
       <section className="mt-8">
         <SectionTitle
@@ -1280,8 +1545,7 @@ function BrandWorkspace({
             <UsersRound className="mx-auto size-6 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium">No products yet</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Add products with categories (like Clothing, Footwear) to see
-              creators that match your niche.
+              Add products with categories (like Clothing, Footwear) to see creators that match your niche.
             </p>
             <Button asChild className="mt-4">
               <Link to="/products">
@@ -1295,10 +1559,7 @@ function BrandWorkspace({
             <p className="mt-3 text-sm font-medium">No matching creators yet</p>
             <p className="mt-1 text-xs text-muted-foreground">
               No influencers have registered with categories matching{" "}
-              <span className="font-medium">
-                {brandCategories.join(", ")}
-              </span>{" "}
-              yet.
+              <span className="font-medium">{brandCategories.join(", ")}</span> yet.
             </p>
             <Button asChild variant="outline" className="mt-4">
               <Link to="/influencers">Browse all creators</Link>
@@ -1365,7 +1626,7 @@ function BrandWorkspace({
       </section>
 
       {/* ======================================================
-          Products in motion (unchanged)
+          PRODUCTS IN MOTION
       ====================================================== */}
       <section className="mt-8">
         <SectionTitle
@@ -1423,8 +1684,7 @@ function BrandWorkspace({
                   />
                   <h3 className="mt-3 font-display text-xl">{product.name}</h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {product.category ?? "Uncategorised"} ·{" "}
-                    {product.inventory ?? 0} in stock
+                    {product.category ?? "Uncategorised"} · {product.inventory ?? 0} in stock
                   </p>
                 </div>
               </Link>
@@ -1446,6 +1706,7 @@ function Dashboard() {
 
   const [realProducts, setRealProducts] = useState<RealProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
+   const [brandAnalytics, setBrandAnalytics] = useState<BrandAnalytics | null>(null);
 
   // Redirect logic
   useEffect(() => {
@@ -1481,6 +1742,17 @@ function Dashboard() {
       .catch(() => setRealProducts([]))
       .finally(() => setProductsLoading(false));
   }, [user, loading]);
+
+
+   useEffect(() => {
+    if (loading || !user) return;
+    const isBrandUser = user.roles.some((r) =>
+      ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
+    );
+    if (!isBrandUser) return;
+    analyticsApi.brand().then(setBrandAnalytics).catch(() => setBrandAnalytics(null));
+  }, [user, loading]);
+
 
   
   if (loading || !user) {
@@ -1528,11 +1800,13 @@ function Dashboard() {
         }
       />
       {/* <StatStrip role={workspace} /> */}
-      {workspace !== "influencer" && <StatStrip role={workspace} />}
+      {/* {workspace !== "influencer" && <StatStrip role={workspace} />} */}
+      {workspace !== "influencer" && (
+  <StatStrip role={workspace} analytics={brandAnalytics} />)}
       {workspace === "admin" && <AdminWorkspace />}
       {workspace === "influencer" && <InfluencerWorkspace />}
       {workspace === "owner" && (
-        <BrandWorkspace products={realProducts} loading={productsLoading} />
+        <BrandWorkspace products={realProducts} loading={productsLoading} analytics={brandAnalytics} />
       )}
       {workspace === "agency" && <AgencyWorkspace />}
       {workspace === "member" && <MemberWorkspace />}

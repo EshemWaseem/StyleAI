@@ -1,0 +1,41 @@
+// listing.prisma
+// ======================================================
+// INFLUENCER LISTING — public offer published by creator
+// Brands browse and claim → creates a CustomOffer DRAFT
+// ======================================================
+
+model InfluencerListing {
+  id           String     @id @default(uuid())
+  influencerId String
+  influencer   Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  title         String // "Christmas Special"
+  description   String?
+  coverImageUrl String?
+  items         Json // same shape as CustomOffer.items
+  subtotal      Decimal @db.Decimal(12, 2)
+  currency      String
+
+  validDays Int // "valid for 2 days"
+  expiresAt DateTime
+
+  status           ListingStatus @default(ACTIVE)
+  viewCount        Int           @default(0)
+  claimCount       Int           @default(0)
+  claimedByBrandId String?
+  claimedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([influencerId, status])
+  @@index([status, expiresAt])
+  @@index([claimedByBrandId])
+}
+
+enum ListingStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  CLAIMED
+}

@@ -1,0 +1,53 @@
+// knowledge.prisma
+// ======================================================
+// Knowledge Base — brand documents + vector chunks (pgvector)
+// ======================================================
+
+model Document {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name        String
+  type        String   @default("other")   // guidelines | catalog | campaign | brand | other
+  mimeType    String?
+  sizeBytes   Int      @default(0)
+  storageUrl  String?                       // Cloudinary URL if file uploaded
+
+  status      DocumentStatus @default(PENDING)  // PENDING | INDEXING | INDEXED | FAILED
+  error       String?
+  chunkCount  Int            @default(0)
+
+  uploadedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  chunks DocumentChunk[]
+
+  @@index([organizationId, createdAt])
+  @@index([status])
+}
+
+enum DocumentStatus {
+  PENDING
+  INDEXING
+  INDEXED
+  FAILED
+}
+
+model DocumentChunk {
+  id             String   @id @default(uuid())
+  documentId     String
+  document       Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  chunkIndex Int
+  content    String   @db.Text
+  tokens     Int      @default(0)
+
+  // pgvector column (768 dims for Gemini text-embedding-004)
+  embedding  Unsupported("vector(768)")?
+
+  createdAt  DateTime @default(now())
+
+  @@index([documentId, chunkIndex])
+}

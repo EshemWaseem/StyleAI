@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -18,18 +17,45 @@ import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MatchedProductsRouteImport } from './routes/matched-products'
 import { Route as MatchingRouteImport } from './routes/matching'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as PendingRouteImport } from './routes/pending'
 import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TeamRouteImport } from './routes/team'
+import { Route as WalletRouteImport } from './routes/wallet'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAgenciesRouteImport } from './routes/admin/agencies'
+import { Route as AdminAuditRouteImport } from './routes/admin/audit'
+import { Route as AdminBrandsRouteImport } from './routes/admin/brands'
+import { Route as AdminCampaignsRouteImport } from './routes/admin/campaigns'
+import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
+import { Route as AdminInfluencersRouteImport } from './routes/admin/influencers'
+import { Route as AdminOffersRouteImport } from './routes/admin/offers'
+import { Route as AdminPaymentsRouteImport } from './routes/admin/payments'
+import { Route as AdminProductsRouteImport } from './routes/admin/products'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminWalletsRouteImport } from './routes/admin/wallets'
+import { Route as AdminWithdrawalsRouteImport } from './routes/admin/withdrawals'
+import { Route as AgencyCampaignsRouteImport } from './routes/agency.campaigns'
+import { Route as AgencyClientsRouteImport } from './routes/agency.clients'
+import { Route as AgencyEditingRouteImport } from './routes/agency.editing'
 import { Route as BrandsIndexRouteImport } from './routes/brands.index'
 import { Route as BrandsBrandIdRouteImport } from './routes/brands.$brandId'
 import { Route as CampaignsIndexRouteImport } from './routes/campaigns.index'
-import { Route as CampaignsSlugRouteImport } from './routes/campaigns.$slug'
+import { Route as CampaignsIdRouteImport } from './routes/campaigns.$id'
+import { Route as InfluencerOffersRouteImport } from './routes/influencer.offers'
+import { Route as InfluencerPricingRouteImport } from './routes/influencer.pricing'
 import { Route as InfluencersIndexRouteImport } from './routes/influencers.index'
 import { Route as InfluencersSlugRouteImport } from './routes/influencers.$slug'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as OffersIndexRouteImport } from './routes/offers.index'
+import { Route as OffersIdRouteImport } from './routes/offers.$id'
+import { Route as OffersBrowseRouteImport } from './routes/offers.browse'
+import { Route as OffersNewRouteImport } from './routes/offers.new'
+import { Route as PaymentsResultRouteImport } from './routes/payments.result'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 import { Route as StudioContentRouteImport } from './routes/studio.content'
@@ -39,11 +65,6 @@ import { Route as TeamsTeamIdRouteImport } from './routes/teams.$teamId'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalyticsRoute = AnalyticsRouteImport.update({
@@ -81,6 +102,16 @@ const MatchingRoute = MatchingRouteImport.update({
   path: '/matching',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PendingRoute = PendingRouteImport.update({
   id: '/pending',
   path: '/pending',
@@ -106,6 +137,96 @@ const TeamRoute = TeamRouteImport.update({
   path: '/team',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WalletRoute = WalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAgenciesRoute = AdminAgenciesRouteImport.update({
+  id: '/admin/agencies',
+  path: '/admin/agencies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/admin/audit',
+  path: '/admin/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBrandsRoute = AdminBrandsRouteImport.update({
+  id: '/admin/brands',
+  path: '/admin/brands',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCampaignsRoute = AdminCampaignsRouteImport.update({
+  id: '/admin/campaigns',
+  path: '/admin/campaigns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFinanceRoute = AdminFinanceRouteImport.update({
+  id: '/admin/finance',
+  path: '/admin/finance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminInfluencersRoute = AdminInfluencersRouteImport.update({
+  id: '/admin/influencers',
+  path: '/admin/influencers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminOffersRoute = AdminOffersRouteImport.update({
+  id: '/admin/offers',
+  path: '/admin/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
+  id: '/admin/payments',
+  path: '/admin/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/admin/products',
+  path: '/admin/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWalletsRoute = AdminWalletsRouteImport.update({
+  id: '/admin/wallets',
+  path: '/admin/wallets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
+  id: '/admin/withdrawals',
+  path: '/admin/withdrawals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgencyCampaignsRoute = AgencyCampaignsRouteImport.update({
+  id: '/agency/campaigns',
+  path: '/agency/campaigns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgencyClientsRoute = AgencyClientsRouteImport.update({
+  id: '/agency/clients',
+  path: '/agency/clients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgencyEditingRoute = AgencyEditingRouteImport.update({
+  id: '/agency/editing',
+  path: '/agency/editing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BrandsIndexRoute = BrandsIndexRouteImport.update({
   id: '/brands/',
   path: '/brands/',
@@ -121,9 +242,19 @@ const CampaignsIndexRoute = CampaignsIndexRouteImport.update({
   path: '/campaigns/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CampaignsSlugRoute = CampaignsSlugRouteImport.update({
-  id: '/campaigns/$slug',
-  path: '/campaigns/$slug',
+const CampaignsIdRoute = CampaignsIdRouteImport.update({
+  id: '/campaigns/$id',
+  path: '/campaigns/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InfluencerOffersRoute = InfluencerOffersRouteImport.update({
+  id: '/influencer/offers',
+  path: '/influencer/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InfluencerPricingRoute = InfluencerPricingRouteImport.update({
+  id: '/influencer/pricing',
+  path: '/influencer/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InfluencersIndexRoute = InfluencersIndexRouteImport.update({
@@ -139,6 +270,31 @@ const InfluencersSlugRoute = InfluencersSlugRouteImport.update({
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffersIndexRoute = OffersIndexRouteImport.update({
+  id: '/offers/',
+  path: '/offers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffersIdRoute = OffersIdRouteImport.update({
+  id: '/offers/$id',
+  path: '/offers/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffersBrowseRoute = OffersBrowseRouteImport.update({
+  id: '/offers/browse',
+  path: '/offers/browse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffersNewRoute = OffersNewRouteImport.update({
+  id: '/offers/new',
+  path: '/offers/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentsResultRoute = PaymentsResultRouteImport.update({
+  id: '/payments/result',
+  path: '/payments/result',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsIndexRoute = ProductsIndexRouteImport.update({
@@ -169,7 +325,6 @@ const TeamsTeamIdRoute = TeamsTeamIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
@@ -177,27 +332,53 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/matched-products': typeof MatchedProductsRoute
   '/matching': typeof MatchingRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
   '/pending': typeof PendingRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/wallet': typeof WalletRoute
+  '/admin/agencies': typeof AdminAgenciesRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/brands': typeof AdminBrandsRoute
+  '/admin/campaigns': typeof AdminCampaignsRoute
+  '/admin/finance': typeof AdminFinanceRoute
+  '/admin/influencers': typeof AdminInfluencersRoute
+  '/admin/offers': typeof AdminOffersRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agency/campaigns': typeof AgencyCampaignsRoute
+  '/agency/clients': typeof AgencyClientsRoute
+  '/agency/editing': typeof AgencyEditingRoute
   '/brands/$brandId': typeof BrandsBrandIdRoute
-  '/campaigns/$slug': typeof CampaignsSlugRoute
+  '/campaigns/$id': typeof CampaignsIdRoute
+  '/influencer/offers': typeof InfluencerOffersRoute
+  '/influencer/pricing': typeof InfluencerPricingRoute
   '/influencers/$slug': typeof InfluencersSlugRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/offers/$id': typeof OffersIdRoute
+  '/offers/browse': typeof OffersBrowseRoute
+  '/offers/new': typeof OffersNewRoute
+  '/payments/result': typeof PaymentsResultRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/studio/content': typeof StudioContentRoute
   '/studio/photography': typeof StudioPhotographyRoute
   '/teams/$teamId': typeof TeamsTeamIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/campaigns/': typeof CampaignsIndexRoute
   '/influencers/': typeof InfluencersIndexRoute
+  '/offers/': typeof OffersIndexRoute
   '/products/': typeof ProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
@@ -205,28 +386,54 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/matched-products': typeof MatchedProductsRoute
   '/matching': typeof MatchingRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
   '/pending': typeof PendingRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/wallet': typeof WalletRoute
+  '/admin/agencies': typeof AdminAgenciesRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/brands': typeof AdminBrandsRoute
+  '/admin/campaigns': typeof AdminCampaignsRoute
+  '/admin/finance': typeof AdminFinanceRoute
+  '/admin/influencers': typeof AdminInfluencersRoute
+  '/admin/offers': typeof AdminOffersRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agency/campaigns': typeof AgencyCampaignsRoute
+  '/agency/clients': typeof AgencyClientsRoute
+  '/agency/editing': typeof AgencyEditingRoute
   '/brands/$brandId': typeof BrandsBrandIdRoute
-  '/campaigns/$slug': typeof CampaignsSlugRoute
+  '/campaigns/$id': typeof CampaignsIdRoute
+  '/influencer/offers': typeof InfluencerOffersRoute
+  '/influencer/pricing': typeof InfluencerPricingRoute
   '/influencers/$slug': typeof InfluencersSlugRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/offers/$id': typeof OffersIdRoute
+  '/offers/browse': typeof OffersBrowseRoute
+  '/offers/new': typeof OffersNewRoute
+  '/payments/result': typeof PaymentsResultRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/studio/content': typeof StudioContentRoute
   '/studio/photography': typeof StudioPhotographyRoute
   '/teams/$teamId': typeof TeamsTeamIdRoute
+  '/admin': typeof AdminIndexRoute
   '/brands': typeof BrandsIndexRoute
   '/campaigns': typeof CampaignsIndexRoute
   '/influencers': typeof InfluencersIndexRoute
+  '/offers': typeof OffersIndexRoute
   '/products': typeof ProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
@@ -234,29 +441,55 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/matched-products': typeof MatchedProductsRoute
   '/matching': typeof MatchingRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
   '/pending': typeof PendingRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/wallet': typeof WalletRoute
+  '/admin/agencies': typeof AdminAgenciesRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/brands': typeof AdminBrandsRoute
+  '/admin/campaigns': typeof AdminCampaignsRoute
+  '/admin/finance': typeof AdminFinanceRoute
+  '/admin/influencers': typeof AdminInfluencersRoute
+  '/admin/offers': typeof AdminOffersRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/wallets': typeof AdminWalletsRoute
+  '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agency/campaigns': typeof AgencyCampaignsRoute
+  '/agency/clients': typeof AgencyClientsRoute
+  '/agency/editing': typeof AgencyEditingRoute
   '/brands/$brandId': typeof BrandsBrandIdRoute
-  '/campaigns/$slug': typeof CampaignsSlugRoute
+  '/campaigns/$id': typeof CampaignsIdRoute
+  '/influencer/offers': typeof InfluencerOffersRoute
+  '/influencer/pricing': typeof InfluencerPricingRoute
   '/influencers/$slug': typeof InfluencersSlugRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/offers/$id': typeof OffersIdRoute
+  '/offers/browse': typeof OffersBrowseRoute
+  '/offers/new': typeof OffersNewRoute
+  '/payments/result': typeof PaymentsResultRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/studio/content': typeof StudioContentRoute
   '/studio/photography': typeof StudioPhotographyRoute
   '/teams/$teamId': typeof TeamsTeamIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/campaigns/': typeof CampaignsIndexRoute
   '/influencers/': typeof InfluencersIndexRoute
+  '/offers/': typeof OffersIndexRoute
   '/products/': typeof ProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/analytics'
     | '/billing'
     | '/dashboard'
@@ -264,27 +497,53 @@ export interface FileRouteTypes {
     | '/login'
     | '/matched-products'
     | '/matching'
+    | '/messages'
+    | '/notifications'
     | '/pending'
     | '/recommendations'
     | '/register'
     | '/settings'
     | '/team'
+    | '/wallet'
+    | '/admin/agencies'
+    | '/admin/audit'
+    | '/admin/brands'
+    | '/admin/campaigns'
+    | '/admin/finance'
+    | '/admin/influencers'
+    | '/admin/offers'
+    | '/admin/payments'
+    | '/admin/products'
+    | '/admin/settings'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/admin/withdrawals'
+    | '/agency/campaigns'
+    | '/agency/clients'
+    | '/agency/editing'
     | '/brands/$brandId'
-    | '/campaigns/$slug'
+    | '/campaigns/$id'
+    | '/influencer/offers'
+    | '/influencer/pricing'
     | '/influencers/$slug'
     | '/invite/$token'
+    | '/offers/$id'
+    | '/offers/browse'
+    | '/offers/new'
+    | '/payments/result'
     | '/products/$slug'
     | '/studio/content'
     | '/studio/photography'
     | '/teams/$teamId'
+    | '/admin/'
     | '/brands/'
     | '/campaigns/'
     | '/influencers/'
+    | '/offers/'
     | '/products/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/analytics'
     | '/billing'
     | '/dashboard'
@@ -292,27 +551,53 @@ export interface FileRouteTypes {
     | '/login'
     | '/matched-products'
     | '/matching'
+    | '/messages'
+    | '/notifications'
     | '/pending'
     | '/recommendations'
     | '/register'
     | '/settings'
     | '/team'
+    | '/wallet'
+    | '/admin/agencies'
+    | '/admin/audit'
+    | '/admin/brands'
+    | '/admin/campaigns'
+    | '/admin/finance'
+    | '/admin/influencers'
+    | '/admin/offers'
+    | '/admin/payments'
+    | '/admin/products'
+    | '/admin/settings'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/admin/withdrawals'
+    | '/agency/campaigns'
+    | '/agency/clients'
+    | '/agency/editing'
     | '/brands/$brandId'
-    | '/campaigns/$slug'
+    | '/campaigns/$id'
+    | '/influencer/offers'
+    | '/influencer/pricing'
     | '/influencers/$slug'
     | '/invite/$token'
+    | '/offers/$id'
+    | '/offers/browse'
+    | '/offers/new'
+    | '/payments/result'
     | '/products/$slug'
     | '/studio/content'
     | '/studio/photography'
     | '/teams/$teamId'
+    | '/admin'
     | '/brands'
     | '/campaigns'
     | '/influencers'
+    | '/offers'
     | '/products'
   id:
     | '__root__'
     | '/'
-    | '/admin'
     | '/analytics'
     | '/billing'
     | '/dashboard'
@@ -320,28 +605,54 @@ export interface FileRouteTypes {
     | '/login'
     | '/matched-products'
     | '/matching'
+    | '/messages'
+    | '/notifications'
     | '/pending'
     | '/recommendations'
     | '/register'
     | '/settings'
     | '/team'
+    | '/wallet'
+    | '/admin/agencies'
+    | '/admin/audit'
+    | '/admin/brands'
+    | '/admin/campaigns'
+    | '/admin/finance'
+    | '/admin/influencers'
+    | '/admin/offers'
+    | '/admin/payments'
+    | '/admin/products'
+    | '/admin/settings'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/admin/withdrawals'
+    | '/agency/campaigns'
+    | '/agency/clients'
+    | '/agency/editing'
     | '/brands/$brandId'
-    | '/campaigns/$slug'
+    | '/campaigns/$id'
+    | '/influencer/offers'
+    | '/influencer/pricing'
     | '/influencers/$slug'
     | '/invite/$token'
+    | '/offers/$id'
+    | '/offers/browse'
+    | '/offers/new'
+    | '/payments/result'
     | '/products/$slug'
     | '/studio/content'
     | '/studio/photography'
     | '/teams/$teamId'
+    | '/admin/'
     | '/brands/'
     | '/campaigns/'
     | '/influencers/'
+    | '/offers/'
     | '/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
   AnalyticsRoute: typeof AnalyticsRoute
   BillingRoute: typeof BillingRoute
   DashboardRoute: typeof DashboardRoute
@@ -349,22 +660,49 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MatchedProductsRoute: typeof MatchedProductsRoute
   MatchingRoute: typeof MatchingRoute
+  MessagesRoute: typeof MessagesRoute
+  NotificationsRoute: typeof NotificationsRoute
   PendingRoute: typeof PendingRoute
   RecommendationsRoute: typeof RecommendationsRoute
   RegisterRoute: typeof RegisterRoute
   SettingsRoute: typeof SettingsRoute
   TeamRoute: typeof TeamRoute
+  WalletRoute: typeof WalletRoute
+  AdminAgenciesRoute: typeof AdminAgenciesRoute
+  AdminAuditRoute: typeof AdminAuditRoute
+  AdminBrandsRoute: typeof AdminBrandsRoute
+  AdminCampaignsRoute: typeof AdminCampaignsRoute
+  AdminFinanceRoute: typeof AdminFinanceRoute
+  AdminInfluencersRoute: typeof AdminInfluencersRoute
+  AdminOffersRoute: typeof AdminOffersRoute
+  AdminPaymentsRoute: typeof AdminPaymentsRoute
+  AdminProductsRoute: typeof AdminProductsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminWalletsRoute: typeof AdminWalletsRoute
+  AdminWithdrawalsRoute: typeof AdminWithdrawalsRoute
+  AgencyCampaignsRoute: typeof AgencyCampaignsRoute
+  AgencyClientsRoute: typeof AgencyClientsRoute
+  AgencyEditingRoute: typeof AgencyEditingRoute
   BrandsBrandIdRoute: typeof BrandsBrandIdRoute
-  CampaignsSlugRoute: typeof CampaignsSlugRoute
+  CampaignsIdRoute: typeof CampaignsIdRoute
+  InfluencerOffersRoute: typeof InfluencerOffersRoute
+  InfluencerPricingRoute: typeof InfluencerPricingRoute
   InfluencersSlugRoute: typeof InfluencersSlugRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  OffersIdRoute: typeof OffersIdRoute
+  OffersBrowseRoute: typeof OffersBrowseRoute
+  OffersNewRoute: typeof OffersNewRoute
+  PaymentsResultRoute: typeof PaymentsResultRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   StudioContentRoute: typeof StudioContentRoute
   StudioPhotographyRoute: typeof StudioPhotographyRoute
   TeamsTeamIdRoute: typeof TeamsTeamIdRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   BrandsIndexRoute: typeof BrandsIndexRoute
   CampaignsIndexRoute: typeof CampaignsIndexRoute
   InfluencersIndexRoute: typeof InfluencersIndexRoute
+  OffersIndexRoute: typeof OffersIndexRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
 }
 
@@ -375,13 +713,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analytics': {
@@ -433,6 +764,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MatchingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pending': {
       id: '/pending'
       path: '/pending'
@@ -468,6 +813,132 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeamRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/wallet': {
+      id: '/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/agencies': {
+      id: '/admin/agencies'
+      path: '/admin/agencies'
+      fullPath: '/admin/agencies'
+      preLoaderRoute: typeof AdminAgenciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/admin/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/brands': {
+      id: '/admin/brands'
+      path: '/admin/brands'
+      fullPath: '/admin/brands'
+      preLoaderRoute: typeof AdminBrandsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/campaigns': {
+      id: '/admin/campaigns'
+      path: '/admin/campaigns'
+      fullPath: '/admin/campaigns'
+      preLoaderRoute: typeof AdminCampaignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/finance': {
+      id: '/admin/finance'
+      path: '/admin/finance'
+      fullPath: '/admin/finance'
+      preLoaderRoute: typeof AdminFinanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/influencers': {
+      id: '/admin/influencers'
+      path: '/admin/influencers'
+      fullPath: '/admin/influencers'
+      preLoaderRoute: typeof AdminInfluencersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/offers': {
+      id: '/admin/offers'
+      path: '/admin/offers'
+      fullPath: '/admin/offers'
+      preLoaderRoute: typeof AdminOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/payments': {
+      id: '/admin/payments'
+      path: '/admin/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/admin/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/wallets': {
+      id: '/admin/wallets'
+      path: '/admin/wallets'
+      fullPath: '/admin/wallets'
+      preLoaderRoute: typeof AdminWalletsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/withdrawals': {
+      id: '/admin/withdrawals'
+      path: '/admin/withdrawals'
+      fullPath: '/admin/withdrawals'
+      preLoaderRoute: typeof AdminWithdrawalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agency/campaigns': {
+      id: '/agency/campaigns'
+      path: '/agency/campaigns'
+      fullPath: '/agency/campaigns'
+      preLoaderRoute: typeof AgencyCampaignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agency/clients': {
+      id: '/agency/clients'
+      path: '/agency/clients'
+      fullPath: '/agency/clients'
+      preLoaderRoute: typeof AgencyClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agency/editing': {
+      id: '/agency/editing'
+      path: '/agency/editing'
+      fullPath: '/agency/editing'
+      preLoaderRoute: typeof AgencyEditingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/brands/': {
       id: '/brands/'
       path: '/brands'
@@ -489,11 +960,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CampaignsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/campaigns/$slug': {
-      id: '/campaigns/$slug'
-      path: '/campaigns/$slug'
-      fullPath: '/campaigns/$slug'
-      preLoaderRoute: typeof CampaignsSlugRouteImport
+    '/campaigns/$id': {
+      id: '/campaigns/$id'
+      path: '/campaigns/$id'
+      fullPath: '/campaigns/$id'
+      preLoaderRoute: typeof CampaignsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/influencer/offers': {
+      id: '/influencer/offers'
+      path: '/influencer/offers'
+      fullPath: '/influencer/offers'
+      preLoaderRoute: typeof InfluencerOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/influencer/pricing': {
+      id: '/influencer/pricing'
+      path: '/influencer/pricing'
+      fullPath: '/influencer/pricing'
+      preLoaderRoute: typeof InfluencerPricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/influencers/': {
@@ -515,6 +1000,41 @@ declare module '@tanstack/react-router' {
       path: '/invite/$token'
       fullPath: '/invite/$token'
       preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offers/': {
+      id: '/offers/'
+      path: '/offers'
+      fullPath: '/offers/'
+      preLoaderRoute: typeof OffersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offers/$id': {
+      id: '/offers/$id'
+      path: '/offers/$id'
+      fullPath: '/offers/$id'
+      preLoaderRoute: typeof OffersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offers/browse': {
+      id: '/offers/browse'
+      path: '/offers/browse'
+      fullPath: '/offers/browse'
+      preLoaderRoute: typeof OffersBrowseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offers/new': {
+      id: '/offers/new'
+      path: '/offers/new'
+      fullPath: '/offers/new'
+      preLoaderRoute: typeof OffersNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payments/result': {
+      id: '/payments/result'
+      path: '/payments/result'
+      fullPath: '/payments/result'
+      preLoaderRoute: typeof PaymentsResultRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products/': {
@@ -557,7 +1077,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
   AnalyticsRoute: AnalyticsRoute,
   BillingRoute: BillingRoute,
   DashboardRoute: DashboardRoute,
@@ -565,22 +1084,49 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MatchedProductsRoute: MatchedProductsRoute,
   MatchingRoute: MatchingRoute,
+  MessagesRoute: MessagesRoute,
+  NotificationsRoute: NotificationsRoute,
   PendingRoute: PendingRoute,
   RecommendationsRoute: RecommendationsRoute,
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRoute,
   TeamRoute: TeamRoute,
+  WalletRoute: WalletRoute,
+  AdminAgenciesRoute: AdminAgenciesRoute,
+  AdminAuditRoute: AdminAuditRoute,
+  AdminBrandsRoute: AdminBrandsRoute,
+  AdminCampaignsRoute: AdminCampaignsRoute,
+  AdminFinanceRoute: AdminFinanceRoute,
+  AdminInfluencersRoute: AdminInfluencersRoute,
+  AdminOffersRoute: AdminOffersRoute,
+  AdminPaymentsRoute: AdminPaymentsRoute,
+  AdminProductsRoute: AdminProductsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminWalletsRoute: AdminWalletsRoute,
+  AdminWithdrawalsRoute: AdminWithdrawalsRoute,
+  AgencyCampaignsRoute: AgencyCampaignsRoute,
+  AgencyClientsRoute: AgencyClientsRoute,
+  AgencyEditingRoute: AgencyEditingRoute,
   BrandsBrandIdRoute: BrandsBrandIdRoute,
-  CampaignsSlugRoute: CampaignsSlugRoute,
+  CampaignsIdRoute: CampaignsIdRoute,
+  InfluencerOffersRoute: InfluencerOffersRoute,
+  InfluencerPricingRoute: InfluencerPricingRoute,
   InfluencersSlugRoute: InfluencersSlugRoute,
   InviteTokenRoute: InviteTokenRoute,
+  OffersIdRoute: OffersIdRoute,
+  OffersBrowseRoute: OffersBrowseRoute,
+  OffersNewRoute: OffersNewRoute,
+  PaymentsResultRoute: PaymentsResultRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   StudioContentRoute: StudioContentRoute,
   StudioPhotographyRoute: StudioPhotographyRoute,
   TeamsTeamIdRoute: TeamsTeamIdRoute,
+  AdminIndexRoute: AdminIndexRoute,
   BrandsIndexRoute: BrandsIndexRoute,
   CampaignsIndexRoute: CampaignsIndexRoute,
   InfluencersIndexRoute: InfluencersIndexRoute,
+  OffersIndexRoute: OffersIndexRoute,
   ProductsIndexRoute: ProductsIndexRoute,
 }
 export const routeTree = rootRouteImport

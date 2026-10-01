@@ -1,3 +1,4 @@
+# main.py
 """
 StyleAI AI Service — FastAPI entry point.
 
@@ -22,9 +23,15 @@ from app.config import settings
 from app.api.routes import health as health_routes
 from app.api.routes import product_content as product_content_routes
 from app.api.routes import product_analyze as product_analyze_routes
-from app.services.ollama_service import ollama_service
-from app.api import routes
 from app.api.routes import product_variants as product_variants_routes
+from app.api.routes import matching as matching_routes
+from app.api.routes import product_angles as product_angles_routes
+from app.api.routes import platform_content as platform_content_routes
+from app.api.routes import product_photography as product_photography_routes
+from app.api.routes import embeddings as embeddings_routes
+from app.api.routes import chat as chat_routes
+from app.services.ollama_service import ollama_service
+
 
 # ======================================================
 # LOGGING
@@ -35,7 +42,6 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 
-# Silence noisy HTTP client debug logs
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -78,7 +84,7 @@ async def _warmup_all() -> None:
     """Warm only the models we actually use."""
     tasks = []
 
-    # ---- TEXT: always warm (Ollama) ----
+    # TEXT: always warm
     text_model = settings.OLLAMA_TEXT_MODEL
     if text_model:
         tasks.append(_warmup_one("text", text_model))
@@ -86,7 +92,7 @@ async def _warmup_all() -> None:
         WARMUP_STATE["text_model"] = "failed"
         WARMUP_STATE["errors"]["text"] = "OLLAMA_TEXT_MODEL not set"
 
-    # ---- VISION: only warm if we're actually using local Ollama for vision ----
+    # VISION: only warm if local Ollama is the vision provider
     if settings.VISION_PROVIDER == "ollama":
         vision_model = settings.OLLAMA_VISION_MODEL
         if vision_model and vision_model != text_model:
@@ -97,7 +103,6 @@ async def _warmup_all() -> None:
             WARMUP_STATE["vision_model"] = "failed"
             WARMUP_STATE["errors"]["vision"] = "OLLAMA_VISION_MODEL not set"
     else:
-        # Gemini (or any cloud provider) — no local warmup needed
         WARMUP_STATE["vision_model"] = "skipped"
         logger.info(
             "Vision warmup skipped — VISION_PROVIDER=%s (cloud)",
@@ -162,10 +167,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---- Mount routes ----
 app.include_router(health_routes.router)
 app.include_router(product_content_routes.router)
 app.include_router(product_analyze_routes.router)
 app.include_router(product_variants_routes.router)
+app.include_router(matching_routes.router)
+app.include_router(product_angles_routes.router)
+app.include_router(platform_content_routes.router)
+app.include_router(product_photography_routes.router)
+app.include_router(embeddings_routes.router)
+app.include_router(chat_routes.router)
+
+
+
 
 @app.get("/", include_in_schema=False)
 async def root():
@@ -176,85 +191,3 @@ async def root():
         "health": "/health",
         "readiness": "/readiness",
     }
-
-
-
-
-
-
-
-
-
-
-
-    
-
-# """
-# StyleAI AI Service — FastAPI entry point.
-
-# Responsibilities:
-# - Initialize FastAPI app
-# - Mount routes
-# - Global error handling
-# - CORS for local dev
-
-# NO business logic here. Keep it clean.
-# """
-
-# from fastapi import FastAPI
-# from fastapi.middleware.cors import CORSMiddleware
-
-# from app.config import settings
-# from app.api.routes import health as health_routes
-
-# # ======================================================
-# # CREATE APP
-# # ======================================================
-# app = FastAPI(
-#     title=settings.APP_NAME,
-#     version=settings.APP_VERSION,
-#     description="AI service for StyleAI — product analysis, content generation, image enhancement.",
-#     docs_url="/docs",
-#     redoc_url="/redoc",
-# )
-
-# # ======================================================
-# # CORS — allow Node backend + local dev
-# # ======================================================
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=[
-#         "http://localhost:4000",  # Node backend
-#         "http://localhost:3000",  # Frontend (for direct testing only)
-#     ],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# # ======================================================
-# # MOUNT ROUTES
-# # ======================================================
-# app.include_router(health_routes.router)
-
-
-# # ======================================================
-# # ROOT
-# # ======================================================
-# @app.get("/", include_in_schema=False)
-# async def root():
-#     return {
-#         "service": settings.APP_NAME,
-#         "version": settings.APP_VERSION,
-#         "docs": "/docs",
-#         "health": "/health",
-#     }
-
-
-
-
-
-
-
-
-

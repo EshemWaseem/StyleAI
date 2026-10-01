@@ -1,17 +1,9 @@
+// frontend/src/routes/team.tsx
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Plus,
-  AlertCircle,
-  Check,
-  X,
-  Mail,
-  UserPlus,
-  Shield,
-  Trash2,
-  Pencil,
-  ChevronDown,
-  Link2,
+  Plus, AlertCircle, Check, X, Mail, UserPlus, Shield, Trash2, Pencil,
+  ChevronDown, Link2,
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -113,18 +105,14 @@ function TeamPage() {
     try {
       const res = await brandTeamApi.listMembers();
       setMembers(res.members);
-    } catch {
-      // silent
-    }
+    } catch {}
   }
 
   async function refreshInvites() {
     try {
       const res = await invitationsApi.sent();
       setInvites(res.invitations);
-    } catch {
-      // silent
-    }
+    } catch {}
   }
 
   async function handleDeleteRole(role: BrandTeamRole) {
@@ -242,9 +230,7 @@ function TeamPage() {
         </div>
       )}
 
-      {/* ====================================================== */}
       {/* MY ROLE — teammate view */}
-      {/* ====================================================== */}
       {!isOwner && !isAdmin && myMembership && (
         <section className="mt-8">
           <Panel>
@@ -269,9 +255,7 @@ function TeamPage() {
         </section>
       )}
 
-      {/* ====================================================== */}
       {/* ROLES */}
-      {/* ====================================================== */}
       {(isOwner || isAdmin) && (
         <section className="mt-8">
           <SectionTitle
@@ -351,9 +335,7 @@ function TeamPage() {
         </section>
       )}
 
-      {/* ====================================================== */}
       {/* PENDING JOIN REQUESTS */}
-      {/* ====================================================== */}
       {(isOwner || isAdmin) && pending.length > 0 && (
         <section className="mt-10">
           <div className="mb-3 flex items-center gap-2">
@@ -416,9 +398,7 @@ function TeamPage() {
         </section>
       )}
 
-      {/* ====================================================== */}
       {/* SENT INVITATIONS */}
-      {/* ====================================================== */}
       {(isOwner || isAdmin) && invites.length > 0 && (
         <section className="mt-10">
           <div className="mb-3 flex items-center gap-2">
@@ -473,9 +453,7 @@ function TeamPage() {
         </section>
       )}
 
-      {/* ====================================================== */}
       {/* MEMBERS */}
-      {/* ====================================================== */}
       <section className="mt-10">
         <SectionTitle
           title="Members"
@@ -580,10 +558,7 @@ function TeamPage() {
         )}
       </section>
 
-      {/* ====================================================== */}
       {/* MODALS */}
-      {/* ====================================================== */}
-
       {showRoleEditor && (
         <RoleEditorModal
           mode={editingRole ? "edit" : "create"}
@@ -735,7 +710,6 @@ function AddMemberModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Result states
   const [result, setResult] = useState<
     | { type: "ADDED"; email: string; roleName: string }
     | { type: "INVITED"; email: string; link: string; roleName: string }
@@ -792,26 +766,28 @@ function AddMemberModal({
   // ======================================================
   if (result?.type === "ADDED") {
     return (
-      <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm">
-        <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-center shadow-lift">
-          <div className="mx-auto grid size-14 place-items-center rounded-full bg-emerald-500/15 text-emerald-500">
-            <Check className="size-7" />
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 backdrop-blur-sm">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-center shadow-lift">
+            <div className="mx-auto grid size-14 place-items-center rounded-full bg-emerald-500/15 text-emerald-500">
+              <Check className="size-7" />
+            </div>
+            <h2 className="mt-4 font-display text-xl font-medium">
+              Member added
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              <strong className="text-foreground">{result.email}</strong> has
+              been added as{" "}
+              <strong className="text-foreground">{result.roleName}</strong>.
+            </p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              They can now log in and access the workspace with their assigned
+              permissions.
+            </p>
+            <Button className="mt-6" onClick={onAdded}>
+              Done
+            </Button>
           </div>
-          <h2 className="mt-4 font-display text-xl font-medium">
-            Member added
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            <strong className="text-foreground">{result.email}</strong> has
-            been added as{" "}
-            <strong className="text-foreground">{result.roleName}</strong>.
-          </p>
-          <p className="mt-3 text-xs text-muted-foreground">
-            They can now log in and access the workspace with their assigned
-            permissions.
-          </p>
-          <Button className="mt-6" onClick={onAdded}>
-            Done
-          </Button>
         </div>
       </div>
     );
@@ -822,42 +798,44 @@ function AddMemberModal({
   // ======================================================
   if (result?.type === "INVITED") {
     return (
-      <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm">
-        <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lift">
-          <div className="mx-auto grid size-14 place-items-center rounded-full bg-amber-500/15 text-amber-500">
-            <Mail className="size-7" />
-          </div>
-          <h2 className="mt-4 text-center font-display text-xl font-medium">
-            Invitation created
-          </h2>
-          <p className="mt-2 text-center text-sm text-muted-foreground">
-            No account found for{" "}
-            <strong className="text-foreground">{result.email}</strong>. Share
-            this link with them:
-          </p>
-
-          <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
-            <div className="flex items-center gap-2">
-              <Link2 className="size-3.5 shrink-0 text-muted-foreground" />
-              <input
-                readOnly
-                value={result.link}
-                className="flex-1 truncate bg-transparent text-xs outline-none"
-              />
-              <Button size="sm" onClick={copyLink}>
-                {copied ? <Check className="size-3.5" /> : "Copy"}
-              </Button>
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 backdrop-blur-sm">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lift">
+            <div className="mx-auto grid size-14 place-items-center rounded-full bg-amber-500/15 text-amber-500">
+              <Mail className="size-7" />
             </div>
-          </div>
+            <h2 className="mt-4 text-center font-display text-xl font-medium">
+              Invitation created
+            </h2>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              No account found for{" "}
+              <strong className="text-foreground">{result.email}</strong>.
+              Share this link with them:
+            </p>
 
-          <p className="mt-3 text-xs text-muted-foreground">
-            They must log in with <strong>{result.email}</strong> to accept.
-            Link expires in 7 days. Role:{" "}
-            <strong>{result.roleName}</strong>.
-          </p>
+            <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
+              <div className="flex items-center gap-2">
+                <Link2 className="size-3.5 shrink-0 text-muted-foreground" />
+                <input
+                  readOnly
+                  value={result.link}
+                  className="flex-1 truncate bg-transparent text-xs outline-none"
+                />
+                <Button size="sm" onClick={copyLink}>
+                  {copied ? <Check className="size-3.5" /> : "Copy"}
+                </Button>
+              </div>
+            </div>
 
-          <div className="mt-6 flex justify-end">
-            <Button onClick={onInvited}>Done</Button>
+            <p className="mt-3 text-xs text-muted-foreground">
+              They must log in with <strong>{result.email}</strong> to accept.
+              Link expires in 7 days. Role:{" "}
+              <strong>{result.roleName}</strong>.
+            </p>
+
+            <div className="mt-6 flex justify-end">
+              <Button onClick={onInvited}>Done</Button>
+            </div>
           </div>
         </div>
       </div>
@@ -868,116 +846,118 @@ function AddMemberModal({
   // FORM
   // ======================================================
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lift"
-      >
-        <h2 className="font-display text-xl font-medium">Add member</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          If they already have an account, they'll be added instantly. Otherwise
-          we'll generate an invite link.
-        </p>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 backdrop-blur-sm">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lift"
+        >
+          <h2 className="font-display text-xl font-medium">Add member</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            If they already have an account, they'll be added instantly.
+            Otherwise we'll generate an invite link.
+          </p>
 
-        {error && (
-          <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            {error}
-          </div>
-        )}
+          {error && (
+            <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {error}
+            </div>
+          )}
 
-        <div className="mt-5 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="memberEmail">Email *</Label>
-            <Input
-              id="memberEmail"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="teammate@example.com"
-              autoFocus
-              required
-            />
-          </div>
+          <div className="mt-5 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="memberEmail">Email *</Label>
+              <Input
+                id="memberEmail"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="teammate@example.com"
+                autoFocus
+                required
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>Role *</Label>
-            <div className="grid gap-2">
-              {roles.map((r) => {
-                const active = roleId === r.id;
-                const classes = getRoleColorClasses(r.color);
-                return (
-                  <label
-                    key={r.id}
-                    className={cn(
-                      "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
-                      active
-                        ? classes.border + " " + classes.bg
-                        : "border-border hover:bg-accent/5"
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="role"
-                      value={r.id}
-                      checked={active}
-                      onChange={() => setRoleId(r.id)}
-                      className="mt-1"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn("text-sm font-medium", classes.text)}
-                        >
-                          {r.name}
-                        </span>
-                        {r.isOwnerRole && (
-                          <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[9px] font-semibold uppercase text-muted-foreground">
-                            Owner
-                          </span>
-                        )}
-                      </div>
-                      {r.description && (
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {r.description}
-                        </p>
+            <div className="space-y-2">
+              <Label>Role *</Label>
+              <div className="grid gap-2">
+                {roles.map((r) => {
+                  const active = roleId === r.id;
+                  const classes = getRoleColorClasses(r.color);
+                  return (
+                    <label
+                      key={r.id}
+                      className={cn(
+                        "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
+                        active
+                          ? classes.border + " " + classes.bg
+                          : "border-border hover:bg-accent/5"
                       )}
-                      <p className="mt-1 text-[10px] text-muted-foreground">
-                        {r.permissions.length} permissions
-                      </p>
-                    </div>
-                  </label>
-                );
-              })}
+                    >
+                      <input
+                        type="radio"
+                        name="role"
+                        value={r.id}
+                        checked={active}
+                        onChange={() => setRoleId(r.id)}
+                        className="mt-1"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn("text-sm font-medium", classes.text)}
+                          >
+                            {r.name}
+                          </span>
+                          {r.isOwnerRole && (
+                            <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[9px] font-semibold uppercase text-muted-foreground">
+                              Owner
+                            </span>
+                          )}
+                        </div>
+                        {r.description && (
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {r.description}
+                          </p>
+                        )}
+                        <p className="mt-1 text-[10px] text-muted-foreground">
+                          {r.permissions.length} permissions
+                        </p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="memberMsg">Message (optional)</Label>
+              <textarea
+                id="memberMsg"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={2}
+                placeholder="Welcome to our team…"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="memberMsg">Message (optional)</Label>
-            <textarea
-              id="memberMsg"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={2}
-              placeholder="Welcome to our team…"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
+          <div className="mt-6 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Adding…" : "Add member"}
+            </Button>
           </div>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={saving}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Adding…" : "Add member"}
-          </Button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }
@@ -1021,82 +1001,84 @@ function ApproveRequestModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lift">
-        <h2 className="font-display text-xl font-medium">Approve request</h2>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 backdrop-blur-sm">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lift">
+          <h2 className="font-display text-xl font-medium">Approve request</h2>
 
-        <div className="mt-5 flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
-          <div className="grid size-10 shrink-0 place-items-center rounded-full bg-accent/15 text-sm font-medium text-accent">
-            {request.user?.name.slice(0, 2).toUpperCase() ?? "?"}
+          <div className="mt-5 flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+            <div className="grid size-10 shrink-0 place-items-center rounded-full bg-accent/15 text-sm font-medium text-accent">
+              {request.user?.name.slice(0, 2).toUpperCase() ?? "?"}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">
+                {request.user?.name}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {request.user?.email}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{request.user?.name}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {request.user?.email}
-            </p>
-          </div>
-        </div>
 
-        <div className="mt-4 space-y-2">
-          <Label>Assign role *</Label>
-          <div className="grid gap-2">
-            {roles.map((r) => {
-              const active = roleId === r.id;
-              const classes = getRoleColorClasses(r.color);
-              return (
-                <label
-                  key={r.id}
-                  className={cn(
-                    "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
-                    active
-                      ? classes.border + " " + classes.bg
-                      : "border-border hover:bg-accent/5"
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="approveRole"
-                    value={r.id}
-                    checked={active}
-                    onChange={() => setRoleId(r.id)}
-                    className="mt-1"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <span
-                      className={cn("text-sm font-medium", classes.text)}
-                    >
-                      {r.name}
-                    </span>
-                    {r.description && (
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {r.description}
-                      </p>
+          <div className="mt-4 space-y-2">
+            <Label>Assign role *</Label>
+            <div className="grid gap-2">
+              {roles.map((r) => {
+                const active = roleId === r.id;
+                const classes = getRoleColorClasses(r.color);
+                return (
+                  <label
+                    key={r.id}
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
+                      active
+                        ? classes.border + " " + classes.bg
+                        : "border-border hover:bg-accent/5"
                     )}
-                  </div>
-                </label>
-              );
-            })}
+                  >
+                    <input
+                      type="radio"
+                      name="approveRole"
+                      value={r.id}
+                      checked={active}
+                      onChange={() => setRoleId(r.id)}
+                      className="mt-1"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <span className={cn("text-sm font-medium", classes.text)}>
+                        {r.name}
+                      </span>
+                      {r.description && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {r.description}
+                        </p>
+                      )}
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {error && (
-          <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            {error}
+          {error && (
+            <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {error}
+            </div>
+          )}
+
+          <div className="mt-6 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleApprove} disabled={saving || !roleId}>
+              {saving ? "Approving…" : "Approve with this role"}
+            </Button>
           </div>
-        )}
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={saving}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleApprove} disabled={saving || !roleId}>
-            {saving ? "Approving…" : "Approve with this role"}
-          </Button>
         </div>
       </div>
     </div>

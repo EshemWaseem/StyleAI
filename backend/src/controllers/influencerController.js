@@ -1,3 +1,5 @@
+// influencerController.js
+
 const multer = require('multer');
 const service = require('../services/influencer');
 const { uploadBufferToCloudinary } = require('../config/cloudinary');

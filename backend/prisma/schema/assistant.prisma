@@ -1,0 +1,38 @@
+// assistant.prisma
+// ======================================================
+// AI Assistant — persistent chat with memory
+// ======================================================
+
+model AssistantConversation {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation("AssistantConversations", fields: [userId], references: [id], onDelete: Cascade)
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)  
+  title          String?           // optional auto-title
+  lastMessageAt  DateTime?
+
+  messages AssistantMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, lastMessageAt])
+}
+
+model AssistantMessage {
+  id             String   @id @default(uuid())
+  conversationId String
+  conversation   AssistantConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role           String   // "user" | "assistant" | "system"
+  content        String   @db.Text
+
+  // Which RAG chunks were used to answer this message (audit)
+  contextChunks  Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+}

@@ -1,3 +1,4 @@
+// brand.prisma 24-09
 // ======================================================
 // BRAND + TEAM ROLES + MEMBERS + JOIN/INVITE
 // ======================================================
@@ -24,8 +25,11 @@ model Brand {
   joinRequests BrandJoinRequest[]
   invitations  BrandInvitation[]
 
-  teamRoles    BrandTeamRole[]
-  teamMembers  BrandTeamMember[]
+  teamRoles   BrandTeamRole[]
+  teamMembers BrandTeamMember[]
+  offers      CustomOffer[]
+  campaigns   Campaign[]
+    orders      Order[]   
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -35,20 +39,20 @@ model Brand {
 }
 
 model BrandTeamRole {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   brandId     String
   name        String
   description String?
   permissions Json
   color       String?
-  isDefault   Boolean  @default(false)
-  isOwnerRole Boolean  @default(false)
+  isDefault   Boolean @default(false)
+  isOwnerRole Boolean @default(false)
 
-  brand            Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  members          BrandTeamMember[]
-  requestedIn      BrandJoinRequest[] @relation("RequestedRole")
-  approvedIn       BrandJoinRequest[] @relation("ApprovedRole")
-  invitations      BrandInvitation[]
+  brand       Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  members     BrandTeamMember[]
+  requestedIn BrandJoinRequest[] @relation("RequestedRole")
+  approvedIn  BrandJoinRequest[] @relation("ApprovedRole")
+  invitations BrandInvitation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -67,10 +71,10 @@ model BrandTeamMember {
   invitedBy  String?
   joinedAt   DateTime         @default(now())
 
-  brand      Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  user       User          @relation("BrandTeamMemberUser", fields: [userId], references: [id], onDelete: Cascade)
-  teamRole   BrandTeamRole @relation(fields: [teamRoleId], references: [id], onDelete: Restrict)
-  inviter    User?         @relation("BrandTeamMemberInviter", fields: [invitedBy], references: [id])
+  brand    Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  user     User          @relation("BrandTeamMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  teamRole BrandTeamRole @relation(fields: [teamRoleId], references: [id], onDelete: Restrict)
+  inviter  User?         @relation("BrandTeamMemberInviter", fields: [invitedBy], references: [id])
 
   updatedAt DateTime @updatedAt
 
@@ -97,7 +101,7 @@ model BrandJoinRequest {
   brand         Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   reviewer      User?          @relation("JoinReviews", fields: [reviewedBy], references: [id])
   requestedRole BrandTeamRole? @relation("RequestedRole", fields: [requestedRoleId], references: [id])
-  approvedRole  BrandTeamRole? @relation("ApprovedRole",  fields: [approvedRoleId],  references: [id])
+  approvedRole  BrandTeamRole? @relation("ApprovedRole", fields: [approvedRoleId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

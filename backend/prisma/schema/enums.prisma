@@ -1,3 +1,4 @@
+// enums.prisma 30-09
 // ======================================================
 // ENUMS — all in one place for easy reference
 // ======================================================
@@ -24,6 +25,29 @@ enum PaymentStatus {
   SUCCEEDED
   FAILED
   REFUNDED
+}
+
+// ======================================================
+// PAYMENTS — gateway / context / cycle (Sprint 24)
+// ======================================================
+enum PaymentProvider {
+  STRIPE
+  JAZZCASH
+  EASYPAISA
+  COD
+  WALLET
+}
+
+enum PaymentContext {
+  SUBSCRIPTION   // brand/agency/influencer → StyleAI
+  ORDER          // shopper → brand (ecommerce)
+  PAYOUT         // StyleAI → influencer withdrawal
+  ESCROW         // brand → wallet escrow for a campaign
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
 }
 
 enum OrderStatus {
@@ -83,15 +107,6 @@ enum InfluencerPlatform {
   OTHER
 }
 
-//    23-09-12:40   ---------- Influencer — NEW ----------
-// enum InfluencerPlatform {
-//   INSTAGRAM
-//   TIKTOK
-//   YOUTUBE
-//   FACEBOOK
-//   PINTEREST
-// }
-
 enum InfluencerStatus {
   ACTIVE
   PAUSED
@@ -102,4 +117,15 @@ enum InfluencerAvailability {
   AVAILABLE
   BOOKED
   UNAVAILABLE
+}
+
+enum OfferStatus {
+  DRAFT
+  PENDING_ADMIN
+  ADMIN_APPROVED
+  ADMIN_REJECTED
+  INFLUENCER_ACCEPTED
+  INFLUENCER_DECLINED
+  EXPIRED
+  CANCELLED
 }

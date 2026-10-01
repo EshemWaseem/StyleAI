@@ -1,0 +1,40 @@
+// notification.prisma
+// ======================================================
+// NOTIFICATION — event-driven, per-user
+// ======================================================
+
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type  NotificationType
+  title String
+  body  String?
+  link  String? // frontend route path e.g. "/offers/abc"
+  meta  Json?
+
+  read   Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
+enum NotificationType {
+  OFFER_SUBMITTED
+  OFFER_APPROVED
+  OFFER_REJECTED
+  OFFER_ACCEPTED
+  OFFER_DECLINED
+  PAYOUT_RECEIVED
+  ESCROW_REFUNDED
+  WITHDRAWAL_REQUESTED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_REJECTED
+  LISTING_CLAIMED
+  LISTING_EXPIRED
+  SYSTEM
+}

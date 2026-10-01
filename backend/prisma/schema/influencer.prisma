@@ -1,60 +1,81 @@
+// influencer.prisma
 // ======================================================
 // INFLUENCER — global pool, optionally linked to a User
 // ======================================================
 
 model Influencer {
-  id                String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  userId            String?  @unique
-  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  displayName       String
-  username          String   @unique
-  slug              String   @unique
-  bio               String?
-  avatarUrl         String?
+  displayName String
+  username    String  @unique
+  slug        String  @unique
+  bio         String?
+  avatarUrl   String?
 
-  email             String?
-  phone             String?
+  email String?
+  phone String?
 
-  country           String?
-  city              String?
-  language          String?
-  gender            String?
-  ageGroup          String?
+  country  String?
+  city     String?
+  language String?
+  gender   String?
+  ageGroup String?
 
-  followerCount     Int      @default(0)
-  followingCount    Int      @default(0)
-  engagementRate    Float    @default(0)
+  followerCount  Int   @default(0)
+  followingCount Int   @default(0)
+  engagementRate Float @default(0)
 
   categories        String[]
-  audienceFavorites String[]   // NEW — ["Shahid Afridi", "Sara Khan", ...]
+  audienceFavorites String[] // ["Shahid Afridi", "Sara Khan", ...]
 
-  avgViews          Int      @default(0)
-  avgLikes          Int      @default(0)
-  avgComments       Int      @default(0)
+  avgViews    Int @default(0)
+  avgLikes    Int @default(0)
+  avgComments Int @default(0)
 
-  pricePerPost      Decimal? @db.Decimal(10, 2)
-  currency          String   @default("USD")
-  availability      InfluencerAvailability @default(AVAILABLE)
-  status            InfluencerStatus       @default(ACTIVE)
+  pricePerPost Decimal? @db.Decimal(10, 2)
 
-  pricingTiers      Json?
-  portfolio         Json?
+  // ----------------------------------------------
+  // Pricing — influencer-owned, no system defaults
+  // ----------------------------------------------
+  // Nullable on purpose: the influencer explicitly opts in.
+  // System NEVER pre-fills these values.
+  minBudget      Decimal? @db.Decimal(10, 2) // floor price; null = no floor
+  acceptsBundles Boolean? // null = not asked yet; true/false = explicit
 
-  fashionScore      Float?
-  luxuryScore       Float?
-  beautyScore       Float?
-  lifestyleScore    Float?
+  currency     String                 @default("USD")
+  availability InfluencerAvailability @default(AVAILABLE)
+  status       InfluencerStatus       @default(ACTIVE)
 
-  profileCompleted  Boolean  @default(false)
+  // Per-platform, per-content-type pricing.
+  // Shape: { "INSTAGRAM": { "post": 150, "reel": 300 }, "TIKTOK": { "video": 250 } }
+  // Only entries the influencer actually offers are stored — nothing auto-filled.
+  pricingTiers Json?
+  portfolio    Json?
 
-  socialAccounts    InfluencerSocialAccount[]
-  audienceMetrics   InfluencerAudienceMetrics?
-  savedByOrgs       OrganizationInfluencer[]
+  fashionScore   Float?
+  luxuryScore    Float?
+  beautyScore    Float?
+  lifestyleScore Float?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  profileCompleted Boolean @default(false)
+
+  // ----------------------------------------------
+  // Relations
+  // ----------------------------------------------
+  socialAccounts  InfluencerSocialAccount[]
+  audienceMetrics InfluencerAudienceMetrics?
+  savedByOrgs     OrganizationInfluencer[]
+  offers          CustomOffer[] // offers targeting this influencer
+  listings        InfluencerListing[] // public listings by this influencer
+  campaigns       Campaign[]
+  // conversations   Conversation[]
+  wallet          Wallet?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([slug])
   @@index([status])
@@ -65,21 +86,21 @@ model Influencer {
 }
 
 model InfluencerSocialAccount {
-  id              String              @id @default(uuid())
-  influencerId    String
-  platform        InfluencerPlatform
-  platformCustom  String?             // NEW — for OTHER (e.g. "Pinterest", "GitHub")
-  handle          String
-  profileUrl      String?
-  followerCount   Int                 @default(0)
-  followingCount  Int                 @default(0)
-  engagementRate  Float               @default(0)
-  isPrimary       Boolean             @default(false)
+  id             String             @id @default(uuid())
+  influencerId   String
+  platform       InfluencerPlatform
+  platformCustom String? // for OTHER (e.g. "Pinterest", "GitHub")
+  handle         String
+  profileUrl     String?
+  followerCount  Int                @default(0)
+  followingCount Int                @default(0)
+  engagementRate Float              @default(0)
+  isPrimary      Boolean            @default(false)
 
-  influencer      Influencer          @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  influencer Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([influencerId, platform, handle])
   @@index([influencerId])
@@ -87,42 +108,156 @@ model InfluencerSocialAccount {
 }
 
 model InfluencerAudienceMetrics {
-  id                   String   @id @default(uuid())
-  influencerId         String   @unique
-  ageDistribution      Json?
-  genderDistribution   Json?
-  topCountries         Json?
-  interests            String[]
-  audienceQuality      Float?
-  fakeFollowerPct      Float?
+  id                 String   @id @default(uuid())
+  influencerId       String   @unique
+  ageDistribution    Json?
+  genderDistribution Json?
+  topCountries       Json?
+  interests          String[]
+  audienceQuality    Float?
+  fakeFollowerPct    Float?
 
-  influencer           Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  influencer Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
 
-  updatedAt            DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 }
 
 model OrganizationInfluencer {
-  id              String   @id @default(uuid())
-  organizationId  String
-  influencerId    String
-  savedAt         DateTime @default(now())
-  notes           String?
+  id             String   @id @default(uuid())
+  organizationId String
+  influencerId   String
+  savedAt        DateTime @default(now())
+  notes          String?
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  influencer      Influencer   @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  influencer   Influencer   @relation(fields: [influencerId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, influencerId])
   @@index([organizationId])
   @@index([influencerId])
 }
 
+// // influencer.prisma 24-09
+// // ======================================================
+// // INFLUENCER — global pool, optionally linked to a User
+// // ======================================================
 
+// model Influencer {
+//   id                String   @id @default(uuid())
 
+//   userId            String?  @unique
+//   user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+//   displayName       String
+//   username          String   @unique
+//   slug              String   @unique
+//   bio               String?
+//   avatarUrl         String?
 
+//   email             String?
+//   phone             String?
 
+//   country           String?
+//   city              String?
+//   language          String?
+//   gender            String?
+//   ageGroup          String?
 
+//   followerCount     Int      @default(0)
+//   followingCount    Int      @default(0)
+//   engagementRate    Float    @default(0)
 
+//   categories        String[]
+//   audienceFavorites String[]   // NEW — ["Shahid Afridi", "Sara Khan", ...]
+
+//   avgViews          Int      @default(0)
+//   avgLikes          Int      @default(0)
+//   avgComments       Int      @default(0)
+
+//   pricePerPost      Decimal? @db.Decimal(10, 2)
+//     minBudget         Decimal? @db.Decimal(10, 2)   // NEW — floor for any offer
+//   acceptsBundles    Boolean  @default(true)       // NEW — allow multi-item offers
+//   currency          String   @default("USD")
+//   availability      InfluencerAvailability @default(AVAILABLE)
+//   status            InfluencerStatus       @default(ACTIVE)
+
+//   pricingTiers      Json?
+//   portfolio         Json?
+
+//   fashionScore      Float?
+//   luxuryScore       Float?
+//   beautyScore       Float?
+//   lifestyleScore    Float?
+
+//   profileCompleted  Boolean  @default(false)
+
+//   socialAccounts    InfluencerSocialAccount[]
+//   audienceMetrics   InfluencerAudienceMetrics?
+//   savedByOrgs       OrganizationInfluencer[]
+//     offers            CustomOffer[]                  // NEW — offers targeting this influencer
+
+//   createdAt         DateTime @default(now())
+//   updatedAt         DateTime @updatedAt
+
+//   @@index([slug])
+//   @@index([status])
+//   @@index([country])
+//   @@index([availability])
+//   @@index([followerCount])
+//   @@index([engagementRate])
+// }
+
+// model InfluencerSocialAccount {
+//   id              String              @id @default(uuid())
+//   influencerId    String
+//   platform        InfluencerPlatform
+//   platformCustom  String?             // NEW — for OTHER (e.g. "Pinterest", "GitHub")
+//   handle          String
+//   profileUrl      String?
+//   followerCount   Int                 @default(0)
+//   followingCount  Int                 @default(0)
+//   engagementRate  Float               @default(0)
+//   isPrimary       Boolean             @default(false)
+
+//   influencer      Influencer          @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+//   createdAt       DateTime            @default(now())
+//   updatedAt       DateTime            @updatedAt
+
+//   @@unique([influencerId, platform, handle])
+//   @@index([influencerId])
+//   @@index([platform])
+// }
+
+// model InfluencerAudienceMetrics {
+//   id                   String   @id @default(uuid())
+//   influencerId         String   @unique
+//   ageDistribution      Json?
+//   genderDistribution   Json?
+//   topCountries         Json?
+//   interests            String[]
+//   audienceQuality      Float?
+//   fakeFollowerPct      Float?
+
+//   influencer           Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+//   updatedAt            DateTime @updatedAt
+// }
+
+// model OrganizationInfluencer {
+//   id              String   @id @default(uuid())
+//   organizationId  String
+//   influencerId    String
+//   savedAt         DateTime @default(now())
+//   notes           String?
+
+//   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+//   influencer      Influencer   @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+//   @@unique([organizationId, influencerId])
+//   @@index([organizationId])
+//   @@index([influencerId])
+// }
 
 // 23-09-2026 -- 12:39
 // // ======================================================

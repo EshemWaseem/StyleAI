@@ -1,5 +1,6 @@
+# ollama_service.py
 """
-Ollama HTTP client. JSON-mode only. No business logic.
+Ollama HTTP client. JSON-mode + raw-text helpers. No business logic.
 """
 
 import asyncio
@@ -49,67 +50,9 @@ class OllamaService:
             await self._client.aclose()
             self._client = None
 
-    # async def generate_json(
-    #     self,
-    #     prompt: str,
-    #     model: Optional[str] = None,
-    #     temperature: float = 0.3,
-    #     num_predict: int = 800,
-    #     keep_alive: str = "30m",
-    # ) -> dict:
-    #     """
-    #     Call Ollama /api/generate with format=json.
-    #     Returns parsed dict. Raises on empty/non-JSON/transport errors.
-    #     """
-    #     model = model or settings.OLLAMA_TEXT_MODEL
-
-    #     payload = {
-    #         "model": model,
-    #         "prompt": prompt,
-    #         "stream": False,
-    #         "format": "json",
-    #         "keep_alive": keep_alive,
-    #         "options": {
-    #             "temperature": temperature,
-    #             "num_predict": num_predict,
-    #         },
-    #     }
-
-    #     client = await self._get_client()
-
-    #     async with self._semaphore:
-    #         try:
-    #             resp = await client.post("/api/generate", json=payload)
-    #             resp.raise_for_status()
-    #         except httpx.ReadTimeout as e:
-    #             logger.error(
-    #                 "Ollama timeout after %ss (model=%s)", self.timeout, model
-    #             )
-    #             raise ValueError(
-    #                 f"Ollama timed out after {self.timeout}s on model {model}"
-    #             ) from e
-    #         except httpx.HTTPStatusError as e:
-    #             logger.error(
-    #                 "Ollama HTTP %s (model=%s): %s",
-    #                 e.response.status_code, model, e.response.text[:200],
-    #             )
-    #             raise ValueError(f"Ollama HTTP error: {e.response.status_code}") from e
-    #         except httpx.RequestError as e:
-    #             logger.error("Ollama unreachable: %s", e)
-    #             raise ValueError(f"Ollama unreachable: {e}") from e
-
-    #     data = resp.json()
-    #     raw = data.get("response", "").strip()
-    #     if not raw:
-    #         raise ValueError("Empty response from Ollama")
-
-    #     try:
-    #         return json.loads(raw)
-    #     except json.JSONDecodeError as e:
-    #         logger.error("Non-JSON from Ollama: %s", raw[:300])
-    #         raise ValueError(f"Invalid JSON from Ollama: {e}") from e
-
-
+    # ==================================================
+    # JSON MODE — returns parsed dict
+    # ==================================================
     async def generate_json(
         self,
         prompt: str,
@@ -119,6 +62,10 @@ class OllamaService:
         num_predict: int = 800,
         keep_alive: str = "30m",
     ) -> dict:
+        """
+        Call Ollama /api/generate with format=json.
+        Returns parsed dict. Raises on empty/non-JSON/transport errors.
+        """
         model = model or settings.OLLAMA_TEXT_MODEL
 
         payload = {
@@ -127,9 +74,16 @@ class OllamaService:
             "stream": False,
             "format": "json",
             "keep_alive": keep_alive,
-            "options": {
+                        "options": {
                 "temperature": temperature,
                 "num_predict": num_predict,
+                "repeat_penalty": 1.15,
+                "repeat_last_n": 128,
+                "top_p": 0.9,
+                "top_k": 40,
+                "presence_penalty": 0.3,
+                "frequency_penalty": 0.3,
+                "stop": ["\nUser:", "\n\nUser:", "\nAssistant:", "<|im_end|>"],
             },
         }
         if images:
@@ -145,7 +99,9 @@ class OllamaService:
                 logger.error("Ollama timeout after %ss (model=%s)", self.timeout, model)
                 raise ValueError(f"Ollama timed out after {self.timeout}s") from e
             except httpx.HTTPStatusError as e:
-                logger.error("Ollama HTTP %s: %s", e.response.status_code, e.response.text[:200])
+                logger.error(
+                    "Ollama HTTP %s: %s", e.response.status_code, e.response.text[:200]
+                )
                 raise ValueError(f"Ollama HTTP error: {e.response.status_code}") from e
             except httpx.RequestError as e:
                 logger.error("Ollama unreachable: %s", e)
@@ -161,5 +117,57 @@ class OllamaService:
         except json.JSONDecodeError as e:
             logger.error("Non-JSON from Ollama: %s", raw[:300])
             raise ValueError(f"Invalid JSON from Ollama: {e}") from e
+
+    # ==================================================
+    # TEXT MODE — raw string (used by /api/v1/chat/text)
+    # ==================================================
+    async def generate_text(
+        self,
+        prompt: str,
+        model: Optional[str] = None,
+        temperature: float = 0.5,
+        num_predict: int = 800,
+        keep_alive: str = "30m",
+    ) -> str:
+        """
+        Like generate_json but NO JSON mode — returns raw text.
+        """
+        model = model or settings.OLLAMA_TEXT_MODEL
+
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+            "keep_alive": keep_alive,
+            "options": {
+                "temperature": temperature,
+                "num_predict": num_predict,
+            },
+        }
+
+        client = await self._get_client()
+
+        async with self._semaphore:
+            try:
+                resp = await client.post("/api/generate", json=payload)
+                resp.raise_for_status()
+            except httpx.ReadTimeout as e:
+                logger.error("Ollama text timeout (model=%s)", model)
+                raise ValueError(f"Ollama timed out after {self.timeout}s") from e
+            except httpx.HTTPStatusError as e:
+                logger.error(
+                    "Ollama HTTP %s: %s", e.response.status_code, e.response.text[:200]
+                )
+                raise ValueError(f"Ollama HTTP error: {e.response.status_code}") from e
+            except httpx.RequestError as e:
+                logger.error("Ollama unreachable: %s", e)
+                raise ValueError(f"Ollama unreachable: {e}") from e
+
+        data = resp.json()
+        raw = (data.get("response") or "").strip()
+        if not raw:
+            raise ValueError("Empty response from Ollama")
+        return raw
+
 
 ollama_service = OllamaService()

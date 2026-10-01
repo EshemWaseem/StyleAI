@@ -1,3 +1,4 @@
+// influencer/helpers.js  24-9
 export function formatFollowers(n: number): string {
   if (!n || n < 0) return "0";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;

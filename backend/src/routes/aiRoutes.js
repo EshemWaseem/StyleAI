@@ -44,8 +44,35 @@ router.post(
   aiController.analyzeAndGenerate
 );
 
-module.exports = router;
+router.post(
+  '/product/angles',
+  authenticate,
+  upload.single('image'),
+  aiController.generateAngles
+);
 
+// ======================================================
+// POST /api/ai/content/platform
+// Body: { platform, productId?, product_name?, tone?, brand_voice? }
+// ======================================================
+router.post(
+  '/content/platform',
+  authenticate,
+  aiController.generatePlatformContent
+);
+
+// ======================================================
+// POST /api/ai/product/photography
+// Multipart image → AI scene + QA → URL
+// ======================================================
+router.post(
+  '/product/photography',
+  authenticate,
+  upload.single('image'),
+  aiController.generatePhotography
+);
+
+module.exports = router;
 
 
 

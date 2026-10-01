@@ -1,40 +1,85 @@
+// subscription.prisma 30-09
 // ======================================================
 // SUBSCRIPTION + PAYMENT
 // ======================================================
 
 model Subscription {
-  id                 String             @id @default(uuid())
-  organizationId     String
-  plan               String
-  status             SubscriptionStatus @default(TRIALING)
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  cancelAtPeriodEnd  Boolean            @default(false)
-  externalId         String?
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // Plan: free | starter | studio | enterprise (validated in service layer)
+  planName String             @default("free")
+  status   SubscriptionStatus @default(ACTIVE)
+  currency String             @default("USD")
+
+  currentPeriodStart DateTime  @default(now())
+  currentPeriodEnd   DateTime?
+
+  cancelAtPeriodEnd Boolean   @default(false)
+  cancelledAt       DateTime?
+
+  // ---- Stripe ----
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?
+  stripeStatus           String?
+  stripeCurrentPeriodEnd DateTime?
+
+  // ---- Generic billing metadata ----
+  provider             PaymentProvider @default(STRIPE)
+  billingCycle         BillingCycle?
+  defaultPaymentMethod String?
+
+  payments Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([organizationId])
+  @@index([status])
+  @@index([planName])
+  @@index([provider])
 }
 
 model Payment {
-  id             String        @id @default(uuid())
+  id             String       @id @default(uuid())
   organizationId String
-  amount         Decimal
-  currency       String
-  status         PaymentStatus @default(PENDING)
-  provider       String        @default("stripe")
-  externalId     String?
-  description    String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  invoiceNumber String        @unique
+  amount        Decimal       @db.Decimal(12, 2)
+  currency      String        @default("USD")
+  status        PaymentStatus @default(PENDING)
+  description   String?
+
+  provider PaymentProvider @default(STRIPE)
+  context  PaymentContext  @default(SUBSCRIPTION)
+
+  externalId            String?
+  stripePaymentIntentId String?
+  stripeInvoiceId       String?
+
+  metadata Json?
+
+  paidAt      DateTime?
+  periodStart DateTime?
+  periodEnd   DateTime?
+
+  walletTransactions WalletTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([organizationId])
+  @@index([organizationId, createdAt])
   @@index([status])
+  @@index([subscriptionId])
+  @@index([orderId])
+  @@index([provider])
+  @@index([context])
+  @@index([externalId])
 }

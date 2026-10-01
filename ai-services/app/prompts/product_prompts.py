@@ -1,3 +1,4 @@
+# ai-services/app/prompts/product_prompts.py
 PRODUCT_ANALYSIS_PROMPT = """You are a fashion product analyst. Analyze the product image and return structured attributes.
 
 STRICT RULES:

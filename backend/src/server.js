@@ -1,3 +1,4 @@
+// server.js
 require('dotenv').config();
 require('./config/fetchTimeout');
 
@@ -23,10 +24,29 @@ const productRoutes = require('./routes/productRoutes');
 const joinRequestRoutes = require('./routes/joinRequestRoutes');
 const invitationRoutes = require('./routes/invitationRoutes');
 const brandTeamRoutes = require('./routes/brandTeamRoutes');
-const influencerRoutes = require('./routes/influencerRoutes');   // ← ADDED
-
+const influencerRoutes = require('./routes/influencerRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const offerRoutes = require('./routes/offerRoutes');
+const catalogRoutes = require('./routes/catalogRoutes');
+const walletRoutes = require('./routes/walletRoutes');
+const listingRoutes = require('./routes/listingRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const campaignRoutes = require('./routes/campaignRoutes');
+const agencyRoutes = require('./routes/agencyRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const matchingRoutes = require('./routes/matchingRoutes');
+const assistantRoutes = require('./routes/assistantRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+const knowledgeRoutes = require('./routes/knowledgeRoutes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
+const { resolveActingBrand } = require('./middleware/actingBrand');
 const prisma = require('./config/prisma');
+const billingRoutes = require('./routes/billingRoutes');
+
+// ⬇️ NEW (Sprint 24)
+const paymentRoutes = require('./routes/paymentRoutes');
+const webhookRoutes = require('./routes/webhookRoutes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -39,7 +59,17 @@ app.use(
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
-app.use(compression());
+
+// Compression — but SKIP for SSE streams (gzip buffers them)
+app.use(
+  compression({
+    filter: (req, res) => {
+      if (req.headers.accept?.includes('text/event-stream')) return false;
+      if (res.getHeader('Content-Type') === 'text/event-stream') return false;
+      return compression.filter(req, res);
+    },
+  })
+);
 
 // ======================================================
 // CORS — BEFORE route mounts
@@ -58,7 +88,7 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Acting-Brand'],
   })
 );
 
@@ -85,10 +115,17 @@ app.use('/api', globalLimiter);
 app.use('/api/auth', authLimiter);
 
 // ======================================================
+// ⚠️ WEBHOOKS — MUST BE MOUNTED BEFORE express.json()
+// Stripe requires the raw body for signature verification.
+// ======================================================
+app.use('/api/webhooks', webhookRoutes);
+
+// ======================================================
 // BODY PARSERS + LOGGING
 // ======================================================
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+app.use(resolveActingBrand);
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
@@ -130,46 +167,71 @@ app.use('/api/products', productRoutes);
 app.use('/api/join-requests', joinRequestRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/brand-team', brandTeamRoutes);
-app.use('/api/influencers', influencerRoutes);   // ← ADDED
+app.use('/api/influencers', influencerRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/offers', offerRoutes);
+app.use('/api/catalog', catalogRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api/listings', listingRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/agency', agencyRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/matching', matchingRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/payments', paymentRoutes);        // ⬅️ NEW
+app.use('/api/knowledge', knowledgeRoutes);
+app.use('/api/assistant', assistantRoutes);
 
 // ======================================================
-// 404 + ERROR
+// 404 + ERROR — MUST be last
 // ======================================================
 app.use(notFound);
 app.use(errorHandler);
 
 // ======================================================
-// SERVER
+// SERVER + PRISMA WARMUP
 // ======================================================
 const PORT = process.env.PORT || 4000;
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Backend running on http://localhost:${PORT}`);
-  console.log(`🌍 Env: ${process.env.NODE_ENV || 'development'}`);
-});
 
-// ======================================================
-// GRACEFUL SHUTDOWN
-// ======================================================
-async function shutdown(signal) {
-  console.log(`\n${signal} received. Shutting down gracefully...`);
-  server.close(async () => {
-    try {
-      await prisma.$disconnect();
-      console.log('✅ Prisma disconnected');
-      process.exit(0);
-    } catch (err) {
-      console.error('❌ Error during shutdown:', err);
-      process.exit(1);
-    }
+(async () => {
+  try {
+    await prisma.$connect();
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('✅ Prisma connected & warmed');
+  } catch (err) {
+    console.error('⚠️  Prisma warmup failed:', err.message);
+  }
+
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Backend running on http://localhost:${PORT}`);
+    console.log(`🌍 Env: ${process.env.NODE_ENV || 'development'}`);
   });
-  setTimeout(() => {
-    console.error('⚠️  Forced shutdown after timeout');
-    process.exit(1);
-  }, 10000);
-}
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+  async function shutdown(signal) {
+    console.log(`\n${signal} received. Shutting down gracefully...`);
+    server.close(async () => {
+      try {
+        await prisma.$disconnect();
+        console.log('✅ Prisma disconnected');
+        process.exit(0);
+      } catch (err) {
+        console.error('❌ Error during shutdown:', err);
+        process.exit(1);
+      }
+    });
+    setTimeout(() => {
+      console.error('⚠️  Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  }
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+})();
+
 process.on('unhandledRejection', (reason) =>
   console.error('Unhandled Rejection:', reason)
 );

@@ -1,17 +1,27 @@
-// subscription.prisma 30-09
+// subscription.prisma 01-10
 // ======================================================
-// SUBSCRIPTION + PAYMENT
+// SUBSCRIPTION + PAYMENT — Role-aware SaaS
+// Brands & Agencies: tied to organizationId
+// Influencers: tied to userId
 // ======================================================
 
 model Subscription {
   id             String       @id @default(uuid())
-  organizationId String       @unique
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String?      @unique
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  // Plan: free | starter | studio | enterprise (validated in service layer)
-  planName String             @default("free")
-  status   SubscriptionStatus @default(ACTIVE)
-  currency String             @default("USD")
+  userId         String?      @unique
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // ---- Plan + Role ----
+  role       BillingRole      @default(BRAND)
+  planName   String           @default("trial")   // trial | starter | growth | studio | free | creator | pro | elite | solo | scale | enterprise
+  status     SubscriptionStatus @default(ACTIVE)
+  currency   String           @default("USD")
+
+  // ---- Trial tracking ----
+  isTrial      Boolean   @default(false)
+  trialEndsAt  DateTime?
 
   currentPeriodStart DateTime  @default(now())
   currentPeriodEnd   DateTime?
@@ -31,19 +41,22 @@ model Subscription {
   defaultPaymentMethod String?
 
   payments Payment[]
+  usageCounters UsageCounter[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([planName])
+  @@index([role])
   @@index([provider])
+  @@index([trialEndsAt])
 }
 
 model Payment {
   id             String       @id @default(uuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   subscriptionId String?
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)

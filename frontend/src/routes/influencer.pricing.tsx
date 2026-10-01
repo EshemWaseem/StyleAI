@@ -1,3 +1,4 @@
+// frontend/src/routes/pricing.tsx
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, ArrowLeft } from "lucide-react";

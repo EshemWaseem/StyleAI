@@ -210,6 +210,17 @@ const PORT = process.env.PORT || 4000;
     console.log(`🌍 Env: ${process.env.NODE_ENV || 'development'}`);
   });
 
+  // ---- Trial cron scheduler (Sprint 27) ----
+  try {
+    const { startCron, stopCron } = require('./services/billing/cron');
+    startCron();
+    // Stop on shutdown
+    process.on('SIGTERM', () => stopCron());
+    process.on('SIGINT', () => stopCron());
+  } catch (err) {
+    console.warn('[server] cron init failed:', err.message);
+  }
+
   async function shutdown(signal) {
     console.log(`\n${signal} received. Shutting down gracefully...`);
     server.close(async () => {

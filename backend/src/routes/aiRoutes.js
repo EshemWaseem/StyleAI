@@ -37,11 +37,53 @@ router.post(
 // Multipart image → analyze → generate content.
 // Returns { attributes, content }.
 // ======================================================
-router.post(
-  '/product/analyze-and-generate',
+// router.post(
+//   '/product/analyze-and-generate',
+//   authenticate,
+//   upload.single('image'),
+//   aiController.analyzeAndGenerate
+// );
+
+
+const { requireActiveSubscription } = require('../middleware/trialCheck');
+const { quotaCheck, incrementUsage } = require('../middleware/quotaCheck');
+
+// AI text — counts against aiTextPerMonth
+router.post('/product/analyze-and-generate',
   authenticate,
+  requireActiveSubscription,
+  quotaCheck('aiTextPerMonth', 'aiTextCalls'),
   upload.single('image'),
-  aiController.analyzeAndGenerate
+  ctrl.analyzeAndGenerate,
+  incrementUsage,
+);
+
+// AI image — counts against aiImagePerMonth
+router.post('/product/photography',
+  authenticate,
+  requireActiveSubscription,
+  quotaCheck('aiImagePerMonth', 'aiImageCalls'),
+  upload.single('image'),
+  ctrl.generatePhotography,
+  incrementUsage,
+);
+
+// AI content
+router.post('/product/content',
+  authenticate,
+  requireActiveSubscription,
+  quotaCheck('aiTextPerMonth', 'aiTextCalls'),
+  ctrl.generateContent,
+  incrementUsage,
+);
+
+// Platform content
+router.post('/content/platform',
+  authenticate,
+  requireActiveSubscription,
+  quotaCheck('aiTextPerMonth', 'aiTextCalls'),
+  ctrl.generatePlatformContent,
+  incrementUsage,
 );
 
 router.post(

@@ -6,8 +6,7 @@ const ctrl = require('../controllers/billingController');
 router.use(authenticate);
 
 router.get('/me', ctrl.getMe);
-router.get('/plans', ctrl.getPlans);
-// POST /upgrade REMOVED — use POST /api/payments/subscription/checkout
+router.get('/plans', ctrl.getPlans);   // optional ?role=BRAND
 router.post('/cancel', ctrl.cancel);
 router.post('/resume', ctrl.resume);
 

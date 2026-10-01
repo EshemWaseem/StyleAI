@@ -1,0 +1,30 @@
+// usage.prisma 01-10
+// ======================================================
+// Monthly usage tracking per subscription
+// Auto-resets on subscription renewal (by periodStart)
+// ======================================================
+
+model UsageCounter {
+  id             String   @id @default(uuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Billing period this counter applies to
+  periodStart DateTime
+  periodEnd   DateTime
+
+  // Usage counters
+  aiTextCalls      Int @default(0)
+  aiImageCalls     Int @default(0)
+  aiAssistMessages Int @default(0)
+  campaignsCreated Int @default(0)
+  knowledgeIngests Int @default(0)
+  storageBytes     BigInt @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([subscriptionId, periodStart])
+  @@index([subscriptionId])
+  @@index([periodEnd])
+}

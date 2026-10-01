@@ -1,6 +1,5 @@
 // controllers/billingController.js
 const svc = require('../services/billing');
-const { listPlans } = require('../services/billing/plans');
 
 async function getMe(req, res, next) {
   try { res.json(await svc.getMyBilling(req.user)); }
@@ -8,11 +7,15 @@ async function getMe(req, res, next) {
 }
 
 async function getPlans(req, res, next) {
-  try { res.json({ plans: listPlans() }); }
-  catch (e) { next(e); }
+  try {
+    const role = (req.query.role || '').toString().toUpperCase();
+    const allowed = ['BRAND', 'AGENCY', 'INFLUENCER'];
+    if (role && !allowed.includes(role)) {
+      return res.status(400).json({ message: `role must be one of ${allowed.join(', ')}` });
+    }
+    res.json({ plans: svc.listPlans(role || null) });
+  } catch (e) { next(e); }
 }
-
-// upgrade() REMOVED — checkout handled by POST /api/payments/subscription/checkout
 
 async function cancel(req, res, next) {
   try { res.json({ subscription: await svc.cancelSubscription(req.user) }); }

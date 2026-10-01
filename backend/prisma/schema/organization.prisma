@@ -15,7 +15,7 @@ model Organization {
   users         User[]
   brands        Brand[]
   teams         Team[]
-  subscriptions Subscription[]
+  subscription Subscription[]
   payments      Payment[]
 
   agencyOf AgencyClient[] @relation("AgencyClients")

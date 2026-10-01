@@ -187,6 +187,7 @@ const APP_NAV: NavGroup[] = [
     items: [
       { to: "/team", label: "Team", icon: UsersRound, excludeRoles: ["INFLUENCER", "SHOPPER"] },
       { to: "/billing", label: "Billing", icon: BadgeDollarSign, roles: ["BRAND_OWNER", "AGENCY"] },
+      { to: "/plans", label: "Plans & Pricing", icon: Sparkles }, 
       { to: "/settings", label: "Settings", icon: Settings, excludeRoles: ["SHOPPER"] },
     ],
   },

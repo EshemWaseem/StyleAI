@@ -129,3 +129,13 @@ enum OfferStatus {
   EXPIRED
   CANCELLED
 }
+
+
+// ======================================================
+// BILLING ROLE — Sprint 27 SaaS plans
+// ======================================================
+enum BillingRole {
+  BRAND
+  AGENCY
+  INFLUENCER
+}

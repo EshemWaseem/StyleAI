@@ -20,10 +20,12 @@ import { Route as MatchingRouteImport } from './routes/matching'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as PendingRouteImport } from './routes/pending'
+import { Route as PlansRouteImport } from './routes/plans'
 import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TeamRouteImport } from './routes/team'
+import { Route as TrialExpiredRouteImport } from './routes/trial-expired'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAgenciesRouteImport } from './routes/admin/agencies'
@@ -117,6 +119,11 @@ const PendingRoute = PendingRouteImport.update({
   path: '/pending',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlansRoute = PlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecommendationsRoute = RecommendationsRouteImport.update({
   id: '/recommendations',
   path: '/recommendations',
@@ -135,6 +142,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrialExpiredRoute = TrialExpiredRouteImport.update({
+  id: '/trial-expired',
+  path: '/trial-expired',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WalletRoute = WalletRouteImport.update({
@@ -335,10 +347,12 @@ export interface FileRoutesByFullPath {
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
   '/pending': typeof PendingRoute
+  '/plans': typeof PlansRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/trial-expired': typeof TrialExpiredRoute
   '/wallet': typeof WalletRoute
   '/admin/agencies': typeof AdminAgenciesRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -389,10 +403,12 @@ export interface FileRoutesByTo {
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
   '/pending': typeof PendingRoute
+  '/plans': typeof PlansRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/trial-expired': typeof TrialExpiredRoute
   '/wallet': typeof WalletRoute
   '/admin/agencies': typeof AdminAgenciesRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -444,10 +460,12 @@ export interface FileRoutesById {
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
   '/pending': typeof PendingRoute
+  '/plans': typeof PlansRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
+  '/trial-expired': typeof TrialExpiredRoute
   '/wallet': typeof WalletRoute
   '/admin/agencies': typeof AdminAgenciesRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -500,10 +518,12 @@ export interface FileRouteTypes {
     | '/messages'
     | '/notifications'
     | '/pending'
+    | '/plans'
     | '/recommendations'
     | '/register'
     | '/settings'
     | '/team'
+    | '/trial-expired'
     | '/wallet'
     | '/admin/agencies'
     | '/admin/audit'
@@ -554,10 +574,12 @@ export interface FileRouteTypes {
     | '/messages'
     | '/notifications'
     | '/pending'
+    | '/plans'
     | '/recommendations'
     | '/register'
     | '/settings'
     | '/team'
+    | '/trial-expired'
     | '/wallet'
     | '/admin/agencies'
     | '/admin/audit'
@@ -608,10 +630,12 @@ export interface FileRouteTypes {
     | '/messages'
     | '/notifications'
     | '/pending'
+    | '/plans'
     | '/recommendations'
     | '/register'
     | '/settings'
     | '/team'
+    | '/trial-expired'
     | '/wallet'
     | '/admin/agencies'
     | '/admin/audit'
@@ -663,10 +687,12 @@ export interface RootRouteChildren {
   MessagesRoute: typeof MessagesRoute
   NotificationsRoute: typeof NotificationsRoute
   PendingRoute: typeof PendingRoute
+  PlansRoute: typeof PlansRoute
   RecommendationsRoute: typeof RecommendationsRoute
   RegisterRoute: typeof RegisterRoute
   SettingsRoute: typeof SettingsRoute
   TeamRoute: typeof TeamRoute
+  TrialExpiredRoute: typeof TrialExpiredRoute
   WalletRoute: typeof WalletRoute
   AdminAgenciesRoute: typeof AdminAgenciesRoute
   AdminAuditRoute: typeof AdminAuditRoute
@@ -785,6 +811,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PendingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/plans': {
+      id: '/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof PlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/recommendations': {
       id: '/recommendations'
       path: '/recommendations'
@@ -811,6 +844,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/team'
       preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trial-expired': {
+      id: '/trial-expired'
+      path: '/trial-expired'
+      fullPath: '/trial-expired'
+      preLoaderRoute: typeof TrialExpiredRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wallet': {
@@ -1087,10 +1127,12 @@ const rootRouteChildren: RootRouteChildren = {
   MessagesRoute: MessagesRoute,
   NotificationsRoute: NotificationsRoute,
   PendingRoute: PendingRoute,
+  PlansRoute: PlansRoute,
   RecommendationsRoute: RecommendationsRoute,
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRoute,
   TeamRoute: TeamRoute,
+  TrialExpiredRoute: TrialExpiredRoute,
   WalletRoute: WalletRoute,
   AdminAgenciesRoute: AdminAgenciesRoute,
   AdminAuditRoute: AdminAuditRoute,

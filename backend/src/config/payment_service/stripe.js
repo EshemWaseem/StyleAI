@@ -6,6 +6,6 @@ module.exports = {
   secretKey: process.env.STRIPE_SECRET_KEY,
   publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-  apiVersion: '2024-06-20',
+  apiVersion: '2026-08-26.dahlia',   // ← YEH UPDATE KARO
   mode: isProd ? 'live' : 'test',
 };

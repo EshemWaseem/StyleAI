@@ -179,3 +179,26 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+
+
+/* ======================================================
+   Select / Option dark-mode fix (Windows Chrome default
+   renders options with white background + light text)
+   ====================================================== */
+
+select {
+  color: var(--color-foreground);
+  background-color: transparent;
+}
+
+select option {
+  background-color: var(--color-popover);
+  color: var(--color-popover-foreground);
+}
+
+select option:checked,
+select option:hover {
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+}

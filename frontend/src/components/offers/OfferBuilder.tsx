@@ -1,6 +1,6 @@
 // components/offers/OfferBuilder.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Loader2, Save, Calculator, Package } from "lucide-react";
+import { Plus, Trash2, Loader2, Send, Calculator, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { offersApi } from "@/lib/offers";
 import type { OfferEstimate } from "@/lib/offers";
@@ -135,7 +135,19 @@ export function OfferBuilder({
     );
   }
 
-  async function create() {
+  async function sendOffer() {
+    if (!estimate) {
+      setError("Wait for the estimate before sending.");
+      return;
+    }
+    const ok = confirm(
+      `Send this offer to ${influencerName}?\n\n` +
+      `Total: ${estimate.currency} ${estimate.total.toFixed(2)}\n\n` +
+      `Escrow will be held from your wallet immediately. ` +
+      `The influencer will be notified and can accept or decline.`
+    );
+    if (!ok) return;
+
     setSaving(true);
     setError("");
     try {
@@ -156,7 +168,7 @@ export function OfferBuilder({
       const r = await offersApi.create(payload);
       onCreated?.(r.offer.id);
     } catch (e: any) {
-      setError(e?.message || "Failed to create offer");
+      setError(e?.message || "Failed to send offer");
     } finally {
       setSaving(false);
     }
@@ -177,7 +189,7 @@ export function OfferBuilder({
             <select
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
-              className="w-full bg-transparent text-sm outline-none"
+              className="w-full cursor-pointer bg-transparent text-sm text-foreground outline-none"
             >
               <option value="">— No specific product —</option>
               {products.map((p) => (
@@ -235,7 +247,7 @@ export function OfferBuilder({
                     <select
                       value={it.platform}
                       onChange={(e) => updateLine(it.id, { platform: e.target.value })}
-                      className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+                      className="w-full cursor-pointer rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
                     >
                       {platformOptions.map((p) => (
                         <option key={p.key} value={p.key}>{p.label}</option>
@@ -247,7 +259,7 @@ export function OfferBuilder({
                     <select
                       value={it.contentType}
                       onChange={(e) => updateLine(it.id, { contentType: e.target.value })}
-                      className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+                      className="w-full cursor-pointer rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
                     >
                       {contentTypes.map((ct) => (
                         <option key={ct} value={ct}>{ct}</option>
@@ -318,7 +330,7 @@ export function OfferBuilder({
           onChange={(e) => setBrandNote(e.target.value)}
           rows={3}
           className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Message for the admin or influencer…"
+          placeholder="Message for the influencer…"
         />
       </div>
 
@@ -364,18 +376,22 @@ export function OfferBuilder({
         {onCancel && (
           <Button variant="ghost" onClick={onCancel}>Cancel</Button>
         )}
-        <Button onClick={create} disabled={saving || items.length === 0}>
+        <Button onClick={sendOffer} disabled={saving || items.length === 0}>
           {saving ? (
             <>
-              <Loader2 className="mr-2 size-4 animate-spin" /> Creating…
+              <Loader2 className="mr-2 size-4 animate-spin" /> Sending…
             </>
           ) : (
             <>
-              <Save className="mr-2 size-4" /> Save as draft
+              <Send className="mr-2 size-4" /> Send to influencer
             </>
           )}
         </Button>
       </div>
+
+      <p className="text-center text-[10px] text-muted-foreground">
+        Offer will be sent directly to the influencer. Escrow is held from your wallet.
+      </p>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+// lib/offers/types.ts
 export type OfferStatus =
   | "DRAFT"
   | "PENDING_ADMIN"
@@ -9,12 +10,30 @@ export type OfferStatus =
   | "CANCELLED";
 
 export interface OfferItem {
-  platform: string;        // Prisma InfluencerPlatform key
-  contentType: string;     // e.g. "reel"
+  platform: string;
+  contentType: string;
   quantity: number;
   unitPrice: number;
-  lineTotal: number;       // server-computed
-  label: string;           // display snapshot
+  lineTotal: number;
+  label: string;
+}
+
+export interface OfferBrand {
+  id: string;
+  organizationId: string;   // ← ADDED
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+}
+
+export interface OfferInfluencer {
+  id: string;
+  userId: string;           // ← ADDED
+  displayName: string;
+  username: string;
+  slug: string;
+  avatarUrl: string | null;
+  currency: string;
 }
 
 export interface Offer {
@@ -41,20 +60,8 @@ export interface Offer {
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
-  brand?: {
-    id: string;
-    name: string;
-    slug: string;
-    logoUrl: string | null;
-  };
-  influencer?: {
-    id: string;
-    displayName: string;
-    username: string;
-    slug: string;
-    avatarUrl: string | null;
-    currency: string;
-  };
+  brand?: OfferBrand;
+  influencer?: OfferInfluencer;
 }
 
 export interface OfferEstimate {

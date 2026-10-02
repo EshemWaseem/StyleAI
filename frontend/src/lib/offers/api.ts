@@ -17,6 +17,9 @@ export const offersApi = {
   create: (payload: CreateOfferPayload) =>
     http.post<{ message: string; offer: Offer }>("/api/offers", payload),
 
+  cancel: (id: string, reason?: string) =>
+  http.post<{ message: string; offer: Offer }>(`/api/offers/${id}/cancel`, { reason }),
+
   /** Role-aware list */
   list: (filters: { brandId?: string; influencerId?: string; status?: string; limit?: number; offset?: number } = {}) => {
     const qs = new URLSearchParams();

@@ -1,6 +1,7 @@
+// routes/offers.$id.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AlertCircle, ArrowLeft, Loader2, Send, Check, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Send, Check, X, Ban } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
@@ -51,10 +52,39 @@ function OfferDetailPage() {
     }
   }
 
+  // ======================================================
+  // Identity — STRICT ownership (not just "user exists")
+  // ======================================================
   const isAdmin = !!user?.roles?.includes("SUPER_ADMIN" as any);
-  const isBrandSide = !!user && !!offer?.brand;
-  const isInfluencerSide = !!user && offer?.influencer;
 
+  const isBrandOwner =
+    !!user?.organizationId &&
+    !!offer?.brand?.organizationId &&
+    user.organizationId === offer.brand.organizationId;
+
+  const isTargetInfluencer =
+    !!user?.id &&
+    !!offer?.influencer?.userId &&
+    offer.influencer.userId === user.id;
+
+  // ======================================================
+  // Permission flags
+  // ======================================================
+  const canSubmitForReview =
+    isBrandOwner && offer?.status === "DRAFT";
+
+  const canCancel =
+    isBrandOwner && ["DRAFT", "PENDING_ADMIN", "ADMIN_APPROVED"].includes(offer?.status || "");
+
+  const canAdminReview =
+    isAdmin && offer?.status === "PENDING_ADMIN";
+
+  const canInfluencerReview =
+    isTargetInfluencer && offer?.status === "ADMIN_APPROVED";
+
+  // ======================================================
+  // Loading
+  // ======================================================
   if (loading) {
     return (
       <ProtectedRoute>
@@ -104,8 +134,24 @@ function OfferDetailPage() {
           }
         />
 
-        <div className="mt-6 flex items-center gap-3">
+        {/* Status + viewer role indicator */}
+        <div className="mt-6 flex flex-wrap items-center gap-3">
           <OfferStatusBadge status={offer.status} />
+          {isBrandOwner && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              You are the brand
+            </span>
+          )}
+          {isTargetInfluencer && (
+            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
+              You are the influencer
+            </span>
+          )}
+          {isAdmin && (
+            <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-destructive">
+              Admin view
+            </span>
+          )}
         </div>
 
         {/* Line items */}
@@ -159,7 +205,7 @@ function OfferDetailPage() {
               />
             )}
             <Row
-              label={`Brand fee (${offer.adminFeePct}%)`}
+              label={`Platform fee (${offer.adminFeePct}%)`}
               value={`+ ${offer.currency} ${Number(offer.adminFee || 0).toFixed(2)}`}
               muted
             />
@@ -177,7 +223,7 @@ function OfferDetailPage() {
         {(offer.brandNote || offer.adminNote || offer.influencerNote) && (
           <Panel className="mt-4 space-y-3 p-6 text-sm">
             {offer.brandNote && <Note label="Brand note" value={offer.brandNote} />}
-            {offer.adminNote && <Note label="Admin note" value={offer.adminNote} />}
+            {offer.adminNote && <Note label="Platform note" value={offer.adminNote} />}
             {offer.influencerNote && <Note label="Influencer note" value={offer.influencerNote} />}
           </Panel>
         )}
@@ -188,21 +234,47 @@ function OfferDetailPage() {
           </div>
         )}
 
-        {/* Actions */}
-        <div className="mt-6 flex flex-wrap justify-end gap-2">
-          {offer.status === "DRAFT" && (
-            <Button disabled={busy} onClick={() => act(() => offersApi.submit(offer.id))}>
-              <Send className="mr-1 size-4" /> Submit for admin review
+        {/* ====================================================== */}
+        {/* ACTIONS — role-aware                                    */}
+        {/* ====================================================== */}
+        <div className="mt-6 flex flex-wrap items-end justify-end gap-2">
+
+          {/* ---- Brand: Submit DRAFT ---- */}
+          {canSubmitForReview && (
+            <Button
+              disabled={busy}
+              onClick={() => act(() => offersApi.submit(offer.id))}
+            >
+              <Send className="mr-1 size-4" /> Submit for review
             </Button>
           )}
-          {offer.status === "PENDING_ADMIN" && isAdmin && (
+
+          {/* ---- Brand: Cancel ---- */}
+          {canCancel && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => {
+                  if (!confirm("Cancel this offer? Escrow will be released back to your wallet.")) return;
+                  act(() => offersApi.cancel(offer.id, "Cancelled by brand"));
+                }}
+            >
+              <Ban className="mr-1 size-4" /> Cancel offer
+            </Button>
+          )}
+
+          {/* ---- Admin: Approve / Reject ---- */}
+          {canAdminReview && (
             <>
               <Button
                 variant="outline"
                 disabled={busy}
                 onClick={() =>
                   act(() =>
-                    offersApi.adminReview(offer.id, { decision: "reject", adminNote: "Rejected by admin" })
+                    offersApi.adminReview(offer.id, {
+                      decision: "reject",
+                      adminNote: "Rejected by admin",
+                    })
                   )
                 }
               >
@@ -218,19 +290,19 @@ function OfferDetailPage() {
               </Button>
             </>
           )}
-          {offer.status === "PENDING_ADMIN" && !isAdmin && (
-            <p className="text-xs text-muted-foreground">
-              Waiting for admin approval…
-            </p>
-          )}
-          {offer.status === "ADMIN_APPROVED" && isInfluencerSide && (
+
+          {/* ---- Influencer: Accept / Decline ---- */}
+          {canInfluencerReview && (
             <>
               <Button
                 variant="outline"
                 disabled={busy}
                 onClick={() =>
                   act(() =>
-                    offersApi.influencerReview(offer.id, { decision: "decline", influencerNote: "Declined" })
+                    offersApi.influencerReview(offer.id, {
+                      decision: "decline",
+                      influencerNote: "Declined",
+                    })
                   )
                 }
               >
@@ -246,9 +318,47 @@ function OfferDetailPage() {
               </Button>
             </>
           )}
-          {offer.status === "ADMIN_APPROVED" && !isInfluencerSide && (
+
+          {/* ---- Status hints (no buttons) ---- */}
+          {offer.status === "PENDING_ADMIN" && isBrandOwner && !isAdmin && (
             <p className="text-xs text-muted-foreground">
-              Waiting for influencer to accept…
+              Waiting for admin approval…
+            </p>
+          )}
+          {offer.status === "PENDING_ADMIN" && !isBrandOwner && !isAdmin && (
+            <p className="text-xs text-muted-foreground">
+              Waiting for admin approval…
+            </p>
+          )}
+          {offer.status === "ADMIN_APPROVED" && isBrandOwner && (
+            <p className="text-xs text-muted-foreground">
+              Sent to influencer — waiting for their response.
+            </p>
+          )}
+          {offer.status === "ADMIN_APPROVED" && isInfluencerSideHint(isTargetInfluencer) && null}
+          {offer.status === "ADMIN_APPROVED" && !isBrandOwner && !isAdmin && !isTargetInfluencer && (
+            <p className="text-xs text-muted-foreground">
+              Waiting for influencer to respond…
+            </p>
+          )}
+          {offer.status === "INFLUENCER_ACCEPTED" && (
+            <p className="text-xs font-medium text-emerald-500">
+              ✓ Offer accepted
+            </p>
+          )}
+          {offer.status === "INFLUENCER_DECLINED" && (
+            <p className="text-xs font-medium text-destructive">
+              Offer declined
+            </p>
+          )}
+          {offer.status === "ADMIN_REJECTED" && (
+            <p className="text-xs font-medium text-destructive">
+              Rejected by admin
+            </p>
+          )}
+          {offer.status === "CANCELLED" && (
+            <p className="text-xs font-medium text-muted-foreground">
+              Offer cancelled
             </p>
           )}
         </div>
@@ -256,6 +366,9 @@ function OfferDetailPage() {
     </ProtectedRoute>
   );
 }
+
+// Small helper to keep JSX tidy
+function isInfluencerSideHint(v: boolean) { return v; }
 
 function Row({ label, value, muted, bold }: { label: string; value: string; muted?: boolean; bold?: boolean }) {
   return (

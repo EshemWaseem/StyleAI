@@ -3,7 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import {
   AlertCircle, Loader2, CreditCard, Check, Sparkles,
-  CheckCircle2, XCircle, Clock, TrendingUp,
+  CheckCircle2, XCircle, Clock, Trash2,
 } from 'lucide-react';
 import { AppShell } from '@/components/app-shell';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,10 @@ function BillingPage() {
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(null);
   const [cycle, setCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
 
+  // Invoice deletion state
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
+
   async function load() {
     setLoading(true);
     setError('');
@@ -44,18 +48,15 @@ function BillingPage() {
       const me = await billingApi.getMe();
       setData(me);
 
-      // Load plans for user's role
       const role = me.role as BillingRole | null;
       const plansResp = await billingApi.getPlans(role || undefined);
       if (Array.isArray(plansResp.plans)) {
         setPlans(plansResp.plans);
       } else {
-        // multiple roles returned — pick the right one
         const map = plansResp.plans as Record<string, Plan[]>;
         setPlans(role ? map[role] || [] : []);
       }
 
-      // Payment methods
       try {
         const methods = await paymentsApi.getMethods('SUBSCRIPTION');
         setProviders(methods.providers);
@@ -124,17 +125,46 @@ function BillingPage() {
     }
   }
 
+  async function handleDeleteInvoice(id: string) {
+    if (!confirm('Delete this failed invoice?')) return;
+    setDeletingId(id);
+    try {
+      await billingApi.deleteInvoice(id);
+      await load();
+    } catch (e: any) {
+      alert(e?.message || 'Delete failed');
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function handleDeleteAllFailed() {
+    const failedCount = data?.invoices.filter((i) => i.status === 'FAILED').length ?? 0;
+    if (!failedCount) return;
+    if (!confirm(`Delete all ${failedCount} failed invoice${failedCount === 1 ? '' : 's'}?`)) return;
+    setDeletingAll(true);
+    try {
+      await billingApi.deleteAllFailed();
+      await load();
+    } catch (e: any) {
+      alert(e?.message || 'Bulk delete failed');
+    } finally {
+      setDeletingAll(false);
+    }
+  }
+
   const sub = data?.subscription;
   const isTrial = sub?.isTrial;
   const trialDaysLeft = sub?.trialDaysLeft ?? 0;
   const state = sub?.effectiveState;
   const isFree = sub?.planName === 'free';
   const isAdmin = data?.isAdmin;
+  const failedCount = data?.invoices.filter((i) => i.status === 'FAILED').length ?? 0;
 
   // Admin has no billing
   if (isAdmin) {
     return (
-      <ProtectedRoute roles={['SUPER_ADMIN']}>
+      <ProtectedRoute roles={['SUPER_ADMIN']} skipTrialCheck>
         <AppShell breadcrumb={['Administration', 'Billing']}>
           <PageHeader
             eyebrow="Administration"
@@ -152,7 +182,7 @@ function BillingPage() {
   }
 
   return (
-    <ProtectedRoute roles={['BRAND_OWNER', 'AGENCY', 'INFLUENCER']}>
+    <ProtectedRoute roles={['BRAND_OWNER', 'AGENCY', 'INFLUENCER']} skipTrialCheck>
       <AppShell breadcrumb={['Administration', 'Billing']}>
         <PageHeader
           eyebrow="Administration"
@@ -442,6 +472,24 @@ function BillingPage() {
                   <SectionTitle
                     title="Invoices"
                     description={`${data.invoices.length} invoice${data.invoices.length === 1 ? '' : 's'}`}
+                    action={
+                      failedCount > 0 ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={handleDeleteAllFailed}
+                          disabled={deletingAll}
+                          title={`Delete all ${failedCount} failed invoices`}
+                        >
+                          {deletingAll ? (
+                            <><Loader2 className="mr-1.5 size-3.5 animate-spin" /> Deleting…</>
+                          ) : (
+                            <><Trash2 className="mr-1.5 size-3.5" /> Clear {failedCount} failed</>
+                          )}
+                        </Button>
+                      ) : null
+                    }
                   />
                   {data.invoices.length === 0 ? (
                     <div className="py-10 text-center">
@@ -449,19 +497,24 @@ function BillingPage() {
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[500px] text-sm">
+                      <table className="w-full min-w-[560px] text-sm">
                         <thead>
                           <tr className="border-b border-border text-left text-xs text-muted-foreground">
                             <th className="pb-3 font-medium">Invoice</th>
                             <th className="pb-3 font-medium">Date</th>
                             <th className="pb-3 font-medium text-right">Amount</th>
                             <th className="pb-3 font-medium">Status</th>
+                            <th className="pb-3 font-medium text-right w-12"> </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                           {data.invoices.map((inv) => (
                             <tr key={inv.id}>
-                              <td className="py-3 font-mono text-xs">{inv.invoiceNumber}</td>
+                              <td className="py-3 font-mono text-xs">
+                                {inv.invoiceNumber.length > 40
+                                  ? `${inv.invoiceNumber.slice(0, 40)}…`
+                                  : inv.invoiceNumber}
+                              </td>
                               <td className="py-3 text-xs text-muted-foreground">
                                 {new Date(inv.createdAt).toLocaleDateString()}
                               </td>
@@ -478,6 +531,24 @@ function BillingPage() {
                                   {inv.status === 'SUCCEEDED' ? <CheckCircle2 className="size-3" /> : inv.status === 'FAILED' ? <XCircle className="size-3" /> : null}
                                   {inv.status}
                                 </span>
+                              </td>
+                              <td className="py-3 text-right">
+                                {inv.status === 'FAILED' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-7 text-muted-foreground hover:text-destructive"
+                                    onClick={() => handleDeleteInvoice(inv.id)}
+                                    disabled={deletingId === inv.id}
+                                    title="Delete this failed invoice"
+                                  >
+                                    {deletingId === inv.id ? (
+                                      <Loader2 className="size-3.5 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="size-3.5" />
+                                    )}
+                                  </Button>
+                                )}
                               </td>
                             </tr>
                           ))}

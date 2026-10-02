@@ -6,7 +6,6 @@ import {
   Banknote,
   BarChart3,
   Bell,
-  BookOpen,
   Briefcase,
   Camera,
   Command,
@@ -15,9 +14,9 @@ import {
   FileText,
   HelpCircle,
   LayoutDashboard,
-  Lightbulb,
   LogOut,
   Megaphone,
+  MessageCircle,
   Package,
   Palette,
   PanelLeftClose,
@@ -32,7 +31,6 @@ import {
   TrendingUp,
   UsersRound,
   Wallet,
-  X,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -49,7 +47,6 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { AgencyProvider, useAgency } from "@/lib/agency/context";
 import { cn } from "@/lib/utils";
 import { useRole, type RoleName } from "@/lib/role";
-import { MessageCircle } from "lucide-react";
 
 // ======================================================
 // TYPES
@@ -69,7 +66,7 @@ type NavGroup = {
 };
 
 // ======================================================
-// ADMIN NAV (SUPER_ADMIN only)
+// ADMIN NAV
 // ======================================================
 const ADMIN_NAV: NavGroup[] = [
   {
@@ -86,9 +83,7 @@ const ADMIN_NAV: NavGroup[] = [
   },
   {
     group: "Marketplace",
-    items: [
-      { to: "/admin/offers", label: "Offers", icon: FileText },
-    ],
+    items: [{ to: "/admin/offers", label: "Offers", icon: FileText }],
   },
   {
     group: "Finance",
@@ -109,12 +104,13 @@ const ADMIN_NAV: NavGroup[] = [
   },
   {
     group: "Account",
-    items: [
-      { to: "/settings", label: "My Account", icon: Settings },
-    ],
+    items: [{ to: "/settings", label: "My Account", icon: Settings }],
   },
 ];
 
+// ======================================================
+// APP NAV
+// ======================================================
 const APP_NAV: NavGroup[] = [
   {
     group: "Workspace",
@@ -125,53 +121,52 @@ const APP_NAV: NavGroup[] = [
     ],
   },
   {
-    group: "Commerce",
-    items: [
-      { to: "/brands", label: "Brand", icon: Palette, permissions: ["brand.read"], excludeRoles: ["INFLUENCER"] },
-      { to: "/products", label: "Products", icon: Shapes, permissions: ["product.read"], excludeRoles: ["INFLUENCER"] },
-    ],
-  },
-  {
     group: "Agency portfolio",
     items: [
-      { to: "/agency/clients", label: "Client organizations", icon: Briefcase, roles: ["AGENCY"] },
+      { to: "/agency", label: "Agency home", icon: Briefcase, roles: ["AGENCY"] },
+      { to: "/agency/clients", label: "Client brands", icon: UsersRound, roles: ["AGENCY"] },
       { to: "/agency/campaigns", label: "All campaigns", icon: Megaphone, roles: ["AGENCY"] },
       { to: "/agency/editing", label: "Editing queue", icon: Camera, roles: ["AGENCY"] },
     ],
   },
   {
+    group: "Commerce",
+    items: [
+      { to: "/brands", label: "Brand", icon: Palette, permissions: ["brand.read"], excludeRoles: ["INFLUENCER", "AGENCY"] },
+      { to: "/products", label: "Products", icon: Shapes, permissions: ["product.read"], excludeRoles: ["INFLUENCER", "AGENCY"] },
+    ],
+  },
+  {
     group: "Influencer intelligence",
     items: [
-      { to: "/influencers", label: "Discover", icon: Search, permissions: ["influencer.read"], excludeRoles: ["INFLUENCER"] },
-      { to: "/matching", label: "AI matching", icon: Target, permissions: ["influencer.read"], excludeRoles: ["INFLUENCER"] },
+      { to: "/influencers", label: "Discover", icon: Search, permissions: ["influencer.read"], excludeRoles: ["INFLUENCER", "AGENCY"] },
+      { to: "/matching", label: "AI matching", icon: Target, permissions: ["influencer.read"], excludeRoles: ["INFLUENCER", "AGENCY"] },
     ],
   },
   {
     group: "Collaborations",
     items: [
-      { to: "/offers", label: "Offers", icon: FileText, permissions: ["influencer.read"], excludeRoles: ["SHOPPER"] },
-      { to: "/offers/browse", label: "Browse offers", icon: Package, roles: ["BRAND_OWNER", "BRAND_TEAM_MEMBER", "AGENCY"] },
+      { to: "/offers", label: "Offers", icon: FileText, permissions: ["influencer.read"], excludeRoles: ["SHOPPER", "AGENCY"] },
+      { to: "/offers/browse", label: "Browse offers", icon: Package, roles: ["BRAND_OWNER", "BRAND_TEAM_MEMBER"] },
     ],
   },
-     {
+  {
     group: "AI Studio",
     items: [
-      { to: "/studio/content", label: "Content Studio", icon: Sparkles, roles: ["BRAND_OWNER", "BRAND_TEAM_MEMBER", "AGENCY"] },
-      { to: "/studio/photography", label: "AI Photography", icon: Camera, roles: ["BRAND_OWNER", "BRAND_TEAM_MEMBER", "AGENCY"] },
+      { to: "/studio/content", label: "Content Studio", icon: Sparkles, roles: ["BRAND_OWNER", "BRAND_TEAM_MEMBER"] },
+      { to: "/studio/photography", label: "AI Photography", icon: Camera, roles: ["BRAND_OWNER", "BRAND_TEAM_MEMBER"] },
     ],
   },
   {
     group: "Marketing",
     items: [
-      { to: "/campaigns", label: "Campaigns", icon: Megaphone, excludeRoles: ["SHOPPER"] },
-      { to: "/analytics", label: "Analytics", icon: BarChart3, excludeRoles: ["SHOPPER"] },
+      { to: "/campaigns", label: "Campaigns", icon: Megaphone, excludeRoles: ["SHOPPER", "AGENCY"] },
+      { to: "/analytics", label: "Analytics", icon: BarChart3, excludeRoles: ["SHOPPER", "AGENCY"] },
     ],
   },
   {
     group: "Finances",
-    items: [
-      { to: "/wallet", label: "Wallet", icon: Wallet, excludeRoles: ["SHOPPER"] },
-    ],
+    items: [{ to: "/wallet", label: "Wallet", icon: Wallet, excludeRoles: ["SHOPPER"] }],
   },
   {
     group: "My account",
@@ -182,12 +177,12 @@ const APP_NAV: NavGroup[] = [
       { to: "/matched-products", label: "Matched Products", icon: Sparkles, permissions: ["influencer.read"], roles: ["INFLUENCER"] },
     ],
   },
-    {
+  {
     group: "Administration",
     items: [
       { to: "/team", label: "Team", icon: UsersRound, excludeRoles: ["INFLUENCER", "SHOPPER"] },
-      { to: "/billing", label: "Billing", icon: BadgeDollarSign, roles: ["BRAND_OWNER", "AGENCY"] },
-      { to: "/plans", label: "Plans & Pricing", icon: Sparkles }, 
+      { to: "/billing", label: "Billing", icon: BadgeDollarSign, roles: ["BRAND_OWNER"] },
+      { to: "/plans", label: "Plans & Pricing", icon: Sparkles, roles: ["BRAND_OWNER"] },
       { to: "/settings", label: "Settings", icon: Settings, excludeRoles: ["SHOPPER"] },
     ],
   },
@@ -257,11 +252,7 @@ function SidebarNav({
   function canSeeItem(item: NavItem): boolean {
     if (user?.pendingApproval) return false;
 
-    if (item.excludeRoles?.length) {
-      const blocked = item.excludeRoles.some((r) => userRoles.includes(r as RoleName));
-      if (blocked) return false;
-    }
-
+    // Explicit role allow-list
     if (item.roles?.length) {
       const allowed = item.roles.some((r) => userRoles.includes(r as RoleName));
       if (!allowed) return false;
@@ -271,8 +262,15 @@ function SidebarNav({
       return true;
     }
 
+    // Explicit role block
+    if (item.excludeRoles?.length) {
+      const blocked = item.excludeRoles.some((r) => userRoles.includes(r as RoleName));
+      if (blocked) return false;
+    }
+
+    // Influencer whitelist
     if (isInfluencer) {
-            const allowed = [
+      const allowed = [
         "/dashboard",
         "/messages",
         "/notifications",
@@ -289,20 +287,18 @@ function SidebarNav({
       return allowed.includes(item.to);
     }
 
+    // Agency whitelist — only their own portfolio tools
     if (isAgencyRole) {
       const allowed = [
         "/dashboard",
         "/messages",
         "/notifications",
+        "/agency",
         "/agency/clients",
         "/agency/campaigns",
         "/agency/editing",
-        "/influencers",
-        "/offers",
-        "/offers/browse",
-        "/campaigns",
-        "/analytics",
         "/wallet",
+        "/team",
         "/settings",
       ];
       return allowed.includes(item.to);
@@ -362,7 +358,7 @@ function SidebarNav({
 }
 
 // ======================================================
-// AGENCY BRAND SWITCHER
+// AGENCY BRAND SWITCHER (header quick-switch)
 // ======================================================
 function AgencyBrandSwitcher() {
   const { isAgency, clients, activeBrandId, setActiveBrand } = useAgency();
@@ -376,18 +372,20 @@ function AgencyBrandSwitcher() {
   if (allBrands.length === 0) {
     return (
       <span className="hidden rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] font-medium text-amber-500 sm:inline">
-        No clients
+        No clients yet
       </span>
     );
   }
 
   return (
     <div className="hidden items-center gap-2 rounded-md border border-border bg-card px-2 py-1 sm:flex">
-      <span className="text-[10px] font-medium uppercase text-muted-foreground">Acting as</span>
+      <span className="text-[10px] font-medium uppercase text-muted-foreground">
+        Acting as
+      </span>
       <select
         value={activeBrandId ?? ""}
         onChange={(e) => setActiveBrand(e.target.value || null)}
-        className="max-w-[180px] truncate bg-transparent text-xs font-medium outline-none"
+        className="max-w-[180px] truncate cursor-pointer bg-transparent text-xs font-medium outline-none"
       >
         <option value="">— none —</option>
         {allBrands.map((b) => (
@@ -401,16 +399,52 @@ function AgencyBrandSwitcher() {
 }
 
 // ======================================================
+// AGENCY ACTING-AS BANNER (below header)
+// ======================================================
+function AgencyActingBanner() {
+  const { isAgency, activeBrandId, activeBrandName, setActiveBrand } = useAgency();
+  if (!isAgency || !activeBrandId) return null;
+
+  return (
+    <div className="sticky top-16 z-10 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 sm:px-6">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <Briefcase className="size-3.5 text-amber-500" />
+        <span className="text-muted-foreground">Acting as</span>
+        <strong className="text-foreground">
+          {activeBrandName || "a client brand"}
+        </strong>
+        <span className="text-muted-foreground">
+          — all actions apply to this brand
+        </span>
+        <button
+          type="button"
+          onClick={() => setActiveBrand(null)}
+          className="ml-auto rounded-md bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+        >
+          Stop acting
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ======================================================
 // BRANDMARK
 // ======================================================
 function Brandmark({ collapsed }: { collapsed?: boolean }) {
   return (
-    <Link to="/dashboard" className="flex items-center gap-2.5" aria-label="StyleAI workspace">
+    <Link
+      to="/dashboard"
+      className="flex items-center gap-2.5"
+      aria-label="StyleAI workspace"
+    >
       <span className="grid size-8 shrink-0 place-items-center rounded-md bg-foreground text-background">
         <span className="font-display text-sm leading-none">S</span>
       </span>
       {!collapsed && (
-        <span className="font-display text-[15px] font-medium tracking-tight">StyleAI</span>
+        <span className="font-display text-[15px] font-medium tracking-tight">
+          StyleAI
+        </span>
       )}
     </Link>
   );
@@ -475,82 +509,9 @@ function getPromptSetForRoles(userRoles: string[]): PromptSet {
   return BRAND_PROMPTS;
 }
 
-// function Assistant() {
-//   const { user } = useRole();
-//   const [open, setOpen] = useState(false);
-//   const [query, setQuery] = useState("");
-
-//   const promptSet = getPromptSetForRoles(user?.roles ?? []);
-
-//   function submitSuggestion(text: string) {
-//     setQuery(text);
-//   }
-
-//   function submitCustom(e: React.FormEvent) {
-//     e.preventDefault();
-//     if (!query.trim()) return;
-//   }
-
-//   return (
-//     <>
-//       <Button size="sm" className="gap-2" onClick={() => setOpen(true)}>
-//         <Sparkles className="size-4" />
-//         <span className="hidden sm:inline">Ask StyleAI</span>
-//       </Button>
-
-//       {open && (
-//         <div className="fixed inset-0 z-50 flex items-start justify-center bg-foreground/20 p-4 pt-24 backdrop-blur-sm">
-//           <div className="w-full max-w-xl overflow-hidden rounded-xl border border-border bg-card shadow-lift">
-//             <form onSubmit={submitCustom} className="flex items-center gap-3 border-b border-border px-4 py-3">
-//               <Sparkles className="size-4 text-accent" aria-hidden="true" />
-//               <input
-//                 autoFocus
-//                 value={query}
-//                 onChange={(e) => setQuery(e.target.value)}
-//                 placeholder={promptSet.placeholder}
-//                 aria-label="Ask StyleAI Assistant"
-//                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-//               />
-//               <Button
-//                 type="button"
-//                 variant="ghost"
-//                 size="icon"
-//                 aria-label="Close assistant"
-//                 onClick={() => { setOpen(false); setQuery(""); }}
-//               >
-//                 <X />
-//               </Button>
-//             </form>
-
-//             <div className="p-3">
-//               <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-//                 Suggested for you
-//               </p>
-//               <ul className="space-y-0.5">
-//                 {promptSet.suggestions.map((p) => (
-//                   <li key={p}>
-//                     <button
-//                       type="button"
-//                       onClick={() => submitSuggestion(p)}
-//                       className="w-full rounded-md px-2 py-2 text-left text-sm hover:bg-muted"
-//                     >
-//                       {p}
-//                     </button>
-//                   </li>
-//                 ))}
-//               </ul>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </>
-//   );
-// }
-
 function Assistant() {
   const { user } = useRole();
   const [open, setOpen] = useState(false);
-
   const promptSet = getPromptSetForRoles(user?.roles ?? []);
 
   return (
@@ -596,23 +557,28 @@ function AppShellInner({
   breadcrumb?: string[];
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, logout } = useRole();
 
   const userRoles = user?.roles ?? [];
   const isAdmin = userRoles.includes("SUPER_ADMIN");
-  const isOwner = userRoles.some((r) => ["BRAND_OWNER", "AGENCY"].includes(r));
+  const isBrandOwner = userRoles.includes("BRAND_OWNER");
 
   return (
     <TooltipProvider delayDuration={300}>
       <div className="min-h-screen bg-background text-foreground">
+        {/* Sidebar */}
         <aside
           className={cn(
             "fixed inset-y-0 left-0 z-30 hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 lg:flex",
             collapsed ? "w-[68px]" : "w-[248px]"
           )}
         >
-          <div className={cn("flex h-16 items-center border-b border-sidebar-border px-4", collapsed && "justify-center px-0")}>
+          <div
+            className={cn(
+              "flex h-16 items-center border-b border-sidebar-border px-4",
+              collapsed && "justify-center px-0"
+            )}
+          >
             <Brandmark collapsed={collapsed} />
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -625,18 +591,33 @@ function AppShellInner({
               className="w-full justify-start gap-3 text-muted-foreground"
               onClick={() => setCollapsed((c) => !c)}
             >
-              {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+              {collapsed ? (
+                <PanelLeftOpen className="size-4" />
+              ) : (
+                <PanelLeftClose className="size-4" />
+              )}
               {!collapsed && "Collapse"}
             </Button>
           </div>
         </aside>
 
-        <div className={cn("transition-[padding] duration-200", collapsed ? "lg:pl-[68px]" : "lg:pl-[248px]")}>
+        <div
+          className={cn(
+            "transition-[padding] duration-200",
+            collapsed ? "lg:pl-[68px]" : "lg:pl-[248px]"
+          )}
+        >
+          {/* Header */}
           <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
             <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden"
+                    aria-label="Open navigation"
+                  >
                     <Command />
                   </Button>
                 </SheetTrigger>
@@ -651,11 +632,21 @@ function AppShellInner({
                 </SheetContent>
               </Sheet>
 
-              <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-2 text-sm text-muted-foreground lg:flex">
+              <nav
+                aria-label="Breadcrumb"
+                className="hidden min-w-0 items-center gap-2 text-sm text-muted-foreground lg:flex"
+              >
                 {breadcrumb.map((crumb, i) => (
                   <span key={crumb} className="flex min-w-0 items-center gap-2">
                     <span className="text-border">/</span>
-                    <span className={cn("truncate", i === breadcrumb.length - 1 && "text-foreground")}>{crumb}</span>
+                    <span
+                      className={cn(
+                        "truncate",
+                        i === breadcrumb.length - 1 && "text-foreground"
+                      )}
+                    >
+                      {crumb}
+                    </span>
                   </span>
                 ))}
               </nav>
@@ -667,11 +658,18 @@ function AppShellInner({
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="Help" className="hidden sm:inline-flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Help"
+                      className="hidden sm:inline-flex"
+                    >
                       <HelpCircle />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Help &amp; documentation</p></TooltipContent>
+                  <TooltipContent side="bottom">
+                    <p>Help &amp; documentation</p>
+                  </TooltipContent>
                 </Tooltip>
 
                 <DropdownMenu>
@@ -681,18 +679,29 @@ function AppShellInner({
                       aria-label="Open user menu"
                     >
                       {user?.name
-                        ? user.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()
+                        ? user.name
+                            .split(" ")
+                            .map((p) => p[0])
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase()
                         : "S"}
                     </button>
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent align="end" className="w-60">
                     <div className="border-b border-border px-3 py-2.5">
-                      <p className="truncate text-sm font-medium">{user?.name ?? "User"}</p>
-                      <p className="truncate text-xs text-muted-foreground">{user?.email ?? ""}</p>
+                      <p className="truncate text-sm font-medium">
+                        {user?.name ?? "User"}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {user?.email ?? ""}
+                      </p>
                       {user?.roles?.length ? (
                         <p className="mt-1 inline-flex rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
-                          {user.roles.map((r) => r.replace(/_/g, " ").toLowerCase()).join(" · ")}
+                          {user.roles
+                            .map((r) => r.replace(/_/g, " ").toLowerCase())
+                            .join(" · ")}
                         </p>
                       ) : null}
                     </div>
@@ -713,7 +722,7 @@ function AppShellInner({
                       </DropdownMenuItem>
                     )}
 
-                    {isOwner && (
+                    {isBrandOwner && (
                       <DropdownMenuItem asChild>
                         <Link to="/billing" className="cursor-pointer">
                           <BadgeDollarSign className="size-4" />
@@ -732,7 +741,10 @@ function AppShellInner({
                     </DropdownMenuItem>
 
                     <DropdownMenuItem asChild>
-                      <button onClick={logout} className="flex w-full cursor-pointer items-center gap-2 text-destructive focus:text-destructive">
+                      <button
+                        onClick={logout}
+                        className="flex w-full cursor-pointer items-center gap-2 text-destructive focus:text-destructive"
+                      >
                         <LogOut className="size-4" />
                         <span>Sign out</span>
                       </button>
@@ -742,6 +754,9 @@ function AppShellInner({
               </div>
             </div>
           </header>
+
+          {/* Agency acting-as banner */}
+          <AgencyActingBanner />
 
           <main className="mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
             {children}

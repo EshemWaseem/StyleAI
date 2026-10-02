@@ -18,6 +18,7 @@ router.patch('/:offerId', ctrl.update);
 
 // ----- State transitions -----
 router.post('/:offerId/submit', ctrl.submit);
+router.post('/:offerId/cancel', ctrl.cancel);
 router.post('/:offerId/admin-review', ctrl.adminReview);
 router.post('/:offerId/influencer-review', ctrl.influencerReview);
 

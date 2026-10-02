@@ -16,7 +16,7 @@ const {
 } = require('../../config/platformCatalog');
 
 // ------------------------------------------------------
-// Finance rules resolver — DB override or code defaults
+// Finance rules resolver
 // ------------------------------------------------------
 async function getFinanceRules() {
   const all = await getAllSettings();
@@ -24,7 +24,7 @@ async function getFinanceRules() {
 }
 
 // ------------------------------------------------------
-// Validate ONE offer line item against platformCatalog
+// Validate ONE offer line item
 // ------------------------------------------------------
 function validateOfferItem(item, index) {
   if (!item || typeof item !== 'object') {
@@ -60,7 +60,7 @@ function validateOfferItem(item, index) {
 }
 
 // ------------------------------------------------------
-// Full offer math — pulls rates from finance settings
+// Full offer math
 // ------------------------------------------------------
 async function computeOfferTotals({ items, currency, influencer }) {
   if (!Array.isArray(items) || items.length === 0) {
@@ -74,7 +74,6 @@ async function computeOfferTotals({ items, currency, influencer }) {
 
   const finance = await getFinanceRules();
 
-  // Bulk discount — only when rules say so
   const threshold = Number(finance.bulkDiscountThreshold ?? 0);
   const discountPct = Number(finance.bulkDiscountPct ?? 0);
   const totalQty = cleanedItems.reduce((s, it) => s + it.quantity, 0);
@@ -82,14 +81,12 @@ async function computeOfferTotals({ items, currency, influencer }) {
     threshold > 0 && totalQty >= threshold ? discountPct : 0;
   const discountAmount = Math.round(subtotal * (appliedDiscountPct / 100) * 100) / 100;
 
-  // Admin fee (brand commission)
   const adminFeePct = Number(finance.brandCommissionPct ?? 0);
   const preFee = subtotal - discountAmount;
   const adminFee = Math.round(preFee * (adminFeePct / 100) * 100) / 100;
 
   const total = Math.round((preFee + adminFee) * 100) / 100;
 
-  // Influencer floor
   if (influencer?.minBudget != null) {
     const minBudget = Number(influencer.minBudget);
     if (total < minBudget) {
@@ -113,7 +110,8 @@ async function computeOfferTotals({ items, currency, influencer }) {
 }
 
 // ------------------------------------------------------
-// API shaping — hides Decimal noise, exposes relations
+// API shaping — includes ownership IDs so frontend can
+// compute per-viewer permissions
 // ------------------------------------------------------
 function shapeOffer(offer, { brand, influencer } = {}) {
   return {
@@ -140,11 +138,18 @@ function shapeOffer(offer, { brand, influencer } = {}) {
     createdAt: offer.createdAt,
     updatedAt: offer.updatedAt,
     brand: brand
-      ? { id: brand.id, name: brand.name, slug: brand.slug, logoUrl: brand.logoUrl }
+      ? {
+          id: brand.id,
+          organizationId: brand.organizationId,   // ← ADDED (for ownership check)
+          name: brand.name,
+          slug: brand.slug,
+          logoUrl: brand.logoUrl,
+        }
       : undefined,
     influencer: influencer
       ? {
           id: influencer.id,
+          userId: influencer.userId,              // ← ADDED (for ownership check)
           displayName: influencer.displayName,
           username: influencer.username,
           slug: influencer.slug,

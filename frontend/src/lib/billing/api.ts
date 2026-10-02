@@ -18,4 +18,12 @@ export const billingApi = {
 
   cancel: () => http.post<{ subscription: Subscription }>('/api/billing/cancel', {}),
   resume: () => http.post<{ subscription: Subscription }>('/api/billing/resume', {}),
+
+  /** Delete a single FAILED invoice */
+  deleteInvoice: (id: string) =>
+    http.delete<{ success: true; id: string }>(`/api/billing/invoices/${id}`),
+
+  /** Delete all FAILED invoices in current org */
+  deleteAllFailed: () =>
+    http.delete<{ success: true; deleted: number }>('/api/billing/invoices'),
 };

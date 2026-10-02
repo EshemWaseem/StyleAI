@@ -7,7 +7,11 @@ frontend/node_modules/
 .env.production
 dist/
 build/
-
+*.sql
+backup_before_pgvector.sql
+backup_before_team_refactor.sql
+backup_users.sql
+check.sql
 
 
 # Python

@@ -1,3 +1,4 @@
+// frontend/src/routes/agency.campaigns.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, Megaphone, Camera, CheckCircle2, Clock } from "lucide-react";

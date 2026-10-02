@@ -1,6 +1,4 @@
-// frontend/src/routes/dashboard.tsx 
-
-
+// frontend/src/routes/dashboard.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { influencersApi, type Influencer } from "@/lib/influencers";
@@ -8,9 +6,7 @@ import {
   ArrowRight,
   BadgeDollarSign,
   Building2,
-  CalendarDays,
   CheckCircle2,
-  CircleDollarSign,
   Clock3,
   FileCheck2,
   Heart,
@@ -19,7 +15,6 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
-  TrendingUp,
   UsersRound,
   WandSparkles,
 } from "lucide-react";
@@ -34,9 +29,7 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle, StatusPill } from "@/components/ui-kit";
-// import { campaigns, revenueSeries } from "@/lib/styleai-data";
 import { useRole, roleLabels, type RoleName } from "@/lib/role";
-// import { productsApi, type Product as RealProduct } from "@/lib/products";
 import { analyticsApi, type BrandAnalytics } from "@/lib/analytics";
 import { recommendationsApi, type Recommendation } from "@/lib/recommendations";
 import {
@@ -45,19 +38,12 @@ import {
   type Product as RealProduct,
   type PublicProduct,
 } from "@/lib/products";
-// Static assets for influencer workspace cards
-import noirDress from "@/assets/p-noir-dress.jpg";
-import leatherBag from "@/assets/p-leather-bag.jpg";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Role Workspace — StyleAI" },
       { name: "description", content: "A role-adaptive StyleAI command center." },
-      { property: "og:title", content: "Role Workspace — StyleAI" },
-      { property: "og:description", content: "Your tailored workspace." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Dashboard,
@@ -75,7 +61,7 @@ const ROLE_TO_WORKSPACE: Record<RoleName, WorkspaceKey> = {
   BRAND_TEAM_MEMBER: "member",
   INFLUENCER: "influencer",
   AGENCY: "agency",
-  SHOPPER: "owner", // never used — shopper redirects to storefront
+  SHOPPER: "owner",
 };
 
 function pickWorkspace(roles: RoleName[]): WorkspaceKey {
@@ -126,7 +112,7 @@ const roleCopy: Record<
   },
   agency: {
     eyebrow: "Agency portfolio",
-    title: "Nine Studios, across every client.",
+    title: "Your agency, in motion.",
     description:
       "Balance approvals, creator delivery, and performance across your brand portfolio.",
   },
@@ -157,10 +143,10 @@ const roleStats: Record<WorkspaceKey, Stat[]> = {
     { label: "Creator reach", value: "1.2M", note: "Across 3 platforms" },
   ],
   agency: [
-    { label: "Managed brands", value: "12", note: "3 need attention", tone: "warning" },
-    { label: "Portfolio revenue", value: "$284K", note: "+16.2% this month", tone: "success" },
-    { label: "Active campaigns", value: "28", note: "Across 7 markets" },
-    { label: "Approval SLA", value: "5.2h", note: "1.4h faster", tone: "success" },
+    { label: "Managed brands", value: "0", note: "Invite your first brand" },
+    { label: "Portfolio revenue", value: "$0", note: "No campaigns yet" },
+    { label: "Active campaigns", value: "0", note: "Across all clients" },
+    { label: "Approval SLA", value: "—", note: "Awaiting activity" },
   ],
   member: [
     { label: "Assigned to me", value: "7", note: "3 due today", tone: "warning" },
@@ -174,59 +160,43 @@ const roleStats: Record<WorkspaceKey, Stat[]> = {
 // Shared sub-components
 // ======================================================
 
-// function StatStrip({ role }: { role: WorkspaceKey }) {
-//   return (
-//     <section className="mt-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
-//       {roleStats[role].map((stat) => (
-//         <article key={stat.label} className="bg-card p-5">
-//           <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//             {stat.label}
-//           </p>
-//           <p className="mt-3 font-display text-3xl text-foreground">{stat.value}</p>
-//           <p
-//             className={`mt-2 text-xs ${
-//               stat.tone === "success"
-//                 ? "text-success"
-//                 : stat.tone === "warning"
-//                 ? "text-warning"
-//                 : "text-muted-foreground"
-//             }`}
-//           >
-//             {stat.note}
-//           </p>
-//         </article>
-//       ))}
-//     </section>
-//   );
-// }
-function StatStrip({ role, analytics }: { role: WorkspaceKey; analytics?: BrandAnalytics | null }) {
-  // For owner, use real analytics; for other roles, keep placeholder for now
-  const stats: Stat[] = role === "owner" && analytics
-    ? [
-        {
-          label: "Attributed revenue",
-          value: `$${(analytics.summary.revenue || 0).toLocaleString()}`,
-          note: analytics.roi >= 1 ? `ROI ${analytics.roi.toFixed(2)}×` : "Below break-even",
-          tone: analytics.roi >= 1 ? "success" : "warning",
-        },
-        {
-          label: "Campaign ROI",
-          value: `${analytics.roi.toFixed(2)}×`,
-          note: analytics.roi >= 1 ? "Profitable" : "Not yet profitable",
-          tone: analytics.roi >= 1 ? "success" : "warning",
-        },
-        {
-          label: "Conversions",
-          value: (analytics.summary.conversions || 0).toLocaleString(),
-          note: `${analytics.activeCampaigns} active campaigns`,
-        },
-        {
-          label: "Creator reach",
-          value: (analytics.summary.reach || 0).toLocaleString(),
-          note: `${analytics.campaignCount} campaigns total`,
-        },
-      ]
-    : roleStats[role];
+function StatStrip({
+  role,
+  analytics,
+}: {
+  role: WorkspaceKey;
+  analytics?: BrandAnalytics | null;
+}) {
+  const stats: Stat[] =
+    role === "owner" && analytics
+      ? [
+          {
+            label: "Attributed revenue",
+            value: `$${(analytics.summary.revenue || 0).toLocaleString()}`,
+            note:
+              analytics.roi >= 1
+                ? `ROI ${analytics.roi.toFixed(2)}×`
+                : "Below break-even",
+            tone: analytics.roi >= 1 ? "success" : "warning",
+          },
+          {
+            label: "Campaign ROI",
+            value: `${analytics.roi.toFixed(2)}×`,
+            note: analytics.roi >= 1 ? "Profitable" : "Not yet profitable",
+            tone: analytics.roi >= 1 ? "success" : "warning",
+          },
+          {
+            label: "Conversions",
+            value: (analytics.summary.conversions || 0).toLocaleString(),
+            note: `${analytics.activeCampaigns} active campaigns`,
+          },
+          {
+            label: "Creator reach",
+            value: (analytics.summary.reach || 0).toLocaleString(),
+            note: `${analytics.campaignCount} campaigns total`,
+          },
+        ]
+      : roleStats[role];
 
   return (
     <section className="mt-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
@@ -298,22 +268,28 @@ function ProductLoop() {
   );
 }
 
+// ======================================================
+// TrendPanel — COMPLETE version (previously truncated)
+// ======================================================
 function TrendPanel({
   title,
   description,
-  series,
+  series = [],
 }: {
   title: string;
   description: string;
-  series: Array<{ day: string; revenue: number; conversions: number }>;
+  series?: Array<{ day: string; revenue: number; conversions: number }>;
 }) {
-  const hasData = series.length > 0;
+  const hasData = Array.isArray(series) && series.length > 0;
+
   return (
     <Panel>
       <SectionTitle
         title={title}
         description={description}
-        action={<span className="text-xs text-muted-foreground">Last 6 weeks</span>}
+        action={
+          <span className="text-xs text-muted-foreground">Last 6 weeks</span>
+        }
       />
       <div className="h-56 w-full">
         {!hasData ? (
@@ -325,14 +301,42 @@ function TrendPanel({
             <AreaChart data={series} margin={{ left: 0, right: 8, top: 12 }}>
               <defs>
                 <linearGradient id="roleTrend" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.32} />
-                  <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
+                  <stop
+                    offset="0%"
+                    stopColor="var(--color-accent)"
+                    stopOpacity={0.32}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--color-accent)"
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="var(--color-border)" vertical={false} />
-              <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
-              <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-card)", color: "var(--color-foreground)", fontSize: 12 }} />
-              <Area type="monotone" dataKey="revenue" stroke="var(--color-accent)" strokeWidth={2} fill="url(#roleTrend)" />
+              <XAxis
+                dataKey="day"
+                tickLine={false}
+                axisLine={false}
+                fontSize={11}
+                stroke="var(--color-muted-foreground)"
+              />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: 8,
+                  border: "1px solid var(--color-border)",
+                  background: "var(--color-card)",
+                  color: "var(--color-foreground)",
+                  fontSize: 12,
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="revenue"
+                stroke="var(--color-accent)"
+                strokeWidth={2}
+                fill="url(#roleTrend)"
+              />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -341,7 +345,15 @@ function TrendPanel({
   );
 }
 
-function Risk({ label, meta, level }: { label: string; meta: string; level: string }) {
+function Risk({
+  label,
+  meta,
+  level,
+}: {
+  label: string;
+  meta: string;
+  level: string;
+}) {
   return (
     <div className="flex items-center gap-3 rounded-md border border-border p-3">
       <ShieldCheck className="size-4 text-accent" />
@@ -375,24 +387,6 @@ function Task({
         <p className="truncate text-xs text-muted-foreground">{meta}</p>
       </div>
       <StatusPill status={status} />
-    </div>
-  );
-}
-
-function MiniSignal({
-  icon: Icon,
-  value,
-  label,
-}: {
-  icon: typeof Heart;
-  value: string;
-  label: string;
-}) {
-  return (
-    <div className="rounded-md border border-border p-4">
-      <Icon className="size-4 text-accent" />
-      <p className="mt-4 font-display text-2xl">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }
@@ -466,7 +460,10 @@ function AdminWorkspace() {
         </div>
       </Panel>
       <Panel>
-        <SectionTitle title="Trust & risk" description="Signals requiring operator attention." />
+        <SectionTitle
+          title="Trust & risk"
+          description="Signals requiring operator attention."
+        />
         <div className="space-y-3">
           <Risk label="Unusual token volume" meta="Atelier North · 12 min ago" level="Review" />
           <Risk label="Dataset consent expires" meta="Creator EU set · 3 days" level="Planned" />
@@ -477,463 +474,9 @@ function AdminWorkspace() {
   );
 }
 
-
-// function InfluencerWorkspace() {
-//   const [profile, setProfile] = useState<Influencer | null>(null);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     influencersApi
-//       .getMe()
-//       .then((res) => setProfile(res.influencer))
-//       .catch(() => setProfile(null))
-//       .finally(() => setLoading(false));
-//   }, []);
-
-//   if (loading) {
-//     return (
-//       <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
-//         <p className="text-sm text-muted-foreground">Loading your profile…</p>
-//       </div>
-//     );
-//   }
-
-//   if (!profile) {
-//     return (
-//       <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
-//         <p className="text-sm text-muted-foreground">
-//           Could not load your profile. Please try again.
-//         </p>
-//       </div>
-//     );
-//   }
-
-//   const needsSetup = !profile.profileCompleted;
-
-//   return (
-//     <>
-//       {needsSetup && (
-//         <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
-//           <div className="flex items-start justify-between gap-4">
-//             <div>
-//               <p className="text-sm font-medium">Complete your profile</p>
-//               <p className="mt-1 text-xs text-muted-foreground">
-//                 Add your bio, social accounts, and categories so brands can
-//                 discover you.
-//               </p>
-//             </div>
-//             <Button asChild size="sm">
-//               <Link to="/influencers/$slug" params={{ slug: profile.slug }}>
-//                 Setup profile
-//               </Link>
-//             </Button>
-//           </div>
-//         </div>
-//       )}
-
-//       <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-//         <Panel>
-//           <SectionTitle
-//             title="Matched opportunities"
-//             description="Invitations selected for your audience and content style."
-//           />
-//           <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
-//             <Sparkles className="mx-auto size-6 text-muted-foreground" />
-//             <p className="mt-3 text-sm font-medium">No opportunities yet</p>
-//             <p className="mt-1 text-xs text-muted-foreground">
-//               Brand invitations will appear here once the campaign system goes
-//               live.
-//             </p>
-//           </div>
-//         </Panel>
-
-//         <Panel>
-//           <SectionTitle
-//             title="Deliverables"
-//             description="Your next committed actions."
-//           />
-//           <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
-//             <FileCheck2 className="mx-auto size-6 text-muted-foreground" />
-//             <p className="mt-3 text-sm font-medium">No deliverables</p>
-//             <p className="mt-1 text-xs text-muted-foreground">
-//               Accepted campaigns will show their tasks here.
-//             </p>
-//           </div>
-//         </Panel>
-
-//         <Panel className="xl:col-span-2">
-//           <SectionTitle
-//             title="Your profile"
-//             description="Live data from your creator profile."
-//           />
-//           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-//             <div className="rounded-lg border border-border p-4">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Followers
-//               </p>
-//               <p className="mt-2 font-display text-2xl font-medium tabular-nums">
-//                 {profile.followerCount.toLocaleString()}
-//               </p>
-//             </div>
-//             <div className="rounded-lg border border-border p-4">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Engagement
-//               </p>
-//               <p className="mt-2 font-display text-2xl font-medium tabular-nums">
-//                 {(profile.engagementRate * 100).toFixed(2)}%
-//               </p>
-//             </div>
-//             <div className="rounded-lg border border-border p-4">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Starting rate
-//               </p>
-//               <p className="mt-2 font-display text-2xl font-medium tabular-nums">
-//                 {profile.pricePerPost != null
-//                   ? `${profile.currency} ${profile.pricePerPost}`
-//                   : "—"}
-//               </p>
-//             </div>
-//             <div className="rounded-lg border border-border p-4">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Status
-//               </p>
-//               <p className="mt-2 font-display text-2xl font-medium">
-//                 {profile.availability === "AVAILABLE" ? "Available" : profile.availability}
-//               </p>
-//             </div>
-//           </div>
-
-//           {/* {profile.categories.length > 0 && (
-//             <div className="mt-5">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Categories
-//               </p>
-//               <div className="mt-2 flex flex-wrap gap-2">
-//                 {profile.categories.map((c) => (
-//                   <span
-//                     key={c}
-//                     className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
-//                   >
-//                     {c}
-//                   </span>
-//                 ))}
-//               </div>
-//             </div>
-//           )}
-//         </Panel> */}
-
-//                   {profile.categories.length > 0 && (
-//             <div className="mt-5">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Categories
-//               </p>
-//               <div className="mt-2 flex flex-wrap gap-2">
-//                 {profile.categories.map((c) => (
-//                   <span
-//                     key={c}
-//                     className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
-//                   >
-//                     {c}
-//                   </span>
-//                 ))}
-//               </div>
-//             </div>
-//           )}
-
-//           {profile.audienceFavorites && profile.audienceFavorites.length > 0 && (
-//             <div className="mt-5">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Audience favorites
-//               </p>
-//               <div className="mt-2 flex flex-wrap gap-2">
-//                 {profile.audienceFavorites.map((name) => (
-//                   <span
-//                     key={name}
-//                     className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
-//                   >
-//                     {name}
-//                   </span>
-//                 ))}
-//               </div>
-//             </div>
-//           )}
-//         </Panel>
-//       </div>
-//     </>
-//   );
-// }
-
-
-
-// function InfluencerWorkspace() {
-//   const [profile, setProfile] = useState<Influencer | null>(null);
-//   const [matchedProducts, setMatchedProducts] = useState<PublicProduct[]>([]);
-//   const [productsLoading, setProductsLoading] = useState(false);
-//   const [loading, setLoading] = useState(true);
-
-//   // 1. Load influencer profile
-//   useEffect(() => {
-//     influencersApi
-//       .getMe()
-//       .then((res) => setProfile(res.influencer))
-//       .catch(() => setProfile(null))
-//       .finally(() => setLoading(false));
-//   }, []);
-
-//   // 2. Load products matching influencer's niche
-//   useEffect(() => {
-//     if (!profile || !profile.categories?.length) {
-//       setMatchedProducts([]);
-//       return;
-//     }
-
-//     setProductsLoading(true);
-//     publicProductsApi
-//       .list({ limit: 40 })
-//       .then((res) => {
-//         const lowerCats = profile.categories.map((c) => c.toLowerCase());
-//         const matched = res.products.filter((p) => {
-//           if (!p.category) return false;
-//           const pc = p.category.toLowerCase();
-//           return (
-//             lowerCats.includes(pc) ||
-//             lowerCats.some((lc) => pc.includes(lc) || lc.includes(pc))
-//           );
-//         });
-//         setMatchedProducts(matched);
-//       })
-//       .catch(() => setMatchedProducts([]))
-//       .finally(() => setProductsLoading(false));
-//   }, [profile]);
-
-//   if (loading) {
-//     return (
-//       <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
-//         <p className="text-sm text-muted-foreground">Loading your profile…</p>
-//       </div>
-//     );
-//   }
-
-//   if (!profile) {
-//     return (
-//       <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
-//         <p className="text-sm text-muted-foreground">
-//           Could not load your profile. Please try again.
-//         </p>
-//       </div>
-//     );
-//   }
-
-//   const needsSetup = !profile.profileCompleted;
-
-//   return (
-//     <>
-//       {needsSetup && (
-//         <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
-//           <div className="flex items-start justify-between gap-4">
-//             <div>
-//               <p className="text-sm font-medium">Complete your profile</p>
-//               <p className="mt-1 text-xs text-muted-foreground">
-//                 Add your bio, social accounts, and categories so brands can
-//                 discover you.
-//               </p>
-//             </div>
-//             <Button asChild size="sm">
-//               <Link to="/influencers/$slug" params={{ slug: profile.slug }}>
-//                 Setup profile
-//               </Link>
-//             </Button>
-//           </div>
-//         </div>
-//       )}
-
-//       <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-//         {/* ---------- Matched products from your niche ---------- */}
-//         <Panel>
-//                    <SectionTitle
-//             title="Products that match your niche"
-//             description={
-//               matchedProducts.length > 0
-//                 ? `Top ${Math.min(2, matchedProducts.length)} of ${matchedProducts.length} products in ${profile.categories.join(", ")}`
-//                 : "No products in your niche yet — explore or adjust your categories."
-//             }
-//             action={
-//               matchedProducts.length > 0 ? (
-//                 <Button asChild variant="outline" size="sm">
-//                   <Link to="/matched-products">Browse all</Link>
-//                 </Button>
-//               ) : null
-//             }
-//           />
-
-//           {productsLoading ? (
-//             <p className="py-10 text-center text-sm text-muted-foreground">
-//               Finding products in your niche…
-//             </p>
-//           ) : matchedProducts.length > 0 ? (
-//             <div className="grid gap-4 sm:grid-cols-2">
-//               {matchedProducts.slice(0, 2).map((p) => (
-//                 <Link
-//                   key={p.id}
-//                   to="/products/$slug"
-//                   params={{ slug: p.id }}
-//                   className="group overflow-hidden rounded-lg border border-border bg-background transition-shadow hover:shadow-lift"
-//                 >
-//                   {p.primaryImage ? (
-//                     <img
-//                       src={p.primaryImage}
-//                       alt={p.name}
-//                       className="h-32 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-//                     />
-//                   ) : (
-//                     <div className="grid h-32 w-full place-items-center bg-muted/30 text-xs text-muted-foreground">
-//                       No image
-//                     </div>
-//                   )}
-//                   <div className="p-4">
-//                     {p.category && (
-//                       <p className="text-xs text-accent">{p.category}</p>
-//                     )}
-//                     <h3 className="mt-1 font-display text-lg leading-snug">
-//                       {p.name}
-//                     </h3>
-//                     <p className="text-xs text-muted-foreground">
-//                       {p.brand.name}
-//                     </p>
-//                     {p.price != null && (
-//                       <p className="mt-2 text-sm font-medium tabular-nums">
-//                         {p.currency} {p.price}
-//                       </p>
-//                     )}
-//                   </div>
-//                 </Link>
-//               ))}
-//             </div>
-//           ) : (
-//             <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
-//               <Sparkles className="mx-auto size-6 text-muted-foreground" />
-//               <p className="mt-3 text-sm font-medium">
-//                 No matching products yet
-//               </p>
-//               <p className="mt-1 text-xs text-muted-foreground">
-//                 {profile.categories.length === 0
-//                   ? "Add categories to your profile so we can find products in your niche."
-//                   : "No live products match your niche right now. Check back later."}
-//               </p>
-//               {profile.categories.length === 0 && (
-//                 <Button asChild size="sm" className="mt-4">
-//                   <Link
-//                     to="/influencers/$slug"
-//                     params={{ slug: profile.slug }}
-//                   >
-//                     Add categories
-//                   </Link>
-//                 </Button>
-//               )}
-//             </div>
-//           )}
-//         </Panel>
-
-//         {/* ---------- Deliverables (unchanged) ---------- */}
-//         <Panel>
-//           <SectionTitle
-//             title="Deliverables"
-//             description="Your next committed actions."
-//           />
-//           <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
-//             <FileCheck2 className="mx-auto size-6 text-muted-foreground" />
-//             <p className="mt-3 text-sm font-medium">No deliverables</p>
-//             <p className="mt-1 text-xs text-muted-foreground">
-//               Accepted campaigns will show their tasks here.
-//             </p>
-//           </div>
-//         </Panel>
-
-//         {/* ---------- Your profile (unchanged) ---------- */}
-//         <Panel className="xl:col-span-2">
-//           <SectionTitle
-//             title="Your profile"
-//             description="Live data from your creator profile."
-//           />
-//           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-//             <div className="rounded-lg border border-border p-4">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Followers
-//               </p>
-//               <p className="mt-2 font-display text-2xl font-medium tabular-nums">
-//                 {profile.followerCount.toLocaleString()}
-//               </p>
-//             </div>
-//             <div className="rounded-lg border border-border p-4">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Engagement
-//               </p>
-//               <p className="mt-2 font-display text-2xl font-medium tabular-nums">
-//                 {(profile.engagementRate * 100).toFixed(2)}%
-//               </p>
-//             </div>
-//             <div className="rounded-lg border border-border p-4">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Starting rate
-//               </p>
-//               <p className="mt-2 font-display text-2xl font-medium tabular-nums">
-//                 {profile.pricePerPost != null
-//                   ? `${profile.currency} ${profile.pricePerPost}`
-//                   : "—"}
-//               </p>
-//             </div>
-//             <div className="rounded-lg border border-border p-4">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Status
-//               </p>
-//               <p className="mt-2 font-display text-2xl font-medium">
-//                 {profile.availability === "AVAILABLE"
-//                   ? "Available"
-//                   : profile.availability}
-//               </p>
-//             </div>
-//           </div>
-
-//           {profile.categories.length > 0 && (
-//             <div className="mt-5">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Categories
-//               </p>
-//               <div className="mt-2 flex flex-wrap gap-2">
-//                 {profile.categories.map((c) => (
-//                   <span
-//                     key={c}
-//                     className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
-//                   >
-//                     {c}
-//                   </span>
-//                 ))}
-//               </div>
-//             </div>
-//           )}
-
-//           {profile.audienceFavorites && profile.audienceFavorites.length > 0 && (
-//             <div className="mt-5">
-//               <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-//                 Audience favorites
-//               </p>
-//               <div className="mt-2 flex flex-wrap gap-2">
-//                 {profile.audienceFavorites.map((name) => (
-//                   <span
-//                     key={name}
-//                     className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
-//                   >
-//                     {name}
-//                   </span>
-//                 ))}
-//               </div>
-//             </div>
-//           )}
-//         </Panel>
-//       </div>
-//     </>
-//   );
-// }
+// ======================================================
+// Influencer
+// ======================================================
 
 function InfluencerWorkspace() {
   const [profile, setProfile] = useState<Influencer | null>(null);
@@ -941,7 +484,6 @@ function InfluencerWorkspace() {
   const [productsLoading, setProductsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // 1. Load influencer profile
   useEffect(() => {
     influencersApi
       .getMe()
@@ -950,13 +492,11 @@ function InfluencerWorkspace() {
       .finally(() => setLoading(false));
   }, []);
 
-  // 2. Load products matching influencer's niche
   useEffect(() => {
     if (!profile || !profile.categories?.length) {
       setMatchedProducts([]);
       return;
     }
-
     setProductsLoading(true);
     publicProductsApi
       .list({ limit: 40 })
@@ -996,7 +536,6 @@ function InfluencerWorkspace() {
 
   const needsSetup = !profile.profileCompleted;
 
-  // Count total tiers set
   const pricingTiers = (profile.pricingTiers as any) || {};
   const platformCount = Object.keys(pricingTiers).length;
   const totalTiers = Object.values(pricingTiers).reduce(
@@ -1026,7 +565,6 @@ function InfluencerWorkspace() {
         </div>
       )}
 
-      {/* ========== PRICING SUMMARY ========== */}
       <Panel className="mt-6">
         <SectionTitle
           title="Your pricing"
@@ -1171,7 +709,10 @@ function InfluencerWorkspace() {
         </Panel>
 
         <Panel>
-          <SectionTitle title="Deliverables" description="Your next committed actions." />
+          <SectionTitle
+            title="Deliverables"
+            description="Your next committed actions."
+          />
           <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
             <FileCheck2 className="mx-auto size-6 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium">No deliverables</p>
@@ -1231,7 +772,7 @@ function InfluencerWorkspace() {
 }
 
 // ======================================================
-// Agency
+// Agency (SAFE version — no missing props)
 // ======================================================
 
 function AgencyWorkspace() {
@@ -1241,6 +782,7 @@ function AgencyWorkspace() {
     ["Serein", "6 live campaigns", "$48.9K", "Healthy"],
     ["North Form", "2 briefs overdue", "$34.1K", "At risk"],
   ];
+
   return (
     <div className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
       <Panel>
@@ -1249,8 +791,7 @@ function AgencyWorkspace() {
           description="Delivery and commercial health across managed brands."
           action={
             <Button variant="outline" size="sm">
-              <Building2 />
-              Switch client
+              <Building2 /> Switch client
             </Button>
           }
         />
@@ -1262,7 +803,9 @@ function AgencyWorkspace() {
             >
               <div>
                 <p className="text-sm font-medium">{name}</p>
-                <p className="text-xs text-muted-foreground sm:hidden">{activity}</p>
+                <p className="text-xs text-muted-foreground sm:hidden">
+                  {activity}
+                </p>
               </div>
               <span className="hidden text-xs text-muted-foreground sm:block">
                 {activity}
@@ -1281,19 +824,37 @@ function AgencyWorkspace() {
           ))}
         </div>
       </Panel>
+
       <Panel>
         <SectionTitle
           title="Approval queue"
           description="Items waiting on clients or your team."
         />
-        <Task icon={FileCheck2} title="8 content drafts" meta="Across 3 brands" status="Client" />
-        <Task icon={WandSparkles} title="12 AI images" meta="Maison Nura · AW26" status="Internal" />
-        <Task icon={Megaphone} title="Campaign brief" meta="North Form · 6h overdue" status="Late" />
+        <Task
+          icon={FileCheck2}
+          title="8 content drafts"
+          meta="Across 3 brands"
+          status="Client"
+        />
+        <Task
+          icon={WandSparkles}
+          title="12 AI images"
+          meta="Maison Nura · AW26"
+          status="Internal"
+        />
+        <Task
+          icon={Megaphone}
+          title="Campaign brief"
+          meta="North Form · 6h overdue"
+          status="Late"
+        />
       </Panel>
+
       <TrendPanel
         title="Portfolio performance"
         description="Attributed revenue across all managed clients."
       />
+
       <Panel>
         <SectionTitle
           title="Team capacity"
@@ -1369,7 +930,10 @@ function MemberWorkspace() {
         </div>
       </Panel>
       <Panel>
-        <SectionTitle title="Team pulse" description="What changed since your last visit." />
+        <SectionTitle
+          title="Team pulse"
+          description="What changed since your last visit."
+        />
         <div className="space-y-4 text-sm">
           <Update name="Sara" action="approved the Luna creative direction" time="18 min" />
           <Update name="AI Studio" action="generated 6 caption variations" time="1h" />
@@ -1398,26 +962,22 @@ function MemberWorkspace() {
   );
 }
 
-
+// ======================================================
+// Brand Owner
+// ======================================================
 
 function BrandWorkspace({
   products,
   loading,
-  analytics, 
+  analytics,
 }: {
   products: RealProduct[];
   loading: boolean;
-  analytics: BrandAnalytics | null; 
+  analytics: BrandAnalytics | null;
 }) {
   const displayed = products.slice(0, 4);
 
-  // ===== REAL analytics for trend + stats =====
-  // const [analytics, setAnalytics] = useState<BrandAnalytics | null>(null);
-
-  // ===== REAL top recommendation =====
   const [topRec, setTopRec] = useState<Recommendation | null>(null);
-
-  // ===== Matched influencers =====
   const [matchedInfluencers, setMatchedInfluencers] = useState<Influencer[]>([]);
   const [influencersLoading, setInfluencersLoading] = useState(false);
 
@@ -1429,16 +989,6 @@ function BrandWorkspace({
     )
   ).sort();
 
-  // ---- fetch brand analytics ----
-  // useEffect(() => {
-  //   if (loading) return;
-  //   analyticsApi
-  //     .brand()
-  //     .then((r) => setAnalytics(r))
-  //     .catch(() => setAnalytics(null));
-  // }, [loading]);
-
-  // ---- fetch top recommendation ----
   useEffect(() => {
     recommendationsApi
       .list()
@@ -1446,7 +996,6 @@ function BrandWorkspace({
       .catch(() => setTopRec(null));
   }, []);
 
-  // ---- fetch matched influencers ----
   useEffect(() => {
     if (loading || brandCategories.length === 0) {
       setMatchedInfluencers([]);
@@ -1470,7 +1019,6 @@ function BrandWorkspace({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products, loading]);
 
-  // Build trend series from analytics
   const trendSeries = analytics
     ? Array.from({ length: 6 }, (_, i) => ({
         day: `Wk ${i + 1}`,
@@ -1483,7 +1031,6 @@ function BrandWorkspace({
     <>
       <ProductLoop />
 
-      {/* ---------- Top row: trend + AI brief ---------- */}
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
         <TrendPanel
           title="Revenue and conversions"
@@ -1491,12 +1038,19 @@ function BrandWorkspace({
           series={trendSeries}
         />
         <Panel>
-          <SectionTitle title="AI decision brief" description="The highest-impact action now." />
+          <SectionTitle
+            title="AI decision brief"
+            description="The highest-impact action now."
+          />
           {topRec ? (
             <div className="rounded-md border border-border bg-brand-soft p-4">
-              <p className="text-xs font-semibold text-accent">{topRec.confidence}% confidence</p>
+              <p className="text-xs font-semibold text-accent">
+                {topRec.confidence}% confidence
+              </p>
               <h3 className="mt-2 font-display text-2xl">{topRec.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{topRec.reason}</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {topRec.reason}
+              </p>
               <Button asChild size="sm" className="mt-5">
                 <Link to="/recommendations">
                   Review recommendation <ArrowRight />
@@ -1514,9 +1068,6 @@ function BrandWorkspace({
         </Panel>
       </div>
 
-      {/* ======================================================
-          MATCHED INFLUENCERS
-      ====================================================== */}
       <section className="mt-8">
         <SectionTitle
           title="Creators matching your brand"
@@ -1625,9 +1176,6 @@ function BrandWorkspace({
         )}
       </section>
 
-      {/* ======================================================
-          PRODUCTS IN MOTION
-      ====================================================== */}
       <section className="mt-8">
         <SectionTitle
           title="Products in motion"
@@ -1706,9 +1254,8 @@ function Dashboard() {
 
   const [realProducts, setRealProducts] = useState<RealProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
-   const [brandAnalytics, setBrandAnalytics] = useState<BrandAnalytics | null>(null);
+  const [brandAnalytics, setBrandAnalytics] = useState<BrandAnalytics | null>(null);
 
-  // Redirect logic
   useEffect(() => {
     if (loading || !user) return;
 
@@ -1716,6 +1263,12 @@ function Dashboard() {
       navigate({ to: "/admin" });
       return;
     }
+
+    // Agency has its own home
+  if (user.roles.includes("AGENCY")) {
+    navigate({ to: "/agency" });
+    return;
+  }
 
     const isOnlyShopper =
       user.roles.includes("SHOPPER") &&
@@ -1726,10 +1279,8 @@ function Dashboard() {
     }
   }, [user, loading, navigate]);
 
-  // Load real products for brand owner / team member
   useEffect(() => {
     if (loading || !user) return;
-
     const isBrandUser = user.roles.some((r) =>
       ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
     );
@@ -1743,8 +1294,7 @@ function Dashboard() {
       .finally(() => setProductsLoading(false));
   }, [user, loading]);
 
-
-   useEffect(() => {
+  useEffect(() => {
     if (loading || !user) return;
     const isBrandUser = user.roles.some((r) =>
       ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
@@ -1753,8 +1303,6 @@ function Dashboard() {
     analyticsApi.brand().then(setBrandAnalytics).catch(() => setBrandAnalytics(null));
   }, [user, loading]);
 
-
-  
   if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -1799,22 +1347,21 @@ function Dashboard() {
           )
         }
       />
-      {/* <StatStrip role={workspace} /> */}
-      {/* {workspace !== "influencer" && <StatStrip role={workspace} />} */}
+
       {workspace !== "influencer" && (
-  <StatStrip role={workspace} analytics={brandAnalytics} />)}
+        <StatStrip role={workspace} analytics={brandAnalytics} />
+      )}
       {workspace === "admin" && <AdminWorkspace />}
       {workspace === "influencer" && <InfluencerWorkspace />}
       {workspace === "owner" && (
-        <BrandWorkspace products={realProducts} loading={productsLoading} analytics={brandAnalytics} />
+        <BrandWorkspace
+          products={realProducts}
+          loading={productsLoading}
+          analytics={brandAnalytics}
+        />
       )}
       {workspace === "agency" && <AgencyWorkspace />}
       {workspace === "member" && <MemberWorkspace />}
     </AppShell>
   );
 }
-
-
-
-
-

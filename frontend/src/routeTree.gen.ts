@@ -23,6 +23,7 @@ import { Route as PendingRouteImport } from './routes/pending'
 import { Route as PlansRouteImport } from './routes/plans'
 import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ReplaceRouteImport } from './routes/replace'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as TrialExpiredRouteImport } from './routes/trial-expired'
@@ -41,6 +42,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminWalletsRouteImport } from './routes/admin/wallets'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin/withdrawals'
+import { Route as AgencyIndexRouteImport } from './routes/agency.index'
 import { Route as AgencyCampaignsRouteImport } from './routes/agency.campaigns'
 import { Route as AgencyClientsRouteImport } from './routes/agency.clients'
 import { Route as AgencyEditingRouteImport } from './routes/agency.editing'
@@ -134,6 +136,11 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReplaceRoute = ReplaceRouteImport.update({
+  id: '/replace',
+  path: '/replace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -222,6 +229,11 @@ const AdminWalletsRoute = AdminWalletsRouteImport.update({
 const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
   id: '/admin/withdrawals',
   path: '/admin/withdrawals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgencyIndexRoute = AgencyIndexRouteImport.update({
+  id: '/agency/',
+  path: '/agency/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgencyCampaignsRoute = AgencyCampaignsRouteImport.update({
@@ -350,6 +362,7 @@ export interface FileRoutesByFullPath {
   '/plans': typeof PlansRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
+  '/replace': typeof ReplaceRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/trial-expired': typeof TrialExpiredRoute
@@ -385,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/studio/photography': typeof StudioPhotographyRoute
   '/teams/$teamId': typeof TeamsTeamIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/agency/': typeof AgencyIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/campaigns/': typeof CampaignsIndexRoute
   '/influencers/': typeof InfluencersIndexRoute
@@ -406,6 +420,7 @@ export interface FileRoutesByTo {
   '/plans': typeof PlansRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
+  '/replace': typeof ReplaceRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/trial-expired': typeof TrialExpiredRoute
@@ -441,6 +456,7 @@ export interface FileRoutesByTo {
   '/studio/photography': typeof StudioPhotographyRoute
   '/teams/$teamId': typeof TeamsTeamIdRoute
   '/admin': typeof AdminIndexRoute
+  '/agency': typeof AgencyIndexRoute
   '/brands': typeof BrandsIndexRoute
   '/campaigns': typeof CampaignsIndexRoute
   '/influencers': typeof InfluencersIndexRoute
@@ -463,6 +479,7 @@ export interface FileRoutesById {
   '/plans': typeof PlansRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
+  '/replace': typeof ReplaceRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/trial-expired': typeof TrialExpiredRoute
@@ -498,6 +515,7 @@ export interface FileRoutesById {
   '/studio/photography': typeof StudioPhotographyRoute
   '/teams/$teamId': typeof TeamsTeamIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/agency/': typeof AgencyIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/campaigns/': typeof CampaignsIndexRoute
   '/influencers/': typeof InfluencersIndexRoute
@@ -521,6 +539,7 @@ export interface FileRouteTypes {
     | '/plans'
     | '/recommendations'
     | '/register'
+    | '/replace'
     | '/settings'
     | '/team'
     | '/trial-expired'
@@ -556,6 +575,7 @@ export interface FileRouteTypes {
     | '/studio/photography'
     | '/teams/$teamId'
     | '/admin/'
+    | '/agency/'
     | '/brands/'
     | '/campaigns/'
     | '/influencers/'
@@ -577,6 +597,7 @@ export interface FileRouteTypes {
     | '/plans'
     | '/recommendations'
     | '/register'
+    | '/replace'
     | '/settings'
     | '/team'
     | '/trial-expired'
@@ -612,6 +633,7 @@ export interface FileRouteTypes {
     | '/studio/photography'
     | '/teams/$teamId'
     | '/admin'
+    | '/agency'
     | '/brands'
     | '/campaigns'
     | '/influencers'
@@ -633,6 +655,7 @@ export interface FileRouteTypes {
     | '/plans'
     | '/recommendations'
     | '/register'
+    | '/replace'
     | '/settings'
     | '/team'
     | '/trial-expired'
@@ -668,6 +691,7 @@ export interface FileRouteTypes {
     | '/studio/photography'
     | '/teams/$teamId'
     | '/admin/'
+    | '/agency/'
     | '/brands/'
     | '/campaigns/'
     | '/influencers/'
@@ -690,6 +714,7 @@ export interface RootRouteChildren {
   PlansRoute: typeof PlansRoute
   RecommendationsRoute: typeof RecommendationsRoute
   RegisterRoute: typeof RegisterRoute
+  ReplaceRoute: typeof ReplaceRoute
   SettingsRoute: typeof SettingsRoute
   TeamRoute: typeof TeamRoute
   TrialExpiredRoute: typeof TrialExpiredRoute
@@ -725,6 +750,7 @@ export interface RootRouteChildren {
   StudioPhotographyRoute: typeof StudioPhotographyRoute
   TeamsTeamIdRoute: typeof TeamsTeamIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AgencyIndexRoute: typeof AgencyIndexRoute
   BrandsIndexRoute: typeof BrandsIndexRoute
   CampaignsIndexRoute: typeof CampaignsIndexRoute
   InfluencersIndexRoute: typeof InfluencersIndexRoute
@@ -830,6 +856,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/replace': {
+      id: '/replace'
+      path: '/replace'
+      fullPath: '/replace'
+      preLoaderRoute: typeof ReplaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -956,6 +989,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/withdrawals'
       fullPath: '/admin/withdrawals'
       preLoaderRoute: typeof AdminWithdrawalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agency/': {
+      id: '/agency/'
+      path: '/agency'
+      fullPath: '/agency/'
+      preLoaderRoute: typeof AgencyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agency/campaigns': {
@@ -1130,6 +1170,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlansRoute: PlansRoute,
   RecommendationsRoute: RecommendationsRoute,
   RegisterRoute: RegisterRoute,
+  ReplaceRoute: ReplaceRoute,
   SettingsRoute: SettingsRoute,
   TeamRoute: TeamRoute,
   TrialExpiredRoute: TrialExpiredRoute,
@@ -1165,6 +1206,7 @@ const rootRouteChildren: RootRouteChildren = {
   StudioPhotographyRoute: StudioPhotographyRoute,
   TeamsTeamIdRoute: TeamsTeamIdRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AgencyIndexRoute: AgencyIndexRoute,
   BrandsIndexRoute: BrandsIndexRoute,
   CampaignsIndexRoute: CampaignsIndexRoute,
   InfluencersIndexRoute: InfluencersIndexRoute,

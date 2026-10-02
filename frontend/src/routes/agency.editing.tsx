@@ -1,3 +1,4 @@
+// frontend/src/routes/agency.editing.tsx
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, Camera, ChevronRight } from "lucide-react";

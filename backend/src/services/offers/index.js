@@ -4,6 +4,7 @@ const { listOffers } = require('./list');
 const { getOffer } = require('./get');
 const { updateOffer } = require('./update');
 const { submitOffer } = require('./submit');
+const { cancelOffer } = require('./cancel');
 const { adminReviewOffer } = require('./adminReview');
 const { influencerReviewOffer } = require('./influencerReview');
 const { estimateOfferTotals } = require('./estimate');
@@ -15,10 +16,10 @@ module.exports = {
   getOffer,
   updateOffer,
   submitOffer,
+  cancelOffer,
   adminReviewOffer,
   influencerReviewOffer,
   estimateOfferTotals,
-  // re-export helpers used by controllers
   getFinanceRules: helpers.getFinanceRules,
   computeOfferTotals: helpers.computeOfferTotals,
 };

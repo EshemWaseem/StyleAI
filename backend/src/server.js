@@ -39,12 +39,13 @@ const matchingRoutes = require('./routes/matchingRoutes');
 const assistantRoutes = require('./routes/assistantRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const knowledgeRoutes = require('./routes/knowledgeRoutes');
+const billingRoutes = require('./routes/billingRoutes');
+const recommendationsRoutes = require('./routes/recommendationsRoutes');   // ← NEW
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { resolveActingBrand } = require('./middleware/actingBrand');
 const prisma = require('./config/prisma');
-const billingRoutes = require('./routes/billingRoutes');
 
-// ⬇️ NEW (Sprint 24)
+// Sprint 24 — Payments
 const paymentRoutes = require('./routes/paymentRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
 
@@ -181,7 +182,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/billing', billingRoutes);
-app.use('/api/payments', paymentRoutes);        // ⬅️ NEW
+app.use('/api/recommendations', recommendationsRoutes);   // ← NEW
+app.use('/api/payments', paymentRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/assistant', assistantRoutes);
 
@@ -214,7 +216,6 @@ const PORT = process.env.PORT || 4000;
   try {
     const { startCron, stopCron } = require('./services/billing/cron');
     startCron();
-    // Stop on shutdown
     process.on('SIGTERM', () => stopCron());
     process.on('SIGINT', () => stopCron());
   } catch (err) {

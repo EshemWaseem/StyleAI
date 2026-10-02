@@ -9,13 +9,28 @@ export function OfferStatusBadge({ status }: { status: string }) {
     EXPIRED: "bg-muted text-muted-foreground",
     CANCELLED: "bg-muted text-muted-foreground",
   };
+
+  // Clearer labels — no "ADMIN APPROVED" confusion for brands
+  const labels: Record<string, string> = {
+    DRAFT: "Draft",
+    PENDING_ADMIN: "Pending review",
+    ADMIN_APPROVED: "Sent to influencer",   // ← renamed
+    ADMIN_REJECTED: "Rejected",
+    INFLUENCER_ACCEPTED: "Accepted",
+    INFLUENCER_DECLINED: "Declined",
+    EXPIRED: "Expired",
+    CANCELLED: "Cancelled",
+  };
+
+  const label = labels[status] || status.replace(/_/g, " ");
+
   return (
     <span
       className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${
         styles[status] || "bg-muted"
       }`}
     >
-      {status.replace(/_/g, " ")}
+      {label}
     </span>
   );
 }

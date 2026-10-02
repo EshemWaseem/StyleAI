@@ -1,98 +1,29 @@
-// lib/billing/types.ts
-// ======================================================
-// Billing types — role-aware SaaS
-// ======================================================
+// lib/billing/api.ts
+import { http } from '../api';
+import type {
+  BillingMeResponse,
+  Plan,
+  PlansResponse,
+  Subscription,
+  BillingRole,
+} from './types';
 
-export type BillingRole = 'BRAND' | 'AGENCY' | 'INFLUENCER';
-export type EffectiveState = 'active' | 'trial' | 'trial_expired' | 'past_due' | 'cancelled' | 'expired';
+export const billingApi = {
+  getMe: () => http.get<BillingMeResponse>('/api/billing/me'),
 
-export interface PlanLimits {
-  products?: number | null;
-  aiTextPerMonth?: number | null;
-  aiImagePerMonth?: number | null;
-  campaignsPerMonth?: number | null;
-  teamSeats?: number | null;
-  storageMb?: number | null;
-  knowledgeDocs?: number | null;
-  assistantMessages?: number | null;
-  managedBrands?: number | null;
-  campaignApplies?: number | null;
-}
+  getPlans: (role?: BillingRole) =>
+    role
+      ? http.get<PlansResponse>(`/api/billing/plans?role=${role}`)
+      : http.get<PlansResponse>('/api/billing/plans'),
 
-export interface Plan {
-  name: string;
-  role: BillingRole;
-  label: string;
-  tagline?: string;
-  priceMonthly: number | null;
-  priceYearly: number | null;
-  currency: string;
-  popular?: boolean;
-  isTrial?: boolean;
-  isFree?: boolean;
-  trialDays?: number;
-  takeRate?: number;
-  stripePriceIdMonthly?: string | null;
-  stripePriceIdYearly?: string | null;
-  features: string[];
-  limits: PlanLimits;
-}
+  cancel: () => http.post<{ subscription: Subscription }>('/api/billing/cancel', {}),
+  resume: () => http.post<{ subscription: Subscription }>('/api/billing/resume', {}),
 
-export interface Subscription {
-  id: string;
-  role: BillingRole;
-  planName: string;
-  status: string;
-  effectiveState: EffectiveState;
-  isTrial: boolean;
-  trialEndsAt: string | null;
-  trialDaysLeft: number | null;
-  currency: string;
-  currentPeriodStart: string;
-  currentPeriodEnd: string | null;
-  cancelAtPeriodEnd: boolean;
-  cancelledAt: string | null;
-  createdAt: string;
-}
+  /** Delete a single FAILED invoice */
+  deleteInvoice: (id: string) =>
+    http.delete<{ success: true; id: string }>(`/api/billing/invoices/${id}`),
 
-export interface Usage {
-  aiTextCalls: number;
-  aiImageCalls: number;
-  aiAssistMessages: number;
-  campaignsCreated: number;
-  knowledgeIngests: number;
-  storageBytes: number;
-}
-
-export interface Invoice {
-  id: string;
-  invoiceNumber: string;
-  amount: number;
-  currency: string;
-  status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED';
-  description: string | null;
-  paidAt: string | null;
-  periodStart: string | null;
-  periodEnd: string | null;
-  createdAt: string;
-}
-
-export interface BillingMeResponse {
-  role: BillingRole | null;
-  subscription: Subscription | null;
-  plan: Plan | null;
-  usage: {
-    used: Usage;
-    limits: PlanLimits;
-  } | null;
-  invoices: Invoice[];
-  isAdmin?: boolean;
-}
-
-export interface PlansResponse {
-  plans: Plan[] | {
-    BRAND: Plan[];
-    AGENCY: Plan[];
-    INFLUENCER: Plan[];
-  };
-}
+  /** Delete all FAILED invoices in current org */
+  deleteAllFailed: () =>
+    http.delete<{ success: true; deleted: number }>('/api/billing/invoices'),
+};

@@ -1,6 +1,7 @@
 // services/offers/create.js
 // ======================================================
-// POST /api/offers — brand (or agency on behalf of brand) creates a DRAFT offer
+// POST /api/offers — brand creates offer → ESCROW → DIRECT TO INFLUENCER
+// No admin approval, no DRAFT retention.
 // ======================================================
 
 const prisma = require('../../config/prisma');
@@ -9,6 +10,9 @@ const {
   computeOfferTotals,
   shapeOffer,
 } = require('./helpers');
+const { writeAudit } = require('../admin/helpers');
+const { holdEscrowForOffer } = require('../wallet');
+const { notifyUser } = require('../notifications');
 
 async function createOffer(user, payload = {}) {
   const {
@@ -41,7 +45,6 @@ async function createOffer(user, payload = {}) {
   if (isAdmin) {
     // Admins can create offers for any brand
   } else if (isAgency) {
-    // Agency must have an active link to the brand's organization
     const link = await prisma.agencyClient.findFirst({
       where: {
         agencyOrganizationId: user.organizationId,
@@ -69,21 +72,15 @@ async function createOffer(user, payload = {}) {
       where: { id: productId },
       select: { id: true, brandId: true },
     });
-    if (!product) {
-      throw httpError('Product not found', 404, 'PRODUCT_NOT_FOUND');
-    }
+    if (!product) throw httpError('Product not found', 404, 'PRODUCT_NOT_FOUND');
     if (product.brandId !== brandId) {
-      throw httpError(
-        'Product does not belong to this brand',
-        400,
-        'PRODUCT_BRAND_MISMATCH'
-      );
+      throw httpError('Product does not belong to this brand', 400, 'PRODUCT_BRAND_MISMATCH');
     }
     resolvedProductId = product.id;
   }
 
   // ------------------------------------------------------
-  // Bundle check — explicit false blocks multi-item offers
+  // Bundle check
   // ------------------------------------------------------
   if (influencer.acceptsBundles === false && Array.isArray(items) && items.length > 1) {
     throw httpError(
@@ -94,7 +91,7 @@ async function createOffer(user, payload = {}) {
   }
 
   // ------------------------------------------------------
-  // Compute totals (fees, discounts, taxes)
+  // Compute totals
   // ------------------------------------------------------
   const totals = await computeOfferTotals({
     items,
@@ -102,15 +99,12 @@ async function createOffer(user, payload = {}) {
     influencer,
   });
 
-  // ------------------------------------------------------
-  // Agency attribution (only for AGENCY role, not admins)
-  // ------------------------------------------------------
   const createdByAgencyId = isAgency && !isAdmin ? user.organizationId : null;
 
   // ------------------------------------------------------
-  // Persist
+  // Step 1 — Create offer as DRAFT (for escrow reference)
   // ------------------------------------------------------
-  const created = await prisma.customOffer.create({
+  let created = await prisma.customOffer.create({
     data: {
       brandId,
       influencerId,
@@ -128,9 +122,70 @@ async function createOffer(user, payload = {}) {
       brandNote: brandNote ?? null,
       createdBy: user.id,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
+      status: 'DRAFT',
     },
-    include: {
-      product: true,
+    include: { product: true },
+  });
+
+  // ------------------------------------------------------
+  // Step 2 — Hold escrow from brand wallet
+  // If this fails, offer stays as DRAFT for retry.
+  // ------------------------------------------------------
+  try {
+    await holdEscrowForOffer(user.id, created.id);
+  } catch (escrowErr) {
+    // Escrow failed — leave as DRAFT so brand can fix wallet and retry
+    console.warn(
+      `[offers.createOffer] escrow hold failed for offer ${created.id}:`,
+      escrowErr.message
+    );
+    throw httpError(
+      escrowErr.message || 'Insufficient wallet balance to fund this offer',
+      400,
+      'ESCROW_HOLD_FAILED'
+    );
+  }
+
+  // ------------------------------------------------------
+  // Step 3 — Flip to ADMIN_APPROVED (= "ready for influencer")
+  // Since we skip admin review, ADMIN_APPROVED = sent to influencer.
+  // ------------------------------------------------------
+  created = await prisma.customOffer.update({
+    where: { id: created.id },
+    data: { status: 'ADMIN_APPROVED' },
+    include: { product: true },
+  });
+
+  // ------------------------------------------------------
+  // Step 4 — Notify influencer DIRECTLY
+  // ------------------------------------------------------
+  if (influencer.userId) {
+    try {
+      await notifyUser(influencer.userId, {
+        type: 'OFFER_SUBMITTED',
+        title: 'New offer received',
+        body: `${brand.name} sent you an offer — ${influencer.currency} ${totals.total.toFixed(2)}`,
+        link: `/offers/${created.id}`,
+        meta: { offerId: created.id, brandId, total: totals.total },
+      });
+    } catch (notifyErr) {
+      console.warn('[offers.createOffer] influencer notify failed:', notifyErr.message);
+    }
+  }
+
+  // ------------------------------------------------------
+  // Step 5 — Audit
+  // ------------------------------------------------------
+  await writeAudit({
+    actorId: user.id,
+    action: 'offer.create',
+    targetType: 'CustomOffer',
+    targetId: created.id,
+    meta: {
+      status: 'ADMIN_APPROVED',
+      escrowHeld: Number(totals.total),
+      currency: influencer.currency,
+      directToInfluencer: true,
     },
   });
 

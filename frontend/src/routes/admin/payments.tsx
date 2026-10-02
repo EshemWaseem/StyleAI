@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CreditCard, AlertCircle, Loader2, TrendingUp } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { adminApi } from "@/lib/admin";
@@ -25,7 +24,7 @@ function AdminPaymentsPage() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <AppShell breadcrumb={["Admin", "Payments"]}>
+      <>
         <PageHeader eyebrow="Finance" title="Payments" description="All transactions across organizations." />
 
         <section className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -106,7 +105,7 @@ function AdminPaymentsPage() {
             </div>
           </Panel>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

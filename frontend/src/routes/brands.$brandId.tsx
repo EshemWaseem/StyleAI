@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Trash2, Save } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,15 +96,15 @@ function BrandDetailPage() {
 
   if (authLoading || loading) {
     return (
-      <AppShell breadcrumb={["Commerce", "Brand"]}>
+      <>
         <p className="text-sm text-muted-foreground">Loading…</p>
-      </AppShell>
+      </>
     );
   }
 
   if (error && !brand) {
     return (
-      <AppShell breadcrumb={["Commerce", "Brand"]}>
+      <>
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </div>
@@ -114,14 +113,14 @@ function BrandDetailPage() {
             <ArrowLeft /> Back
           </Link>
         </Button>
-      </AppShell>
+      </>
     );
   }
 
   if (!brand || !form) return null;
 
   return (
-    <AppShell breadcrumb={["Commerce", "Brand", brand.name]}>
+    <>
       <PageHeader
         eyebrow={brand.organization.name}
         title={brand.name}
@@ -275,6 +274,6 @@ function BrandDetailPage() {
           </div>
         </Panel>
       </form>
-    </AppShell>
+    </>
   );
 }

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   AlertCircle, Loader2, Briefcase, Users, ExternalLink, ChevronRight,
 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { agencyApi, type AgencyClientEntry } from "@/lib/campaigns";
@@ -32,7 +31,7 @@ function AgencyClientsPage() {
 
   return (
     <ProtectedRoute roles={["AGENCY"]}>
-      <AppShell breadcrumb={["Agency", "Clients"]}>
+      <>
         <PageHeader
           eyebrow="Agency"
           title="Client organizations"
@@ -137,7 +136,7 @@ function AgencyClientsPage() {
             ))}
           </div>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

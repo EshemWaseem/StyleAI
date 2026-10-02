@@ -2,7 +2,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, ArrowLeft } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -31,12 +30,12 @@ function InfluencerPricingPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <AppShell breadcrumb={["Influencer", "Pricing"]}>
+        <>
           <div className="mt-16 flex items-center justify-center">
             <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Loading…</span>
           </div>
-        </AppShell>
+        </>
       </ProtectedRoute>
     );
   }
@@ -44,12 +43,12 @@ function InfluencerPricingPage() {
   if (error || !influencer) {
     return (
       <ProtectedRoute>
-        <AppShell breadcrumb={["Influencer", "Pricing"]}>
+        <>
           <div className="mt-6 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <span>{error || "No influencer profile linked to your account."}</span>
           </div>
-        </AppShell>
+        </>
       </ProtectedRoute>
     );
   }
@@ -60,7 +59,7 @@ function InfluencerPricingPage() {
 
   return (
     <ProtectedRoute roles={["INFLUENCER"]}>
-      <AppShell breadcrumb={["Influencer", "Pricing"]}>
+      <>
         <PageHeader
           eyebrow="Your profile"
           title="Pricing"
@@ -84,7 +83,7 @@ function InfluencerPricingPage() {
             activePlatforms={activePlatforms}
           />
         </Panel>
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

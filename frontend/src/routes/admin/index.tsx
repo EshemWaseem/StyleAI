@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   Users, Building2, Store, ShoppingBag, Briefcase, Megaphone, AlertCircle, Loader2,
 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -29,7 +28,7 @@ function AdminDashboard() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <AppShell breadcrumb={["Admin", "Overview"]}>
+      <>
         <PageHeader
           eyebrow="Super admin"
           title="Platform overview"
@@ -101,7 +100,7 @@ function AdminDashboard() {
             </section>
           </>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

@@ -33,16 +33,14 @@ async function listMyConversations(user, query = {}) {
   });
 
   const shaped = await Promise.all(
-    rows.map((r) => shapeConversation(r, { currentUserId: user.id }))
+    rows.map((r) => shapeConversation(r, { user }))   // ← pass `user` (not currentUserId)
   );
 
   return { conversations: shaped, total: shaped.length };
 }
 
 // ------------------------------------------------------
-// Open chat with ANY party:
-//   POST /chat/conversations/with   { type, id }
-//   type = "INFLUENCER" | "ORG"
+// Open chat with ANY party: POST /chat/conversations/with
 // ------------------------------------------------------
 async function getOrCreateConversation(user, targetType, targetId, contextType = 'DIRECT') {
   const me = await resolveMyParty(user);
@@ -84,14 +82,14 @@ async function getOrCreateConversation(user, targetType, targetId, contextType =
     });
   }
 
-  return shapeConversation(conv, { currentUserId: user.id });
+  return shapeConversation(conv, { user });   // ← pass `user`
 }
 
 async function getConversation(user, id) {
   const conv = await prisma.conversation.findUnique({ where: { id } });
   if (!conv) throw httpError('Conversation not found', 404, 'NOT_FOUND');
   await assertCanAccessConversation(user, conv);
-  return shapeConversation(conv, { currentUserId: user.id });
+  return shapeConversation(conv, { user });   // ← pass `user`
 }
 
 async function getTotalUnread(user) {

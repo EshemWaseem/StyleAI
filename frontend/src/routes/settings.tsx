@@ -17,7 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
 import { useRole } from "@/lib/role";
 import { http } from "@/lib/api";
@@ -205,9 +204,9 @@ function SettingsPage() {
 
   if (authLoading || loading) {
     return (
-      <AppShell breadcrumb={["Administration", "Settings"]}>
+      <>
         <p className="text-sm text-muted-foreground">Loading settings…</p>
-      </AppShell>
+      </>
     );
   }
 
@@ -219,7 +218,7 @@ function SettingsPage() {
   const adminMode = isAdmin(roles);
 
   return (
-    <AppShell breadcrumb={["Administration", "Settings"]}>
+    <>
       <PageHeader
         eyebrow="Account"
         title="Settings"
@@ -603,6 +602,6 @@ function SettingsPage() {
           </div>
         </div>
       </Panel>
-    </AppShell>
+    </>
   );
 }

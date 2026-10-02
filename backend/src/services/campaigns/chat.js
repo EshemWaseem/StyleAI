@@ -8,6 +8,14 @@ const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
 const { assertCanViewCampaign } = require('./helpers');
 
+// ── WebSocket broadcast (soft dependency — never blocks send) ──
+let broadcastCampaignMessage = null;
+try {
+  broadcastCampaignMessage = require('../websocket/broadcast').broadcastCampaignMessage;
+} catch (e) {
+  console.warn('[campaigns.chat] WebSocket broadcast unavailable:', e.message);
+}
+
 const MAX_BODY = 2000;
 
 // ------------------------------------------------------
@@ -64,7 +72,6 @@ async function listMessages(user, campaignId, query = {}) {
     take: limit,
   });
 
-  // Reverse → chronological order
   return {
     messages: rows.reverse().map((m) => shapeMessage(m, { currentUserId: user.id })),
     campaignId,
@@ -105,14 +112,22 @@ async function sendMessage(user, campaignId, payload = {}) {
       senderAgencyId: role === 'AGENCY' ? user.organizationId : null,
       body,
       attachments,
-      // Sender's own role is auto-read
       readByBrand: role === 'BRAND',
       readByInfluencer: role === 'INFLUENCER',
       readByAgency: role === 'AGENCY',
     },
   });
 
-  return shapeMessage(created, { currentUserId: user.id });
+  const shaped = shapeMessage(created, { currentUserId: user.id });
+
+  // ── Push to all other participants over WebSocket (fire-and-forget) ──
+  if (broadcastCampaignMessage) {
+    broadcastCampaignMessage(campaign, shaped, user.id).catch((err) => {
+      console.warn('[campaigns.chat] WS broadcast failed:', err.message);
+    });
+  }
+
+  return shaped;
 }
 
 // ------------------------------------------------------

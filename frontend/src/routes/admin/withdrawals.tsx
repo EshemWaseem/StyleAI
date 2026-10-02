@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, Check, X, Banknote } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -51,7 +50,7 @@ function AdminWithdrawalsPage() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <AppShell breadcrumb={["Admin", "Withdrawals"]}>
+      <>
         <PageHeader
           eyebrow="Super admin"
           title="Withdrawals"
@@ -153,7 +152,7 @@ function AdminWithdrawalsPage() {
             </table>
           </Panel>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

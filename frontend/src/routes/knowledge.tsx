@@ -5,7 +5,6 @@ import {
   AlertCircle, Loader2, Upload, Sparkles, Search, FileText,
   Trash2, RotateCw, CheckCircle2, XCircle, Clock,
 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,7 +116,7 @@ function KnowledgePage() {
 
   return (
     <ProtectedRoute>
-      <AppShell breadcrumb={["Intelligence", "Knowledge Base"]}>
+      <>
         <PageHeader
           eyebrow="Intelligence"
           title="Brand Knowledge Base"
@@ -359,7 +358,7 @@ function KnowledgePage() {
             </div>
           )}
         </Panel>
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

@@ -4,7 +4,6 @@ import {
   AlertCircle, Loader2, TrendingUp, Users, MousePointerClick,
   DollarSign, BarChart3, Eye, Target,
 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { analyticsApi } from "@/lib/analytics";
@@ -48,7 +47,7 @@ function AnalyticsPage() {
 
   return (
     <ProtectedRoute>
-      <AppShell breadcrumb={["Analytics"]}>
+      <>
         <PageHeader
           eyebrow="Analytics"
           title={isAdmin ? "Platform analytics" : isAgency ? "Agency analytics" : isInfluencer ? "My performance" : "Brand analytics"}
@@ -87,7 +86,7 @@ function AnalyticsPage() {
             {isInfluencer && <InfluencerView data={data as InfluencerAnalytics} />}
           </>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

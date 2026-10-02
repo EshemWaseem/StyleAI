@@ -8,6 +8,15 @@ const {
   shapeDirectMessage,
 } = require('./helpers');
 
+// ── WebSocket broadcast (soft dependency — never blocks send) ──
+let broadcastDirectMessage = null;
+try {
+  broadcastDirectMessage = require('../websocket/broadcast').broadcastDirectMessage;
+} catch (e) {
+  // WebSocket not initialised — messages still work via REST/polling
+  console.warn('[chat.messages] WebSocket broadcast unavailable:', e.message);
+}
+
 const MAX_BODY = 2000;
 
 async function listMessages(user, conversationId, query = {}) {
@@ -80,7 +89,16 @@ async function sendMessage(user, conversationId, payload = {}) {
     return message;
   });
 
-  return shapeDirectMessage(result, { currentUserId: user.id });
+  const shaped = shapeDirectMessage(result, { currentUserId: user.id });
+
+  // ── Push to the other party over WebSocket (fire-and-forget) ──
+  if (broadcastDirectMessage) {
+    broadcastDirectMessage(conv, shaped, user.id).catch((err) => {
+      console.warn('[chat.messages] WS broadcast failed:', err.message);
+    });
+  }
+
+  return shaped;
 }
 
 async function markRead(user, conversationId) {
@@ -92,15 +110,12 @@ async function markRead(user, conversationId) {
 
   const myParty = mine.party;
   const oppositeSideFlag = isA ? 'readByA' : 'readByB';
-  const oppositePartyType = isA ? conv.partyBType : conv.partyAType;
-  const oppositePartyId = isA ? conv.partyBId : conv.partyAId;
 
   await prisma.$transaction([
     prisma.directMessage.updateMany({
       where: {
         conversationId,
         [oppositeSideFlag]: false,
-        // only mark messages sent by the OTHER party
         NOT: {
           senderPartyType: myParty.type,
           senderPartyId: myParty.id,

@@ -5,7 +5,6 @@ import {
   Search, Users, AlertCircle, Loader2, Trash2,
   Pause, Play, ExternalLink, Archive, BadgeDollarSign, X,
 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -76,7 +75,7 @@ function AdminInfluencersPage() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <AppShell breadcrumb={["Admin", "Influencers"]}>
+      <>
         <PageHeader
           eyebrow="Platform"
           title="All influencers"
@@ -308,7 +307,7 @@ function AdminInfluencersPage() {
             </div>
           </div>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

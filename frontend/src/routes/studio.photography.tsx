@@ -6,7 +6,6 @@ import {
   Image as ImageIcon, RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { productsApi, type Product } from "@/lib/products";
@@ -136,7 +135,7 @@ function PhotographyStudio() {
 
   return (
     <ProtectedRoute>
-      <AppShell breadcrumb={["AI Studio", "AI Photography"]}>
+      <>
         <PageHeader
           eyebrow="AI Studio"
           title="AI Photography"
@@ -403,7 +402,7 @@ function PhotographyStudio() {
             </div>
           </div>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

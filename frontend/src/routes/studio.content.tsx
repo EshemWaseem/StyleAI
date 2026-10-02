@@ -5,7 +5,6 @@ import {
   Sparkles, Loader2, RefreshCw, Copy, Check, Package, Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { productsApi, type Product } from "@/lib/products";
@@ -83,7 +82,7 @@ function ContentStudio() {
 
   return (
     <ProtectedRoute>
-      <AppShell breadcrumb={["AI Studio", "Content"]}>
+      <>
         <PageHeader
           eyebrow="AI Studio"
           title="Content Studio"
@@ -221,7 +220,7 @@ function ContentStudio() {
             )}
           </>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

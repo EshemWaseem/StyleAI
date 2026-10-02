@@ -2,7 +2,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Search, Users, AlertCircle, UserX, UserCheck, Trash2, Loader2 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -60,7 +59,7 @@ function AdminUsersPage() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <AppShell breadcrumb={["Admin", "Users"]}>
+      <>
         <PageHeader
           eyebrow="Platform"
           title="All users"
@@ -177,7 +176,7 @@ function AdminUsersPage() {
             </div>
           </Panel>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

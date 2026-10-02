@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, AlertCircle, Globe, Lock } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,9 +100,9 @@ function BrandPage() {
 
   if (authLoading || loading) {
     return (
-      <AppShell breadcrumb={["Commerce", "Brand"]}>
+      <>
         <p className="text-sm text-muted-foreground">Loading…</p>
-      </AppShell>
+      </>
     );
   }
 
@@ -111,19 +110,19 @@ function BrandPage() {
 
   if (error) {
     return (
-      <AppShell breadcrumb={["Commerce", "Brand"]}>
+      <>
         <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <span>{error}</span>
         </div>
-      </AppShell>
+      </>
     );
   }
 
   const hasBrand = brands.length > 0;
 
   return (
-    <AppShell breadcrumb={["Commerce", "Brand"]}>
+    <>
       <PageHeader
         eyebrow="Commerce"
         title="Brand"
@@ -305,7 +304,7 @@ function BrandPage() {
           onSubmit={handleCreate}
         />
       )}
-    </AppShell>
+    </>
   );
 }
 

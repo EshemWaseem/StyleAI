@@ -1,17 +1,32 @@
 const prisma = require('../../config/prisma');
-const { parsePagination } = require('../admin/helpers');
+const { httpError } = require('../influencer/helpers');
 const { shapeTransaction } = require('./helpers');
+const { resolveWalletOwner } = require('./get');
 
+/**
+ * List the caller's wallet transactions.
+ * Uses the same role-aware owner resolution as getMyWallet.
+ */
 async function listMyTransactions(user, query = {}) {
-  const wallet = await prisma.wallet.findFirst({
-    where:
-      user.roles?.includes('INFLUENCER')
-        ? { influencer: { userId: user.id } }
-        : { userId: user.id },
-  });
-  if (!wallet) return { transactions: [], total: 0, limit: 0, offset: 0 };
+  if (!user?.id) throw httpError('Not authenticated', 401);
 
-  const { limit, offset } = parsePagination(query);
+  const owner = await resolveWalletOwner(user);
+
+  const where =
+    owner.type === 'influencer'
+      ? { influencerId: owner.id }
+      : owner.type === 'organization'
+      ? { organizationId: owner.id }
+      : { userId: owner.id };
+
+  const wallet = await prisma.wallet.findUnique({ where });
+  if (!wallet) {
+    // No wallet yet — return empty list (wallet will be created on getMe)
+    return { transactions: [], total: 0, limit: 0, offset: 0 };
+  }
+
+  const limit = Math.min(Number(query.limit) || 100, 500);
+  const offset = Number(query.offset) || 0;
 
   const [rows, total] = await Promise.all([
     prisma.walletTransaction.findMany({
@@ -25,7 +40,9 @@ async function listMyTransactions(user, query = {}) {
 
   return {
     transactions: rows.map(shapeTransaction),
-    total, limit, offset,
+    total,
+    limit,
+    offset,
   };
 }
 

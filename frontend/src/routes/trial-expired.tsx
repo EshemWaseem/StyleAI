@@ -2,7 +2,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { AlertCircle, Loader2, Sparkles, Clock, ArrowRight } from 'lucide-react';
-import { AppShell } from '@/components/app-shell';
 import { Button } from '@/components/ui/button';
 import { PageHeader, Panel } from '@/components/ui-kit';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -39,12 +38,12 @@ function TrialExpiredPage() {
   if (loading || !data) {
     return (
       <ProtectedRoute>
-        <AppShell breadcrumb={['Trial Expired']}>
+        <>
           <div className="mt-16 flex items-center justify-center">
             <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Checking your subscription…</span>
           </div>
-        </AppShell>
+        </>
       </ProtectedRoute>
     );
   }
@@ -54,12 +53,12 @@ function TrialExpiredPage() {
   if (state !== 'trial_expired' && state !== 'expired' && state !== 'past_due') {
     return (
       <ProtectedRoute>
-        <AppShell breadcrumb={['Trial Expired']}>
+        <>
           <div className="mt-16 flex items-center justify-center">
             <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Redirecting…</span>
           </div>
-        </AppShell>
+        </>
       </ProtectedRoute>
     );
   }
@@ -67,7 +66,7 @@ function TrialExpiredPage() {
   // ---- Actually expired ----
   return (
     <ProtectedRoute>
-      <AppShell breadcrumb={['Trial Expired']}>
+      <>
         <PageHeader
           eyebrow="Action required"
           title="Your trial has ended"
@@ -111,7 +110,7 @@ function TrialExpiredPage() {
             </div>
           </div>
         </Panel>
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

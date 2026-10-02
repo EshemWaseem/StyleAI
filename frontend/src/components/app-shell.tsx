@@ -1,5 +1,5 @@
 // components/app-shell.tsx
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
 import {
   BadgeDollarSign,
@@ -32,7 +32,7 @@ import {
   UsersRound,
   Wallet,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -45,6 +45,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { AgencyProvider, useAgency } from "@/lib/agency/context";
+import { connectSocket, disconnectSocket } from "@/lib/websocket/client";
 import { cn } from "@/lib/utils";
 import { useRole, type RoleName } from "@/lib/role";
 
@@ -563,6 +564,19 @@ function AppShellInner({
   const isAdmin = userRoles.includes("SUPER_ADMIN");
   const isBrandOwner = userRoles.includes("BRAND_OWNER");
 
+  // ---- WebSocket: connect when user is present ----
+  useEffect(() => {
+    if (user) {
+      connectSocket();
+    }
+  }, [user]);
+
+  // ---- Logout handler — disconnect socket first ----
+  function handleLogout() {
+    disconnectSocket();
+    logout();
+  }
+
   return (
     <TooltipProvider delayDuration={300}>
       <div className="min-h-screen bg-background text-foreground">
@@ -742,7 +756,7 @@ function AppShellInner({
 
                     <DropdownMenuItem asChild>
                       <button
-                        onClick={logout}
+                        onClick={handleLogout}
                         className="flex w-full cursor-pointer items-center gap-2 text-destructive focus:text-destructive"
                       >
                         <LogOut className="size-4" />

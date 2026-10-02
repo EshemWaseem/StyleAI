@@ -29,13 +29,14 @@ model Wallet {
 }
 
 enum WalletTxType {
-  DEPOSIT // brand funds wallet
-  WITHDRAWAL // influencer/owner cashes out
-  OFFER_HOLD // brand funds escrow when offer submitted
-  OFFER_RELEASE // escrow → influencer wallet (minus fee)
-  OFFER_REFUND // escrow → brand wallet (offer rejected/cancelled)
-  PLATFORM_FEE // platform revenue from offer
-  ADJUSTMENT // admin correction
+  DEPOSIT            // brand funds wallet
+  WITHDRAWAL         // influencer/owner cashes out
+  OFFER_HOLD         // brand funds escrow when offer submitted
+  OFFER_RELEASE      // escrow → influencer wallet (minus fee)
+  OFFER_REFUND       // escrow → brand wallet (offer rejected/cancelled)
+  PLATFORM_FEE       // platform revenue from offer
+  SUBSCRIPTION_INCOME // NEW — platform revenue from SaaS subscription
+  ADJUSTMENT         // admin correction
 }
 
 enum WalletTxStatus {

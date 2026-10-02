@@ -1,36 +1,33 @@
-// services/wallet/index.js
-const helpers = require('./helpers');
-const { getMyWallet, getWalletForOffer } = require('./get');
+const { getMyWallet, getWalletForOffer, resolveWalletOwner } = require('./get');
 const { listMyTransactions } = require('./listTransactions');
-const {
-  holdEscrowForOffer, releaseEscrowForOffer, refundEscrowForOffer,
-} = require('./offerFlow');
-const {
-  requestWithdrawal, reviewWithdrawal, listWithdrawals,
-} = require('./withdraw');
-
-
+const { requestWithdrawal, reviewWithdrawal, listWithdrawals } = require('./withdraw');
 const { getWalletStats, listAllWallets } = require('./adminStats');
+const { getPlatformWallet, creditPlatformWallet } = require('./platform');
+const {
+  ensureWallet,
+  recalculateBalance,
+  postTransaction,
+  shapeWallet,
+  shapeTransaction,
+  getFinanceRules,
+} = require('./helpers');
 
 module.exports = {
-  // owner-facing
   getMyWallet,
-  listMyTransactions,
   getWalletForOffer,
-  // offer flow
-  holdEscrowForOffer,
-  releaseEscrowForOffer,
-  refundEscrowForOffer,
-  // withdrawals
+  listMyTransactions,
   requestWithdrawal,
   reviewWithdrawal,
   listWithdrawals,
-   getWalletStats,
+  getWalletStats,
   listAllWallets,
-  // utilities
-  ensureWallet: helpers.ensureWallet,
-  recalculateBalance: helpers.recalculateBalance,
-  postTransaction: helpers.postTransaction,
-  shapeWallet: helpers.shapeWallet,
-  shapeTransaction: helpers.shapeTransaction,
+  getPlatformWallet,
+  creditPlatformWallet,
+  resolveWalletOwner,
+  ensureWallet,
+  recalculateBalance,
+  postTransaction,
+  shapeWallet,
+  shapeTransaction,
+  getFinanceRules,
 };

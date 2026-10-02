@@ -2,7 +2,6 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, ArrowLeft } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -71,7 +70,7 @@ function NewOfferPage() {
   if (!resolvedBrandId) {
     return (
       <ProtectedRoute roles={["BRAND_OWNER", "BRAND_TEAM_MEMBER"]}>
-        <AppShell breadcrumb={["Offers", "New"]}>
+        <>
           <div className="mt-6 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             You need a brand first. Create your brand before making offers.
           </div>
@@ -80,7 +79,7 @@ function NewOfferPage() {
               <ArrowLeft className="mr-1 size-4" /> Back to offers
             </Button>
           </div>
-        </AppShell>
+        </>
       </ProtectedRoute>
     );
   }
@@ -90,7 +89,7 @@ function NewOfferPage() {
 
   return (
     <ProtectedRoute roles={["BRAND_OWNER", "BRAND_TEAM_MEMBER"]}>
-      <AppShell breadcrumb={["Offers", "New"]}>
+      <>
         <PageHeader
           eyebrow="Custom offer"
           title={
@@ -162,7 +161,7 @@ function NewOfferPage() {
             />
           </Panel>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

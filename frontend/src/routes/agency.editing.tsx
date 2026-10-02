@@ -2,7 +2,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, Camera, ChevronRight } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -43,7 +42,7 @@ function AgencyEditingPage() {
 
   return (
     <ProtectedRoute roles={["AGENCY"]}>
-      <AppShell breadcrumb={["Agency", "Editing"]}>
+      <>
         <PageHeader
           eyebrow="Agency"
           title="Editing queue"
@@ -91,7 +90,7 @@ function AgencyEditingPage() {
             ))}
           </Panel>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

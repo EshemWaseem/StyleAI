@@ -1,7 +1,6 @@
 // routes/payments.result.tsx
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { CheckCircle2, XCircle, Loader2, ArrowRight } from 'lucide-react';
-import { AppShell } from '@/components/app-shell';
 import { Button } from '@/components/ui/button';
 import { PageHeader, Panel } from '@/components/ui-kit';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -23,7 +22,7 @@ function PaymentsResultPage() {
 
   return (
     <ProtectedRoute roles={['BRAND_OWNER', 'AGENCY', 'SUPER_ADMIN', 'SHOPPER']}>
-      <AppShell breadcrumb={['Payments', 'Result']}>
+      <>
         <PageHeader
           eyebrow="Payments"
           title="Payment status"
@@ -72,7 +71,7 @@ function PaymentsResultPage() {
             </div>
           </Panel>
         </div>
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

@@ -1,7 +1,10 @@
+// components/campaigns/ChatTab.tsx
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Send, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { campaignsApi, type ChatMessage } from "@/lib/campaigns";
+import { getSocket } from "@/lib/websocket/client";
+import { useRole } from "@/lib/role";
 
 interface Props {
   campaignId: string;
@@ -9,6 +12,7 @@ interface Props {
 }
 
 export function ChatTab({ campaignId, currentUserId }: Props) {
+  const { user } = useRole();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
@@ -16,14 +20,16 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
   const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior }), 50);
+  };
 
+  // ---- Initial load ----
   async function load(initial = false) {
     try {
       const r = await campaignsApi.listMessages(campaignId, { limit: 200 });
       setMessages(r.messages);
-      if (initial) {
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "instant" as any }), 50);
-      }
+      if (initial) scrollToBottom("auto");
     } catch (e: any) {
       setError(e?.message || "Failed to load messages");
     } finally {
@@ -31,23 +37,43 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
     }
   }
 
-  // Initial load + mark read
   useEffect(() => {
     load(true);
     campaignsApi.markChatRead(campaignId).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
 
-  // Poll for new messages every 5s
+  // ---- WebSocket real-time ----
   useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const onNew = (payload: any) => {
+      if (payload?.kind !== "campaign" || payload?.campaignId !== campaignId) return;
+      const m = payload.message as ChatMessage;
+      setMessages((prev) => {
+        if (prev.some((x) => x.id === m.id)) return prev;
+        scrollToBottom();
+        return [...prev, m];
+      });
+      // Mark read immediately since tab is open
+      campaignsApi.markChatRead(campaignId).catch(() => {});
+    };
+
+    socket.on("chat:new", onNew);
+    return () => { socket.off("chat:new", onNew); };
+  }, [campaignId]);
+
+  // ---- Polling fallback (only when WS not connected) ----
+  useEffect(() => {
+    const socket = getSocket();
+    if (socket?.connected) return;
+
     const t = setInterval(() => {
       campaignsApi.listMessages(campaignId, { limit: 200 })
         .then((r) => {
           setMessages((prev) => {
-            if (r.messages.length !== prev.length) {
-              // new message arrived → scroll
-              setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-            }
+            if (r.messages.length !== prev.length) scrollToBottom();
             return r.messages;
           });
         })
@@ -56,7 +82,7 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
     return () => clearInterval(t);
   }, [campaignId]);
 
-  // Mark read when tab is open
+  // ---- Mark read on interval (fallback) ----
   useEffect(() => {
     const t = setInterval(() => {
       campaignsApi.markChatRead(campaignId).catch(() => {});
@@ -71,9 +97,12 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
     setError("");
     try {
       const r = await campaignsApi.sendMessage(campaignId, { body });
-      setMessages((prev) => [...prev, r.chatMessage]);
+      setMessages((prev) => {
+        if (prev.some((x) => x.id === r.chatMessage.id)) return prev;
+        return [...prev, r.chatMessage];
+      });
       setInput("");
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+      scrollToBottom();
     } catch (e: any) {
       setError(e?.message || "Failed to send");
     } finally {
@@ -99,11 +128,7 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
 
   return (
     <div className="flex h-[600px] flex-col overflow-hidden rounded-lg border border-border bg-card">
-      {/* Messages */}
-      <div
-        ref={scrollRef}
-        className="flex-1 space-y-3 overflow-y-auto px-4 py-4"
-      >
+      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <MessageSquare className="size-6 text-muted-foreground" />
@@ -118,14 +143,12 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Error */}
       {error && (
         <div className="border-t border-destructive/30 bg-destructive/10 px-4 py-2 text-xs text-destructive">
           {error}
         </div>
       )}
 
-      {/* Input */}
       <div className="flex items-end gap-2 border-t border-border p-3">
         <textarea
           value={input}
@@ -151,12 +174,7 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
   );
 }
 
-// ======================================================
-// Message bubble
-// ======================================================
 function MessageBubble({ m }: { m: ChatMessage }) {
-  const isMine = m.isMine;
-
   const roleStyles: Record<string, string> = {
     BRAND: "text-blue-500",
     AGENCY: "text-purple-500",
@@ -171,18 +189,16 @@ function MessageBubble({ m }: { m: ChatMessage }) {
   };
 
   return (
-    <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[75%] space-y-1 ${isMine ? "items-end" : "items-start"}`}>
-        {!isMine && (
+    <div className={`flex ${m.isMine ? "justify-end" : "justify-start"}`}>
+      <div className={`max-w-[75%] space-y-1 ${m.isMine ? "items-end" : "items-start"}`}>
+        {!m.isMine && (
           <p className={`text-[10px] font-medium uppercase tracking-wide ${roleStyles[m.senderRole] || "text-muted-foreground"}`}>
             {roleLabel[m.senderRole] || m.senderRole}
           </p>
         )}
         <div
           className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
-            isMine
-              ? "bg-accent text-accent-foreground"
-              : "bg-muted text-foreground"
+            m.isMine ? "bg-accent text-accent-foreground" : "bg-muted text-foreground"
           }`}
         >
           <p className="whitespace-pre-wrap break-words">{m.body}</p>

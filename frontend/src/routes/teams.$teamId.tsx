@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Save, UserPlus, X, Trash2 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,15 +95,15 @@ function TeamDetailPage() {
 
   if (authLoading || loading) {
     return (
-      <AppShell breadcrumb={["Administration", "Teams"]}>
+      <>
         <p className="text-sm text-muted-foreground">Loading…</p>
-      </AppShell>
+      </>
     );
   }
 
   if (error && !team) {
     return (
-      <AppShell breadcrumb={["Administration", "Teams"]}>
+      <>
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </div>
@@ -113,14 +112,14 @@ function TeamDetailPage() {
             <ArrowLeft /> Back to teams
           </Link>
         </Button>
-      </AppShell>
+      </>
     );
   }
 
   if (!team) return null;
 
   return (
-    <AppShell breadcrumb={["Administration", "Teams", team.name]}>
+    <>
       <PageHeader
         eyebrow={team.organization.name}
         title={team.name}
@@ -230,7 +229,7 @@ function TeamDetailPage() {
           onAdd={handleAddMember}
         />
       )}
-    </AppShell>
+    </>
   );
 }
 

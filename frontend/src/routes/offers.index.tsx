@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, FileText, Plus } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -28,7 +27,7 @@ function OffersListPage() {
 
   return (
     <ProtectedRoute>
-      <AppShell breadcrumb={["Offers"]}>
+      <>
         <PageHeader
           eyebrow="Collaborations"
           title="Custom offers"
@@ -104,7 +103,7 @@ function OffersListPage() {
             </div>
           </Panel>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

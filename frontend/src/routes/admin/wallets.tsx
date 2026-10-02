@@ -1,11 +1,10 @@
 // routes/admin/wallets.tsx
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   AlertCircle, Loader2, Wallet as WalletIcon, TrendingUp,
   Lock, Banknote, Users,
 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { http } from "@/lib/api";
@@ -16,7 +15,13 @@ export const Route = createFileRoute("/admin/wallets")({
 });
 
 interface Stats {
-  platformRevenue: { brandFees: number; influencerFees: number; total: number; currency: string };
+  platformRevenue: {
+    brandFees: number;
+    influencerFees: number;
+    subscriptionIncome: number;
+    total: number;
+    currency: string;
+  };
   volume: number;
   escrow: { count: number; amount: number };
   withdrawals: { pendingCount: number; pendingAmount: number };
@@ -62,7 +67,7 @@ function AdminWalletsPage() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <AppShell breadcrumb={["Admin", "Wallets"]}>
+      <>
         <PageHeader
           eyebrow="Super admin"
           title="Wallet overview"
@@ -82,13 +87,12 @@ function AdminWalletsPage() {
           </div>
         ) : stats ? (
           <>
-            {/* ===== TOP STATS ===== */}
             <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 icon={TrendingUp}
                 label="Platform revenue"
                 value={`${stats.platformRevenue.currency} ${stats.platformRevenue.total.toFixed(2)}`}
-                note={`Brand ${stats.platformRevenue.brandFees.toFixed(2)} · Creator ${stats.platformRevenue.influencerFees.toFixed(2)}`}
+                note={`Offer ${(stats.platformRevenue.brandFees + stats.platformRevenue.influencerFees).toFixed(2)} · Subs ${stats.platformRevenue.subscriptionIncome.toFixed(2)}`}
               />
               <StatCard
                 icon={WalletIcon}
@@ -110,14 +114,12 @@ function AdminWalletsPage() {
               />
             </section>
 
-            {/* ===== WALLET COUNT BREAKDOWN ===== */}
             <section className="mt-4 grid gap-4 sm:grid-cols-3">
               <MiniCard label="User wallets" value={stats.wallets.users} />
               <MiniCard label="Organization wallets" value={stats.wallets.organizations} />
               <MiniCard label="Influencer wallets" value={stats.wallets.influencers} />
             </section>
 
-            {/* ===== WALLET LIST ===== */}
             <Panel className="mt-8 overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <div className="flex items-center gap-2">
@@ -179,7 +181,7 @@ function AdminWalletsPage() {
             </Panel>
           </>
         ) : null}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

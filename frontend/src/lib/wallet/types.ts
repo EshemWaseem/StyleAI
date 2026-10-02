@@ -1,7 +1,13 @@
+// lib/wallet/types.ts
 export type WalletTxType =
-  | "DEPOSIT" | "WITHDRAWAL"
-  | "OFFER_HOLD" | "OFFER_RELEASE" | "OFFER_REFUND"
-  | "PLATFORM_FEE" | "ADJUSTMENT";
+  | "DEPOSIT"
+  | "WITHDRAWAL"
+  | "OFFER_HOLD"
+  | "OFFER_RELEASE"
+  | "OFFER_REFUND"
+  | "PLATFORM_FEE"
+  | "SUBSCRIPTION_INCOME"   // ✅ NEW
+  | "ADJUSTMENT";
 
 export interface Wallet {
   id: string;

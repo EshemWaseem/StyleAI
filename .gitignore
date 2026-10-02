@@ -12,7 +12,7 @@ backup_before_pgvector.sql
 backup_before_team_refactor.sql
 backup_users.sql
 check.sql
-
+backup_before_currency_migration.sql
 
 # Python
 __pycache__/

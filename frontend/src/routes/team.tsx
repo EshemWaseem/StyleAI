@@ -5,7 +5,6 @@ import {
   Plus, AlertCircle, Check, X, Mail, UserPlus, Shield, Trash2, Pencil,
   ChevronDown, Link2,
 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,18 +179,14 @@ function TeamPage() {
 
   if (authLoading || loading) {
     return (
-      <AppShell breadcrumb={["Administration", "Team"]}>
+      <>
         <p className="text-sm text-muted-foreground">Loading team…</p>
-      </AppShell>
+      </>
     );
   }
 
   return (
-    <AppShell
-      breadcrumb={
-        isAdmin ? ["Platform", "All Teams"] : ["Administration", "Team"]
-      }
-    >
+    <>
       <PageHeader
         eyebrow={isAdmin ? "Platform" : "Administration"}
         title={isAdmin ? "All Teams" : "Team"}
@@ -603,7 +598,7 @@ function TeamPage() {
           onApprove={(roleId) => handleApprove(approvingRequest, roleId)}
         />
       )}
-    </AppShell>
+    </>
   );
 }
 

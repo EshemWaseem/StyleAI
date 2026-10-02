@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, Clock, Eye, Package, Check } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -49,7 +48,7 @@ function BrowseOffersPage() {
 
   return (
     <ProtectedRoute roles={["BRAND_OWNER", "BRAND_TEAM_MEMBER", "AGENCY"]}>
-      <AppShell breadcrumb={["Offers", "Browse"]}>
+      <>
         <PageHeader
           eyebrow="Marketplace"
           title="Browse creator offers"
@@ -149,7 +148,7 @@ function BrowseOffersPage() {
             })}
           </div>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

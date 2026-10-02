@@ -2,7 +2,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, Megaphone, Camera, CheckCircle2, Clock } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { campaignsApi, type Campaign } from "@/lib/campaigns";
@@ -46,7 +45,7 @@ function AgencyCampaignsPage() {
 
   return (
     <ProtectedRoute roles={["AGENCY"]}>
-      <AppShell breadcrumb={["Agency", "Campaigns"]}>
+      <>
         <PageHeader
           eyebrow="Agency"
           title="Client campaigns"
@@ -119,7 +118,7 @@ function AgencyCampaignsPage() {
             </table>
           </Panel>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

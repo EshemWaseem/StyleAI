@@ -106,17 +106,29 @@ async function enrichParty(type, id) {
   return null;
 }
 
-async function shapeConversation(c, { currentUserId } = {}) {
+// ------------------------------------------------------
+// shapeConversation — accepts `user` and returns `mySide`
+// so the client knows exactly which party is "them"
+// ------------------------------------------------------
+async function shapeConversation(c, { user } = {}) {
   const [partyA, partyB] = await Promise.all([
     enrichParty(c.partyAType, c.partyAId),
     enrichParty(c.partyBType, c.partyBId),
   ]);
+
+  // Determine which side the current user is on (A, B, ADMIN, or null)
+  let mySide = null;
+  if (user) {
+    const mine = await myPartyIn(user, c);
+    if (mine) mySide = mine.side; // 'A' | 'B' | 'ADMIN'
+  }
 
   return {
     id: c.id,
     contextType: c.contextType,
     partyA: partyA || { type: c.partyAType, id: c.partyAId },
     partyB: partyB || { type: c.partyBType, id: c.partyBId },
+    mySide,
     lastMessageAt: c.lastMessageAt,
     lastMessageBody: c.lastMessageBody,
     lastSenderUserId: c.lastSenderUserId,

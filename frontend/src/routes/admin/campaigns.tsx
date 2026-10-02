@@ -4,7 +4,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Megaphone, AlertCircle, Loader2 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { adminApi } from "@/lib/admin";
@@ -28,7 +27,7 @@ function AdminCampaignsPage() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <AppShell breadcrumb={["Admin", "Campaigns"]}>
+      <>
         {/* <PageHeader eyebrow="Platform" title="All campaigns" description="Monitor campaigns across all brands." /> */}
         <PageHeader
               eyebrow="Platform"
@@ -80,7 +79,7 @@ function AdminCampaignsPage() {
             </div>
           </Panel>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

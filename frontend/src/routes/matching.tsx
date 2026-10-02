@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   AlertCircle, Loader2, Sparkles, Package, Sliders,
 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -77,7 +76,7 @@ function MatchingPage() {
 
   return (
     <ProtectedRoute roles={["BRAND_OWNER", "BRAND_TEAM_MEMBER", "AGENCY", "SUPER_ADMIN"]}>
-      <AppShell breadcrumb={["Influencer intelligence", "AI matching"]}>
+      <>
         <PageHeader
           eyebrow="AI matching"
           title="Find the right creators"
@@ -221,7 +220,7 @@ function MatchingPage() {
             </div>
           </>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

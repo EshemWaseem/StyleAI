@@ -2,7 +2,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Sparkles, Loader2 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -51,7 +50,7 @@ function PlansPage() {
   if (user?.roles?.includes("SUPER_ADMIN")) {
     return (
       <ProtectedRoute roles={["SUPER_ADMIN"]} skipTrialCheck>
-        <AppShell breadcrumb={["Plans & Pricing"]}>
+        <>
           <PageHeader
             eyebrow="Pricing"
             title="Plans & Pricing"
@@ -63,7 +62,7 @@ function PlansPage() {
               to brands, agencies, and influencers.
             </p>
           </Panel>
-        </AppShell>
+        </>
       </ProtectedRoute>
     );
   }
@@ -72,7 +71,7 @@ function PlansPage() {
   if (!authLoading && !role) {
     return (
       <ProtectedRoute skipTrialCheck>
-        <AppShell breadcrumb={["Plans & Pricing"]}>
+        <>
           <PageHeader
             eyebrow="Pricing"
             title="Plans & Pricing"
@@ -83,7 +82,7 @@ function PlansPage() {
               No billing role assigned to your account. Please contact support.
             </p>
           </Panel>
-        </AppShell>
+        </>
       </ProtectedRoute>
     );
   }
@@ -116,7 +115,7 @@ function PlansPage() {
 
   return (
     <ProtectedRoute skipTrialCheck>
-      <AppShell breadcrumb={["Plans & Pricing"]}>
+      <>
         <PageHeader
           eyebrow={copy?.eyebrow || "Pricing"}
           title={copy?.title || "Plans & Pricing"}
@@ -235,7 +234,7 @@ function PlansPage() {
           All prices exclude applicable taxes. Yearly plans save you 2 months.
           USD equivalent is approximate and based on current FX rates.
         </p>
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

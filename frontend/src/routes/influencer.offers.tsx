@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   AlertCircle, Loader2, Plus, Trash2, X, Sparkles, Clock, Eye, Save,
 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,7 +47,7 @@ function MyListingsPage() {
 
   return (
     <ProtectedRoute roles={["INFLUENCER"]}>
-      <AppShell breadcrumb={["Influencer", "My Offers"]}>
+      <>
         <PageHeader
           eyebrow="Promotions"
           title="My public offers"
@@ -93,7 +92,7 @@ function MyListingsPage() {
             onCreated={() => { setShowCreate(false); load(); }}
           />
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

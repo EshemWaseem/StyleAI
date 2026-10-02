@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, FileClock } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { auditApi, type AuditRow } from "@/lib/admin/finance";
@@ -39,7 +38,7 @@ function AdminAuditPage() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <AppShell breadcrumb={["Admin", "Audit"]}>
+      <>
         <PageHeader
           eyebrow="Super admin"
           title="Audit log"
@@ -128,7 +127,7 @@ function AdminAuditPage() {
             </div>
           </Panel>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

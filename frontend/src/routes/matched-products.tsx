@@ -10,7 +10,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AppShell } from "@/components/app-shell";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
 import { useRole } from "@/lib/role";
 import { influencersApi, type Influencer } from "@/lib/influencers";
@@ -129,7 +128,7 @@ function MatchedProductsPage() {
   // ---------- Loading ----------
   if (authLoading || loading) {
     return (
-      <AppShell breadcrumb={["Creator workspace", "Matched products"]}>
+      <>
         <div className="mt-12 flex flex-col items-center justify-center">
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">Scoring products for you…</p>
@@ -137,7 +136,7 @@ function MatchedProductsPage() {
             First run can take 30–60s while the AI warms up.
           </p>
         </div>
-      </AppShell>
+      </>
     );
   }
 
@@ -146,7 +145,7 @@ function MatchedProductsPage() {
   const hasCategories = !!profile?.categories?.length;
 
   return (
-    <AppShell breadcrumb={["Creator workspace", "Matched products"]}>
+    <>
       <Link
         to="/dashboard"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
@@ -409,6 +408,6 @@ function MatchedProductsPage() {
           )}
         </>
       )}
-    </AppShell>
+    </>
   );
 }

@@ -2,7 +2,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, Sparkles, RefreshCw } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { InsightCard, PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -40,7 +39,7 @@ function Recommendations() {
 
   return (
     <ProtectedRoute>
-      <AppShell breadcrumb={["Intelligence", "Recommendations"]}>
+      <>
         <PageHeader
           eyebrow="Intelligence"
           title="Recommendations"
@@ -97,7 +96,7 @@ function Recommendations() {
             )}
           </>
         )}
-      </AppShell>
+      </>
     </ProtectedRoute>
   );
 }

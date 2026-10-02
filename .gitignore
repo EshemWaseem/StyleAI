@@ -14,6 +14,8 @@ backup_users.sql
 check.sql
 backup_before_currency_migration.sql
 
+# backend/prisma/schema.prisma.backup
+backend/prisma/schema.prisma.backup
 # Python
 __pycache__/
 *.py[cod]

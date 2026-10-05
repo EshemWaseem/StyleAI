@@ -22,5 +22,22 @@ services:
       retries: 5
       start_period: 10s
 
+  redis:
+    image: redis:7-alpine
+    container_name: styleai-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - styleai_redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
 volumes:
   styleai_postgres_data:
+  styleai_redis_data:

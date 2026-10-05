@@ -2,7 +2,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Users, Building2, Store, ShoppingBag, Briefcase, Megaphone, AlertCircle, Loader2,
+  Users, Building2, Store, ShoppingBag, Briefcase, Megaphone, AlertCircle, Loader2, Cpu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
@@ -34,9 +34,16 @@ function AdminDashboard() {
           title="Platform overview"
           description="Real-time operational health across all users, brands, and organizations."
           actions={
-            <Button asChild>
-              <Link to="/admin/users">Manage users</Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button asChild variant="outline">
+                <Link to="/admin/ai">
+                  <Cpu className="mr-2 size-4" /> AI operations
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link to="/admin/users">Manage users</Link>
+              </Button>
+            </div>
           }
         />
 

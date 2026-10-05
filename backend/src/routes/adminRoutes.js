@@ -71,4 +71,16 @@ router.patch('/settings', ctrl.updateSettings);
 // ======================================================
 router.get('/audit', ctrl.listAuditLogs);
 
+// ======================================================
+// AI — Model Management Dashboard (SRS §48-49)
+// ======================================================
+router.get('/ai/stats', ctrl.getAIStats);
+router.get('/ai/timeline', ctrl.getAITimeline);
+router.get('/ai/usage', ctrl.listAIUsage);
+router.get('/ai/models', ctrl.listAIModels);
+router.get('/ai/models/:id', ctrl.getAIModel);
+router.post('/ai/models', ctrl.createAIModel);
+router.patch('/ai/models/:id', ctrl.updateAIModel);
+router.delete('/ai/models/:id', ctrl.deleteAIModel);
+
 module.exports = router;

@@ -1,5 +1,6 @@
 // backend/src/controllers/adminController.js
 const admin = require('../services/admin');
+const ai = require('../services/ai');
 
 // ---------- Dashboard ----------
 async function dashboard(req, res, next) {
@@ -133,6 +134,76 @@ async function listAuditLogs(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// ======================================================
+// AI — Model Management Dashboard (SRS §48-49)
+// ======================================================
+async function getAIStats(req, res, next) {
+  try {
+    const sinceHours = Number(req.query.sinceHours) || 24;
+    const stats = await ai.getUsageStats({ sinceHours });
+    res.json({ stats });
+  } catch (err) { next(err); }
+}
+
+async function getAITimeline(req, res, next) {
+  try {
+    const days = Number(req.query.days) || 7;
+    const timeline = await ai.getUsageTimeline({ days });
+    res.json({ timeline });
+  } catch (err) { next(err); }
+}
+
+async function listAIUsage(req, res, next) {
+  try {
+    const result = await ai.listRecentUsage({
+      limit: req.query.limit,
+      offset: req.query.offset,
+      provider: req.query.provider,
+      status: req.query.status,
+    });
+    res.json(result);
+  } catch (err) { next(err); }
+}
+
+async function listAIModels(req, res, next) {
+  try {
+    const models = await ai.listModels({
+      taskType: req.query.taskType,
+      provider: req.query.provider,
+      status: req.query.status,
+    });
+    res.json({ models });
+  } catch (err) { next(err); }
+}
+
+async function getAIModel(req, res, next) {
+  try {
+    const model = await ai.getModel(req.params.id);
+    res.json({ model });
+  } catch (err) { next(err); }
+}
+
+async function createAIModel(req, res, next) {
+  try {
+    const model = await ai.createModel(req.user, req.body);
+    res.status(201).json({ message: 'Model created', model });
+  } catch (err) { next(err); }
+}
+
+async function updateAIModel(req, res, next) {
+  try {
+    const model = await ai.updateModel(req.user, req.params.id, req.body);
+    res.json({ message: 'Model updated', model });
+  } catch (err) { next(err); }
+}
+
+async function deleteAIModel(req, res, next) {
+  try {
+    const result = await ai.deleteModel(req.user, req.params.id);
+    res.json({ message: 'Model deleted', ...result });
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   dashboard,
   listUsers, getUser, activateUser, deactivateUser, deleteUser, changeUserRole,
@@ -147,4 +218,14 @@ module.exports = {
   getAllSettings,
   updateSettings,
   listAuditLogs,
+
+  // AI (SRS §48-49)
+  getAIStats,
+  getAITimeline,
+  listAIUsage,
+  listAIModels,
+  getAIModel,
+  createAIModel,
+  updateAIModel,
+  deleteAIModel,
 };

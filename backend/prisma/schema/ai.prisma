@@ -1,0 +1,78 @@
+// ai.prisma
+// ======================================================
+// AI Model Registry + Usage Tracking
+// SRS §48 (AI Dashboard), §49 (Model Management)
+// ======================================================
+
+model AIModel {
+  id          String   @id @default(uuid())
+
+  name        String                              // "qwen2.5:7b"
+  displayName String                              // "Qwen 2.5 7B"
+  provider    String                              // "ollama" | "gemini" | "huggingface" | "groq"
+  taskType    String                              // "text" | "vision" | "embedding" | "image" | "ranking"
+  version     String   @default("1.0")
+  baseModel   String?
+
+  status      String   @default("PRODUCTION")     // PRODUCTION | STAGING | DEPRECATED | DISABLED
+
+  accuracy         Float?
+  evaluationScore  Float?
+  evaluationNotes  String?
+
+  trainingDataset  String?
+  trainingDate     DateTime?
+  trainingHours    Float?
+
+  // Cost in USD
+  costPer1kInput   Float?
+  costPer1kOutput  Float?
+  costPerCall      Float?
+
+  meta        Json?
+  isDefault   Boolean  @default(false)
+
+  usages      AIUsage[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([provider, taskType])
+  @@index([status])
+  @@unique([name, version])
+}
+
+model AIUsage {
+  id          String   @id @default(uuid())
+
+  modelId     String?
+  model       AIModel? @relation(fields: [modelId], references: [id], onDelete: SetNull)
+
+  modelName   String
+  provider    String
+  taskType    String
+
+  userId         String?
+  organizationId String?
+
+  inputTokens   Int    @default(0)
+  outputTokens  Int    @default(0)
+  totalTokens   Int    @default(0)
+  cost          Float  @default(0)
+
+  latencyMs     Int?
+  status        String @default("SUCCESS")        // SUCCESS | ERROR | TIMEOUT
+  errorMessage  String?
+
+  route         String?
+  requestId     String?
+  meta          Json?
+
+  createdAt     DateTime @default(now())
+
+  @@index([modelId, createdAt])
+  @@index([provider, createdAt])
+  @@index([organizationId, createdAt])
+  @@index([status])
+  @@index([createdAt])
+}

@@ -1,8 +1,13 @@
+// frontend/src/lib/admin/api.ts
 import { http } from "../api";
 import type {
   AdminUserFilters,
   AdminUserListResponse,
   PlatformStats,
+  AIModel,
+  AIUsageStats,
+  AITimelinePoint,
+  AIUsageListResponse,
 } from "./types";
 
 export const adminApi = {
@@ -108,4 +113,41 @@ export const adminApi = {
       `/api/admin/payments${q ? `?${q}` : ""}`
     );
   },
+
+  // ---------- AI (Model Management — SRS §48-49) ----------
+  getAIStats: (sinceHours = 24) =>
+    http.get<{ stats: AIUsageStats }>(`/api/admin/ai/stats?sinceHours=${sinceHours}`),
+
+  getAITimeline: (days = 7) =>
+    http.get<{ timeline: AITimelinePoint[] }>(`/api/admin/ai/timeline?days=${days}`),
+
+  listAIUsage: (filters: { limit?: number; offset?: number; provider?: string; status?: string } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.set(k, String(v));
+    });
+    const q = qs.toString();
+    return http.get<AIUsageListResponse>(`/api/admin/ai/usage${q ? `?${q}` : ""}`);
+  },
+
+  listAIModels: (filters: { taskType?: string; provider?: string; status?: string } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.set(k, String(v));
+    });
+    const q = qs.toString();
+    return http.get<{ models: AIModel[] }>(`/api/admin/ai/models${q ? `?${q}` : ""}`);
+  },
+
+  getAIModel: (id: string) =>
+    http.get<{ model: AIModel }>(`/api/admin/ai/models/${id}`),
+
+  createAIModel: (payload: Partial<AIModel>) =>
+    http.post<{ message: string; model: AIModel }>(`/api/admin/ai/models`, payload),
+
+  updateAIModel: (id: string, payload: Partial<AIModel>) =>
+    http.patch<{ message: string; model: AIModel }>(`/api/admin/ai/models/${id}`, payload),
+
+  deleteAIModel: (id: string) =>
+    http.delete<{ message: string }>(`/api/admin/ai/models/${id}`),
 };

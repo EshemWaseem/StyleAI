@@ -30,6 +30,7 @@ import { Route as TrialExpiredRouteImport } from './routes/trial-expired'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAgenciesRouteImport } from './routes/admin/agencies'
+import { Route as AdminAiRouteImport } from './routes/admin/ai'
 import { Route as AdminAuditRouteImport } from './routes/admin/audit'
 import { Route as AdminBrandsRouteImport } from './routes/admin/brands'
 import { Route as AdminCampaignsRouteImport } from './routes/admin/campaigns'
@@ -169,6 +170,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminAgenciesRoute = AdminAgenciesRouteImport.update({
   id: '/admin/agencies',
   path: '/admin/agencies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAiRoute = AdminAiRouteImport.update({
+  id: '/admin/ai',
+  path: '/admin/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAuditRoute = AdminAuditRouteImport.update({
@@ -368,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/trial-expired': typeof TrialExpiredRoute
   '/wallet': typeof WalletRoute
   '/admin/agencies': typeof AdminAgenciesRoute
+  '/admin/ai': typeof AdminAiRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/brands': typeof AdminBrandsRoute
   '/admin/campaigns': typeof AdminCampaignsRoute
@@ -426,6 +433,7 @@ export interface FileRoutesByTo {
   '/trial-expired': typeof TrialExpiredRoute
   '/wallet': typeof WalletRoute
   '/admin/agencies': typeof AdminAgenciesRoute
+  '/admin/ai': typeof AdminAiRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/brands': typeof AdminBrandsRoute
   '/admin/campaigns': typeof AdminCampaignsRoute
@@ -485,6 +493,7 @@ export interface FileRoutesById {
   '/trial-expired': typeof TrialExpiredRoute
   '/wallet': typeof WalletRoute
   '/admin/agencies': typeof AdminAgenciesRoute
+  '/admin/ai': typeof AdminAiRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/brands': typeof AdminBrandsRoute
   '/admin/campaigns': typeof AdminCampaignsRoute
@@ -545,6 +554,7 @@ export interface FileRouteTypes {
     | '/trial-expired'
     | '/wallet'
     | '/admin/agencies'
+    | '/admin/ai'
     | '/admin/audit'
     | '/admin/brands'
     | '/admin/campaigns'
@@ -603,6 +613,7 @@ export interface FileRouteTypes {
     | '/trial-expired'
     | '/wallet'
     | '/admin/agencies'
+    | '/admin/ai'
     | '/admin/audit'
     | '/admin/brands'
     | '/admin/campaigns'
@@ -661,6 +672,7 @@ export interface FileRouteTypes {
     | '/trial-expired'
     | '/wallet'
     | '/admin/agencies'
+    | '/admin/ai'
     | '/admin/audit'
     | '/admin/brands'
     | '/admin/campaigns'
@@ -720,6 +732,7 @@ export interface RootRouteChildren {
   TrialExpiredRoute: typeof TrialExpiredRoute
   WalletRoute: typeof WalletRoute
   AdminAgenciesRoute: typeof AdminAgenciesRoute
+  AdminAiRoute: typeof AdminAiRoute
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBrandsRoute: typeof AdminBrandsRoute
   AdminCampaignsRoute: typeof AdminCampaignsRoute
@@ -905,6 +918,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/agencies'
       fullPath: '/admin/agencies'
       preLoaderRoute: typeof AdminAgenciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/ai': {
+      id: '/admin/ai'
+      path: '/admin/ai'
+      fullPath: '/admin/ai'
+      preLoaderRoute: typeof AdminAiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/audit': {
@@ -1176,6 +1196,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrialExpiredRoute: TrialExpiredRoute,
   WalletRoute: WalletRoute,
   AdminAgenciesRoute: AdminAgenciesRoute,
+  AdminAiRoute: AdminAiRoute,
   AdminAuditRoute: AdminAuditRoute,
   AdminBrandsRoute: AdminBrandsRoute,
   AdminCampaignsRoute: AdminCampaignsRoute,

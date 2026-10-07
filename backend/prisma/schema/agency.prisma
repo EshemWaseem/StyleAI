@@ -1,5 +1,5 @@
 // ======================================================
-// AGENCY
+// AGENCY — clients, tasks, profile, engagements
 // ======================================================
 
 model AgencyClient {
@@ -40,5 +40,90 @@ model AgencyTask {
   updatedAt DateTime @updatedAt
 
   @@index([agencyClientId])
+  @@index([status])
+}
+
+// ======================================================
+// AGENCY PROFILE — service categories + rate card
+// ======================================================
+model AgencyProfile {
+  id             String @id @default(uuid())
+  organizationId String @unique
+
+  displayName String?
+  tagline     String?
+  description String?  @db.Text
+  website     String?
+  logoUrl     String?
+
+  serviceTypes AgencyServiceType[]
+
+  monthlyRetainer Decimal? @db.Decimal(12, 2)
+  hourlyRate      Decimal? @db.Decimal(12, 2)
+  photoshootRate  Decimal? @db.Decimal(12, 2)
+  videographyRate Decimal? @db.Decimal(12, 2)
+
+  currency String @default("PKR")
+
+  portfolioUrls String[]
+
+  verified       Boolean @default(false)
+  isAcceptingNew Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([verified])
+  @@index([isAcceptingNew])
+}
+
+// ======================================================
+// AGENCY ENGAGEMENT — hire requests from brands OR influencers
+// ======================================================
+model AgencyEngagement {
+  id String @id @default(uuid())
+
+  agencyOrganizationId String
+
+  clientType    String  // "BRAND" | "INFLUENCER"
+  brandId       String?
+  influencerId  String?
+  hiredByUserId String
+
+  serviceType AgencyServiceType
+  status      AgencyEngagementStatus @default(PENDING)
+
+  title       String
+  description String?  @db.Text
+  budget      Decimal  @db.Decimal(12, 2)
+  currency    String   @default("PKR")
+  deadline    DateTime?
+
+  deliverables Json?
+  notes        String?
+  agencyNote   String?
+
+  // ---- Timeline ----
+  acceptedAt   DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
+
+  // ✅ NEW: Agency deliverable + campaign bridge
+  deliverableFiles    Json?      // [{ url, publicId, type, name }]
+  deliveredAt         DateTime?
+  linkedCampaignId    String?    // campaign jisme forward hoga
+  linkedDeliverableId String?    // specific deliverable in campaign
+  forwardedAt         DateTime?  // when influencer accepted & forwarded
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyOrganizationId, status])
+  @@index([brandId, status])
+  @@index([influencerId, status])
+  @@index([hiredByUserId])
+  @@index([serviceType])
   @@index([status])
 }

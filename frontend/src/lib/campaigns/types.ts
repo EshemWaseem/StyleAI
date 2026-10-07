@@ -1,9 +1,10 @@
 // lib/campaigns/types.ts
-// ======================================================
-// Campaign + Deliverable + Pipeline types
-// ======================================================
 
 export type CampaignStatus =
+  | "AWAITING_ADDRESS"
+  | "ADDRESS_SUBMITTED"
+  | "SHIPPED"
+  | "IN_PRODUCTION"
   | "ACTIVE"
   | "IN_REVIEW"
   | "DELIVERED"
@@ -11,16 +12,7 @@ export type CampaignStatus =
   | "CANCELLED"
   | "DISPUTED";
 
-export type SubmissionStage = "RAW" | "FINAL";
-
-export type SubmissionStatus =
-  | "PENDING"
-  | "APPROVED"
-  | "REJECTED"
-  | "CHANGES_REQUESTED";
-
 export type DeliverableStatus =
-  // Pipeline stages (agency workflow)
   | "PENDING"
   | "RAW_UPLOADED"
   | "AGENCY_EDITING"
@@ -31,24 +23,112 @@ export type DeliverableStatus =
   | "PUBLISHED"
   | "METRICS_ENTERED"
   | "COMPLETED"
-  // Legacy / simple mode
   | "IN_PROGRESS"
   | "SUBMITTED"
   | "APPROVED"
   | "CHANGES_REQUESTED"
   | "REJECTED";
 
-// ======================================================
-// SUBMISSIONS
-// ======================================================
+export interface ShippingAddress {
+  fullName: string;
+  phone: string;
+  street: string;
+  city: string;
+  state?: string | null;
+  postalCode?: string | null;
+  country: string;
+  notes?: string | null;
+}
+
+export interface Campaign {
+  id: string;
+  offerId: string;
+  brandId: string;
+  influencerId: string;
+  productId: string | null;
+  agencyId: string | null;
+
+  title: string;
+  description: string | null;
+  currency: string;
+  totalAmount: number;
+  brief: string | null;
+  hashtags: string[];
+  mentions: string[];
+
+  startDate: string;
+  dueDate: string | null;
+  completedAt: string | null;
+  status: CampaignStatus;
+
+  shippingAddress: ShippingAddress | null;
+  shippingCarrier: string | null;
+  trackingNumber: string | null;
+  shippedAt: string | null;
+  receivedAt: string | null;
+  contentDeadline: string | null;
+
+  reach: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  revenue: number;
+
+  brand?: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+  };
+  influencer?: {
+    id: string;
+    displayName: string;
+    username: string;
+    slug: string;
+    avatarUrl: string | null;
+  };
+  product?: {
+    id: string;
+    name: string;
+    sku: string | null;
+    category: string | null;
+    price: number | null;
+    currency: string | null;
+    primaryImage: string | null;
+  };
+  agency?: { id: string; name: string; slug: string };
+  deliverables?: Deliverable[];
+  messages?: CampaignMessage[];
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Deliverable {
+  id: string;
+  campaignId: string;
+  platform: string;
+  contentType: string;
+  quantity: number;
+  status: DeliverableStatus;
+  dueDate: string | null;
+  submissions?: Submission[];
+  publishes?: Publish[];
+  metrics?: Metric[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Submission {
   id: string;
   deliverableId: string;
   files: any;
   caption: string | null;
   notes: string | null;
-  stage: SubmissionStage;
-  status: SubmissionStatus;
+  stage: "RAW" | "FINAL";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "CHANGES_REQUESTED";
+  iteration: number;
+  isLatest: boolean;
   submittedByRole: string | null;
   submittedByAgencyId: string | null;
   feedback: string | null;
@@ -59,10 +139,7 @@ export interface Submission {
   updatedAt: string;
 }
 
-// ======================================================
-// PUBLISH + METRICS
-// ======================================================
-export interface ContentPublish {
+export interface Publish {
   id: string;
   platform: string;
   postUrl: string;
@@ -74,7 +151,7 @@ export interface ContentPublish {
   createdAt: string;
 }
 
-export interface DeliverableMetric {
+export interface Metric {
   id: string;
   reach: number;
   impressions: number;
@@ -90,27 +167,6 @@ export interface DeliverableMetric {
   createdAt: string;
 }
 
-// ======================================================
-// DELIVERABLE
-// ======================================================
-export interface Deliverable {
-  id: string;
-  campaignId: string;
-  platform: string;
-  contentType: string;
-  quantity: number;
-  status: DeliverableStatus;
-  dueDate: string | null;
-  createdAt: string;
-  updatedAt: string;
-  submissions?: Submission[];
-  publishes?: ContentPublish[];
-  metrics?: DeliverableMetric[];
-}
-
-// ======================================================
-// MESSAGES
-// ======================================================
 export interface CampaignMessage {
   id: string;
   campaignId: string;
@@ -121,68 +177,6 @@ export interface CampaignMessage {
   createdAt: string;
 }
 
-// ======================================================
-// SUMMARY TYPES (relations)
-// ======================================================
-export interface ProductSummary {
-  id: string;
-  name: string;
-  sku: string;
-  category: string | null;
-  price: number | null;
-  currency: string | null;
-  primaryImage: string | null;
-}
-
-export interface AgencySummary {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-// ======================================================
-// CAMPAIGN
-// ======================================================
-export interface Campaign {
-  id: string;
-  offerId: string;
-  brandId: string;
-  influencerId: string;
-  productId: string | null;
-  agencyId: string | null;
-  title: string;
-  description: string | null;
-  currency: string;
-  totalAmount: number;
-  brief: string | null;
-  hashtags: string[];
-  mentions: string[];
-  startDate: string;
-  dueDate: string | null;
-  completedAt: string | null;
-  status: CampaignStatus;
-  reach: number;
-  impressions: number;
-  clicks: number;
-  conversions: number;
-  revenue: number;
-  createdAt: string;
-  updatedAt: string;
-  // Relations
-  brand?: { id: string; name: string; slug: string; logoUrl: string | null };
-  influencer?: {
-    id: string;
-    displayName: string;
-    username: string;
-    slug: string;
-    avatarUrl: string | null;
-  };
-  product?: ProductSummary;
-  agency?: AgencySummary;
-  deliverables?: Deliverable[];
-  messages?: CampaignMessage[];
-}
-
 export interface CampaignListResponse {
   campaigns: Campaign[];
   total: number;
@@ -190,24 +184,23 @@ export interface CampaignListResponse {
   offset: number;
 }
 
-// ======================================================
-// AGENCY
-// ======================================================
+export interface SubmitAddressInput {
+  address: ShippingAddress;
+}
+
+export interface ShipProductInput {
+  carrier: string;
+  trackingNumber: string;
+  note?: string;
+}
+
+export interface SetDeadlineInput {
+  contentDeadline: string;
+}
+
 export interface AgencyClientEntry {
   id: string;
   status: string;
   clientOrganization: { id: string; name: string; slug: string };
-  brands: { id: string; name: string; slug: string; logoUrl: string | null }[];
-}
-
-export interface ChatMessage {
-  id: string;
-  campaignId: string;
-  senderUserId: string;
-  senderRole: "BRAND" | "AGENCY" | "INFLUENCER" | "ADMIN" | string;
-  senderAgencyId: string | null;
-  body: string;
-  attachments: any;
-  isMine: boolean;
-  createdAt: string;
+  brands: Array<{ id: string; name: string; slug: string; logoUrl: string | null }>;
 }

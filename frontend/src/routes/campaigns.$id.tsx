@@ -5,6 +5,7 @@ import {
   AlertCircle, ArrowLeft, Loader2, CheckCircle2, Clock, Package,
   MessageSquare, BarChart3, FileText, Save, Flag, Calendar,
   Upload, Pencil, Check, X, Send, ExternalLink, BarChart, Image as ImageIcon,
+  MapPin, Truck, PackageCheck, RefreshCw, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,8 @@ import { FinalUploadModal } from "@/components/campaigns/FinalUploadModal";
 import { PublishModal } from "@/components/campaigns/PublishModal";
 import { MetricsModal } from "@/components/campaigns/MetricsModal";
 import { RejectModal } from "@/components/campaigns/RejectModal";
+import { ShippingAddressModal } from "@/components/campaigns/ShippingAddressModal";
+import { ShipProductModal } from "@/components/campaigns/ShipProductModal";
 import { ChatTab } from "@/components/campaigns/ChatTab";
 import { campaignsApi, type Campaign, type Deliverable } from "@/lib/campaigns";
 import { useRole } from "@/lib/role";
@@ -38,16 +41,22 @@ function CampaignDetailPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [chatUnread, setChatUnread] = useState(0);
 
-  const isAdmin = !!user?.roles?.includes("SUPER_ADMIN" as any);
-  const isAgencyRole = !!user?.roles?.includes("AGENCY" as any);
-  const isInfluencerRole = !!user?.roles?.includes("INFLUENCER" as any);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showShipModal, setShowShipModal] = useState(false);
+  const [receiving, setReceiving] = useState(false);
 
-  const isBrandOwner =
-    !!user && !!campaign && (user as any).organizationId === (campaign as any).brandId_org;
-  const isAgencySide =
-    isAgencyRole && !!campaign && (user as any).organizationId === campaign.agencyId;
+  const roles = (user?.roles ?? []) as string[];
+  const isAdmin = roles.includes("SUPER_ADMIN");
+  const isAgencyRole = roles.includes("AGENCY");
+  const isInfluencerRole = roles.includes("INFLUENCER");
+  const isBrandOwnerRole = roles.includes("BRAND_OWNER");
+  const isBrandTeamRole = roles.includes("BRAND_TEAM_MEMBER");
+
   const isInfluencerSide = isInfluencerRole && !!campaign;
-  const canEditBrief = isBrandOwner || isAdmin;
+  const isAgencySide = isAgencyRole && !!campaign && !!campaign.agencyId;
+  const isBrandSide =
+    !isInfluencerRole && (isBrandOwnerRole || isBrandTeamRole || isAdmin);
+  const canEditBrief = isBrandSide || isAdmin;
 
   async function load() {
     setLoading(true);
@@ -87,6 +96,20 @@ function CampaignDetailPage() {
     finally { setBusy(false); }
   }
 
+  async function handleReceive() {
+    if (!campaign) return;
+    if (!confirm("Confirm you have received the product?")) return;
+    setReceiving(true);
+    try {
+      const r = await campaignsApi.receive(campaign.id, { note: "Product in good condition" });
+      setCampaign(r.campaign);
+    } catch (e: any) {
+      alert(e?.message || "Failed");
+    } finally {
+      setReceiving(false);
+    }
+  }
+
   if (loading) {
     return (
       <ProtectedRoute>
@@ -121,6 +144,14 @@ function CampaignDetailPage() {
     { key: "analytics", label: "Analytics", icon: BarChart3 },
   ];
 
+  const shippingStatus = campaign.status;
+  const needsAddress = isInfluencerSide && shippingStatus === "AWAITING_ADDRESS";
+  const needsShip = isBrandSide && shippingStatus === "ADDRESS_SUBMITTED";
+  const needsReceive = isInfluencerSide && shippingStatus === "SHIPPED";
+  const isInProduction = shippingStatus === "IN_PRODUCTION";
+  const showShippingSection =
+    ["AWAITING_ADDRESS", "ADDRESS_SUBMITTED", "SHIPPED", "IN_PRODUCTION"].includes(shippingStatus);
+
   return (
     <ProtectedRoute>
       <PageHeader
@@ -153,6 +184,150 @@ function CampaignDetailPage() {
           value={campaign.dueDate ? new Date(campaign.dueDate).toLocaleDateString() : "—"}
         />
       </section>
+
+      {showShippingSection && (
+        <section className="mt-8">
+          <SectionTitle
+            title="Shipping & delivery"
+            description="Track the product journey from brand to influencer."
+          />
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StepCard
+              icon={MapPin}
+              label="Address"
+              status={
+                shippingStatus === "AWAITING_ADDRESS"
+                  ? "pending"
+                  : ["ADDRESS_SUBMITTED", "SHIPPED", "IN_PRODUCTION"].includes(shippingStatus)
+                  ? "done"
+                  : "waiting"
+              }
+              detail={
+                campaign.shippingAddress
+                  ? `${campaign.shippingAddress.city}, ${campaign.shippingAddress.country}`
+                  : "Not submitted yet"
+              }
+            />
+            <StepCard
+              icon={Truck}
+              label="Shipped"
+              status={
+                ["AWAITING_ADDRESS", "ADDRESS_SUBMITTED"].includes(shippingStatus)
+                  ? "waiting"
+                  : ["SHIPPED", "IN_PRODUCTION"].includes(shippingStatus)
+                  ? "done"
+                  : "waiting"
+              }
+              detail={
+                campaign.trackingNumber
+                  ? `${campaign.shippingCarrier ?? ""} · ${campaign.trackingNumber}`
+                  : "Awaiting shipment"
+              }
+            />
+            <StepCard
+              icon={PackageCheck}
+              label="Received"
+              status={
+                campaign.receivedAt ? "done" : shippingStatus === "SHIPPED" ? "pending" : "waiting"
+              }
+              detail={
+                campaign.receivedAt
+                  ? new Date(campaign.receivedAt).toLocaleDateString()
+                  : "Not received yet"
+              }
+            />
+            <StepCard
+              icon={Calendar}
+              label="Deadline"
+              status={campaign.contentDeadline ? "done" : "waiting"}
+              detail={
+                campaign.contentDeadline
+                  ? new Date(campaign.contentDeadline).toLocaleDateString()
+                  : "Not set"
+              }
+            />
+          </div>
+
+          <Panel className="mt-4 p-4">
+            {campaign.shippingAddress && (
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Shipping address
+                </p>
+                <div className="mt-2 space-y-0.5 text-sm">
+                  <p className="font-medium">{campaign.shippingAddress.fullName}</p>
+                  <p className="text-muted-foreground">{campaign.shippingAddress.phone}</p>
+                  <p className="text-muted-foreground">{campaign.shippingAddress.street}</p>
+                  <p className="text-muted-foreground">
+                    {[
+                      campaign.shippingAddress.city,
+                      campaign.shippingAddress.state,
+                      campaign.shippingAddress.postalCode,
+                      campaign.shippingAddress.country,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </p>
+                  {campaign.shippingAddress.notes && (
+                    <p className="mt-1 text-xs italic text-muted-foreground">
+                      Note: {campaign.shippingAddress.notes}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {needsAddress && (
+                <Button onClick={() => setShowAddressModal(true)}>
+                  <MapPin className="mr-1.5 size-4" /> Submit shipping address
+                </Button>
+              )}
+              {needsShip && (
+                <Button onClick={() => setShowShipModal(true)}>
+                  <Truck className="mr-1.5 size-4" /> Mark as shipped
+                </Button>
+              )}
+              {needsReceive && (
+                <Button onClick={handleReceive} disabled={receiving}>
+                  {receiving ? (
+                    <><Loader2 className="mr-1.5 size-4 animate-spin" /> Confirming…</>
+                  ) : (
+                    <><PackageCheck className="mr-1.5 size-4" /> I received the product</>
+                  )}
+                </Button>
+              )}
+              {isInProduction && (
+                <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm">
+                  <CheckCircle2 className="size-4 text-emerald-500" />
+                  <span className="font-medium">In production</span>
+                  {campaign.contentDeadline && (
+                    <span className="text-xs text-muted-foreground">
+                      · due {new Date(campaign.contentDeadline).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              )}
+              {isBrandSide && shippingStatus === "AWAITING_ADDRESS" && (
+                <p className="text-sm text-muted-foreground">
+                  Waiting for influencer to submit shipping address.
+                </p>
+              )}
+              {isInfluencerSide && shippingStatus === "ADDRESS_SUBMITTED" && (
+                <p className="text-sm text-muted-foreground">
+                  Address submitted. Waiting for brand to ship.
+                </p>
+              )}
+              {isInfluencerSide && shippingStatus === "SHIPPED" && (
+                <p className="text-sm text-muted-foreground">
+                  Product on the way — mark received when it arrives.
+                </p>
+              )}
+            </div>
+          </Panel>
+        </section>
+      )}
 
       <div className="mt-8 flex gap-1 border-b border-border">
         {tabs.map((t) => {
@@ -205,7 +380,52 @@ function CampaignDetailPage() {
         )}
         {tab === "analytics" && <AnalyticsTabPlaceholder campaign={campaign} />}
       </div>
+
+      {showAddressModal && (
+        <ShippingAddressModal
+          campaignId={campaign.id}
+          initial={campaign.shippingAddress}
+          onClose={() => setShowAddressModal(false)}
+          onSaved={(c) => { setCampaign(c); setShowAddressModal(false); }}
+        />
+      )}
+
+      {showShipModal && (
+        <ShipProductModal
+          campaignId={campaign.id}
+          onClose={() => setShowShipModal(false)}
+          onSaved={(c) => { setCampaign(c); setShowShipModal(false); }}
+        />
+      )}
     </ProtectedRoute>
+  );
+}
+
+// ======================================================
+// STEP CARD
+// ======================================================
+function StepCard({
+  icon: Icon, label, status, detail,
+}: {
+  icon: any;
+  label: string;
+  status: "done" | "pending" | "waiting";
+  detail: string;
+}) {
+  const color =
+    status === "done"
+      ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-500"
+      : status === "pending"
+      ? "border-amber-500/30 bg-amber-500/5 text-amber-500"
+      : "border-border bg-card text-muted-foreground opacity-60";
+  return (
+    <div className={`rounded-xl border p-4 ${color}`}>
+      <div className="flex items-center gap-2">
+        <Icon className="size-4" />
+        <p className="text-xs font-medium uppercase tracking-wide">{label}</p>
+      </div>
+      <p className="mt-2 text-xs leading-relaxed text-foreground/80">{detail}</p>
+    </div>
   );
 }
 
@@ -218,6 +438,9 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+// ======================================================
+// OVERVIEW TAB
+// ======================================================
 function OverviewTab({
   campaign, canEdit, onUpdate,
 }: { campaign: Campaign; canEdit: boolean; onUpdate: () => void }) {
@@ -326,11 +549,8 @@ function OverviewTab({
             <SectionTitle title="Product" description="What the influencer shoots." />
             <div className="flex items-start gap-3">
               {campaign.product.primaryImage ? (
-                <img
-                  src={campaign.product.primaryImage}
-                  alt={campaign.product.name}
-                  className="size-20 rounded-lg object-cover"
-                />
+                <img src={campaign.product.primaryImage} alt={campaign.product.name}
+                  className="size-20 rounded-lg object-cover" />
               ) : (
                 <div className="grid size-20 place-items-center rounded-lg bg-muted text-muted-foreground">
                   <ImageIcon className="size-6" />
@@ -374,6 +594,17 @@ function OverviewTab({
                 </div>
               </div>
             )}
+            {campaign.contentDeadline && (
+              <div className="flex items-start gap-3">
+                <Clock className="mt-0.5 size-4 text-purple-500" />
+                <div>
+                  <p className="text-xs font-medium">Content deadline</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(campaign.contentDeadline).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            )}
             {campaign.completedAt && (
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 size-4 text-emerald-500" />
@@ -392,6 +623,9 @@ function OverviewTab({
   );
 }
 
+// ======================================================
+// DELIVERABLES TAB
+// ======================================================
 function DeliverablesTab({
   campaign, user, isBrandSide, isAgencySide, isInfluencerSide, isAdmin, onUpdate,
 }: {
@@ -440,14 +674,22 @@ function DeliverablesTab({
         ))}
       </div>
 
-      {rawFor && (
-        <RawUploadModal
-          campaignId={campaign.id}
-          deliverableId={rawFor}
-          onClose={() => setRawFor(null)}
-          onSubmitted={() => { setRawFor(null); onUpdate(); }}
-        />
-      )}
+      {rawFor && (() => {
+        const del = items.find((x) => x.id === rawFor);
+        const rawSubs = (del?.submissions ?? []).filter((s) => s.stage === "RAW");
+        const latestRaw = rawSubs[0];
+        return (
+          <RawUploadModal
+            campaignId={campaign.id}
+            deliverableId={rawFor}
+            currentIteration={latestRaw?.iteration ?? 0}
+            previousFeedback={latestRaw?.feedback ?? null}
+            onClose={() => setRawFor(null)}
+            onSubmitted={() => { setRawFor(null); onUpdate(); }}
+          />
+        );
+      })()}
+
       {finalFor && (
         <FinalUploadModal
           campaignId={campaign.id}
@@ -482,6 +724,9 @@ function DeliverablesTab({
   );
 }
 
+// ======================================================
+// DELIVERABLE CARD (with version history)
+// ======================================================
 function DeliverableCard({
   d, isBrandSide, isAgencySide, isInfluencerSide, isAdmin,
   onRawUpload, onFinalUpload, onPublish, onMetrics, onReject, onUpdate,
@@ -499,6 +744,8 @@ function DeliverableCard({
   onUpdate: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [showRawHistory, setShowRawHistory] = useState(false);
+  const [showFinalHistory, setShowFinalHistory] = useState(false);
 
   async function doAction(fn: () => Promise<any>) {
     setBusy(true);
@@ -528,18 +775,27 @@ function DeliverableCard({
     REJECTED: "bg-destructive/15 text-destructive",
   };
 
-  const latestRaw = (d.submissions ?? []).find((s) => s.stage === "RAW");
-  const latestFinal = (d.submissions ?? []).find((s) => s.stage === "FINAL");
+  const rawSubs = (d.submissions ?? []).filter((s) => s.stage === "RAW");
+  const finalSubs = (d.submissions ?? []).filter((s) => s.stage === "FINAL");
+
+  const latestRaw = rawSubs[0];
+  const latestFinal = finalSubs[0];
   const latestPublish = (d.publishes ?? [])[0];
   const latestMetric = (d.metrics ?? [])[0];
 
-  const canSubmitRaw = (isInfluencerSide || isAdmin) && ["PENDING", "IN_PROGRESS", "CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
+  const canSubmitRaw = (isInfluencerSide || isAdmin) &&
+    ["PENDING", "IN_PROGRESS", "CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
   const canStartEdit = (isAgencySide || isAdmin) && d.status === "RAW_UPLOADED";
-  const canSubmitFinal = (isAgencySide || isAdmin) && ["RAW_UPLOADED", "AGENCY_EDITING", "CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
+  const canSubmitFinal = (isAgencySide || isAdmin) &&
+    ["RAW_UPLOADED", "AGENCY_EDITING", "CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
   const canApprove = (isBrandSide || isAdmin) && ["FINAL_UPLOADED", "BRAND_REVIEW"].includes(d.status);
   const canReject = (isBrandSide || isAdmin) && ["FINAL_UPLOADED", "BRAND_REVIEW"].includes(d.status);
   const canPublish = (isAgencySide || isAdmin) && d.status === "BRAND_APPROVED";
-  const canEnterMetrics = (isAgencySide || isBrandSide || isInfluencerSide || isAdmin) && d.status === "PUBLISHED";
+  const canEnterMetrics = (isAgencySide || isBrandSide || isInfluencerSide || isAdmin) &&
+    d.status === "PUBLISHED";
+
+  const isRawRevision = rawSubs.length > 0 && ["CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
+  const isFinalRevision = finalSubs.length > 0 && ["CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
 
   return (
     <Panel className="overflow-hidden">
@@ -563,47 +819,157 @@ function DeliverableCard({
       </div>
 
       <div className="grid gap-3 p-4 sm:grid-cols-2">
+        {/* 1. RAW */}
         <div className="rounded-lg border border-border p-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase text-muted-foreground">1. Raw (Influencer)</p>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+              1. Raw (Influencer)
+            </p>
+            {rawSubs.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setShowRawHistory((s) => !s)}
+                className="inline-flex items-center gap-1 text-[10px] text-accent hover:underline"
+              >
+                {rawSubs.length} versions
+                {showRawHistory ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+              </button>
+            )}
+          </div>
+
           {latestRaw ? (
             <div className="space-y-1">
-              <p className="text-xs">{Array.isArray(latestRaw.files) ? latestRaw.files.length : 0} file(s)</p>
-              {latestRaw.notes && <p className="text-[11px] text-muted-foreground italic">"{latestRaw.notes}"</p>}
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold text-accent">
+                  v{latestRaw.iteration ?? 1}
+                </span>
+                <p className="text-xs">
+                  {Array.isArray(latestRaw.files) ? latestRaw.files.length : 0} file(s)
+                </p>
+              </div>
+              {latestRaw.notes && (
+                <p className="text-[11px] text-muted-foreground italic">
+                  "{latestRaw.notes}"
+                </p>
+              )}
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">Not uploaded</p>
           )}
+
           {canSubmitRaw && (
-            <Button size="sm" className="mt-2 w-full" onClick={onRawUpload} disabled={busy}>
-              <Upload className="mr-1 size-3" /> Upload raw
+            <Button
+              size="sm"
+              className="mt-2 w-full"
+              onClick={onRawUpload}
+              disabled={busy}
+            >
+              {isRawRevision ? (
+                <><RefreshCw className="mr-1 size-3" /> Upload revised version</>
+              ) : (
+                <><Upload className="mr-1 size-3" /> Upload raw</>
+              )}
             </Button>
+          )}
+
+          {showRawHistory && rawSubs.length > 1 && (
+            <div className="mt-3 space-y-1.5 border-t border-border pt-2">
+              {rawSubs.slice(1).map((s) => (
+                <div key={s.id} className="flex items-center justify-between text-[10px]">
+                  <span className="text-muted-foreground">v{s.iteration ?? 1}</span>
+                  <span className={`rounded-full px-1.5 py-0.5 uppercase ${statusStyles[s.status] || "bg-muted"}`}>
+                    {s.status.replace(/_/g, " ")}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {new Date(s.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
+        {/* 2. AGENCY EDIT */}
         <div className="rounded-lg border border-border p-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase text-muted-foreground">2. Agency edit</p>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+              2. Agency edit
+            </p>
+            {finalSubs.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setShowFinalHistory((s) => !s)}
+                className="inline-flex items-center gap-1 text-[10px] text-accent hover:underline"
+              >
+                {finalSubs.length} versions
+                {showFinalHistory ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+              </button>
+            )}
+          </div>
+
           {latestFinal ? (
             <div className="space-y-1">
-              <p className="text-xs">{Array.isArray(latestFinal.files) ? latestFinal.files.length : 0} final file(s)</p>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold text-accent">
+                  v{latestFinal.iteration ?? 1}
+                </span>
+                <p className="text-xs">
+                  {Array.isArray(latestFinal.files) ? latestFinal.files.length : 0} final file(s)
+                </p>
+              </div>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">Not edited yet</p>
           )}
+
           {canStartEdit && (
-            <Button size="sm" variant="outline" className="mt-2 w-full"
-              onClick={() => doAction(() => campaignsApi.startEditing(d.id))} disabled={busy}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-2 w-full"
+              onClick={() => doAction(() => campaignsApi.startEditing(d.id))}
+              disabled={busy}
+            >
               <Pencil className="mr-1 size-3" /> Start editing
             </Button>
           )}
           {canSubmitFinal && (
-            <Button size="sm" className="mt-2 w-full" onClick={onFinalUpload} disabled={busy}>
-              <Upload className="mr-1 size-3" /> Upload final
+            <Button
+              size="sm"
+              className="mt-2 w-full"
+              onClick={onFinalUpload}
+              disabled={busy}
+            >
+              {isFinalRevision ? (
+                <><RefreshCw className="mr-1 size-3" /> Upload revised final</>
+              ) : (
+                <><Upload className="mr-1 size-3" /> Upload final</>
+              )}
             </Button>
+          )}
+
+          {showFinalHistory && finalSubs.length > 1 && (
+            <div className="mt-3 space-y-1.5 border-t border-border pt-2">
+              {finalSubs.slice(1).map((s) => (
+                <div key={s.id} className="flex items-center justify-between text-[10px]">
+                  <span className="text-muted-foreground">v{s.iteration ?? 1}</span>
+                  <span className={`rounded-full px-1.5 py-0.5 uppercase ${statusStyles[s.status] || "bg-muted"}`}>
+                    {s.status.replace(/_/g, " ")}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {new Date(s.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
+        {/* 3. BRAND REVIEW */}
         <div className="rounded-lg border border-border p-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase text-muted-foreground">3. Brand review</p>
+          <p className="mb-2 text-[10px] font-semibold uppercase text-muted-foreground">
+            3. Brand review
+          </p>
           {["BRAND_APPROVED", "PUBLISHED", "METRICS_ENTERED", "COMPLETED"].includes(d.status) ? (
             <p className="text-xs text-emerald-500">Approved ✓</p>
           ) : d.status === "BRAND_REJECTED" ? (
@@ -616,19 +982,30 @@ function DeliverableCard({
               <Button size="sm" variant="outline" className="flex-1" onClick={onReject} disabled={busy}>
                 <X className="mr-1 size-3" /> Changes
               </Button>
-              <Button size="sm" className="flex-1"
-                onClick={() => doAction(() => campaignsApi.approveContent(d.id))} disabled={busy}>
+              <Button
+                size="sm"
+                className="flex-1"
+                onClick={() => doAction(() => campaignsApi.approveContent(d.id))}
+                disabled={busy}
+              >
                 <Check className="mr-1 size-3" /> Approve
               </Button>
             </div>
           )}
         </div>
 
+        {/* 4. PUBLISH & METRICS */}
         <div className="rounded-lg border border-border p-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase text-muted-foreground">4. Publish & metrics</p>
+          <p className="mb-2 text-[10px] font-semibold uppercase text-muted-foreground">
+            4. Publish & metrics
+          </p>
           {latestPublish ? (
-            <a href={latestPublish.postUrl} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-accent hover:underline">
+            <a
+              href={latestPublish.postUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
+            >
               {latestPublish.platform} · view post <ExternalLink className="size-3" />
             </a>
           ) : (
@@ -647,23 +1024,34 @@ function DeliverableCard({
             </Button>
           )}
           {canEnterMetrics && (
-            <Button size="sm" variant="outline" className="mt-2 w-full" onClick={onMetrics} disabled={busy}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-2 w-full"
+              onClick={onMetrics}
+              disabled={busy}
+            >
               <BarChart className="mr-1 size-3" /> Enter metrics
             </Button>
           )}
         </div>
       </div>
 
-      {latestRaw?.feedback && d.status === "BRAND_REJECTED" && (
+      {d.status === "BRAND_REJECTED" && latestFinal?.feedback && (
         <div className="border-t border-border bg-destructive/5 p-3 text-xs">
           <p className="font-medium text-destructive">Brand feedback</p>
-          <p className="mt-1 text-muted-foreground">{latestRaw.feedback}</p>
+          <p className="mt-1 whitespace-pre-line text-muted-foreground">
+            {latestFinal.feedback}
+          </p>
         </div>
       )}
     </Panel>
   );
 }
 
+// ======================================================
+// ANALYTICS TAB
+// ======================================================
 function AnalyticsTabPlaceholder({ campaign }: { campaign: Campaign }) {
   return (
     <Panel className="py-16 text-center">

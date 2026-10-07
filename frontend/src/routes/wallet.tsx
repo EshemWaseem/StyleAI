@@ -3,12 +3,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Wallet as WalletIcon, AlertCircle, Loader2, ArrowDownRight, ArrowUpRight,
-  Lock, Unlock, RotateCcw, Coins, ExternalLink, TrendingUp,
+  Lock, Unlock, RotateCcw, Coins, ExternalLink, TrendingUp, Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { WithdrawModal } from "@/components/wallet/WithdrawModal";
+import { AddFundsModal } from "@/components/wallet/AddFundsModal";
 import { walletApi } from "@/lib/wallet";
 import type { Wallet, WalletTransaction, WalletTxType } from "@/lib/wallet";
 
@@ -23,6 +24,7 @@ function WalletPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showWithdraw, setShowWithdraw] = useState(false);
+  const [showAddFunds, setShowAddFunds] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -90,13 +92,17 @@ function WalletPage() {
               </div>
             </div>
 
-            {wallet.balance > 0 && (
-              <div className="mt-5">
-                <Button onClick={() => setShowWithdraw(true)}>
+            {/* Actions */}
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button onClick={() => setShowAddFunds(true)}>
+                <Plus className="mr-2 size-4" /> Add funds
+              </Button>
+              {wallet.balance > 0 && (
+                <Button variant="outline" onClick={() => setShowWithdraw(true)}>
                   <ArrowUpRight className="mr-2 size-4" /> Withdraw funds
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </Panel>
 
           <Panel className="mt-6 overflow-hidden">
@@ -166,6 +172,13 @@ function WalletPage() {
               minAmount={50}
               onClose={() => setShowWithdraw(false)}
               onSubmitted={() => { setShowWithdraw(false); load(); }}
+            />
+          )}
+
+          {showAddFunds && (
+            <AddFundsModal
+              onClose={() => setShowAddFunds(false)}
+              onSuccess={() => { setShowAddFunds(false); load(); }}
             />
           )}
         </>

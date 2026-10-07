@@ -25,7 +25,6 @@ function TrialExpiredPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Silent redirect — valid trial or paid plan → /billing
   useEffect(() => {
     if (!data) return;
     const state = data.subscription?.effectiveState;
@@ -34,83 +33,118 @@ function TrialExpiredPage() {
     }
   }, [data, navigate]);
 
-  // Always show spinner until we know for sure (prevents flash)
+  // ---- Loading ----
   if (loading || !data) {
     return (
       <ProtectedRoute>
-        <>
-          <div className="mt-16 flex items-center justify-center">
-            <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Checking your subscription…</span>
+        <div className="flex min-h-[60vh] items-center justify-center px-4 sm:px-6">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 sm:px-6 sm:py-4">
+            <Loader2 className="size-4 animate-spin text-muted-foreground sm:size-5" />
+            <span className="text-xs text-muted-foreground sm:text-sm">
+              Checking your subscription…
+            </span>
           </div>
-        </>
+        </div>
       </ProtectedRoute>
     );
   }
 
-  // If not expired → show generic "still active" and redirect after brief moment
+  // ---- Redirect (not expired) ----
   const state = data.subscription?.effectiveState;
   if (state !== 'trial_expired' && state !== 'expired' && state !== 'past_due') {
     return (
       <ProtectedRoute>
-        <>
-          <div className="mt-16 flex items-center justify-center">
-            <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Redirecting…</span>
+        <div className="flex min-h-[60vh] items-center justify-center px-4 sm:px-6">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 sm:px-6 sm:py-4">
+            <Loader2 className="size-4 animate-spin text-muted-foreground sm:size-5" />
+            <span className="text-xs text-muted-foreground sm:text-sm">
+              Redirecting…
+            </span>
           </div>
-        </>
+        </div>
       </ProtectedRoute>
     );
   }
 
-  // ---- Actually expired ----
+  // ---- Expired ----
   return (
     <ProtectedRoute>
-      <>
-        <PageHeader
-          eyebrow="Action required"
-          title="Your trial has ended"
-          description="Choose a plan to keep using StyleAI's AI features and campaigns."
-        />
+      {/* ---- Outer wrapper — always has breathing room ---- */}
+      <div className="min-h-[calc(100vh-8rem)] w-full">
+        {/* ---- Page header — responsive padding ---- */}
+        <div className="px-4 pt-2 sm:px-6 sm:pt-4 lg:px-8">
+          <PageHeader
+            eyebrow="Action required"
+            title="Your trial has ended"
+            description="Choose a plan to keep using StyleAI's AI features and campaigns."
+          />
+        </div>
 
-        <Panel className="mt-8">
-          <div className="flex flex-col items-center py-8 text-center">
-            <div className="grid size-16 place-items-center rounded-full bg-amber-500/15 text-amber-500">
-              <Clock className="size-8" />
-            </div>
-            <h2 className="mt-4 font-display text-2xl font-medium">
-              Trial period ended
-            </h2>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              Your 3-day trial has expired. To continue using products, AI features,
-              and campaigns, please choose a plan.
-            </p>
+        {/* ---- Card — responsive container ---- */}
+        <div className="flex justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+          <Panel className="w-full max-w-2xl overflow-hidden">
+            <div className="flex flex-col items-center px-5 py-8 text-center sm:px-8 sm:py-10 md:px-12 md:py-12">
+              {/* ---- Icon ---- */}
+              <div className="grid size-14 place-items-center rounded-full bg-amber-500/15 text-amber-500 sm:size-16 md:size-20">
+                <Clock className="size-7 sm:size-8 md:size-10" />
+              </div>
 
-            {data.subscription?.trialEndsAt && (
-              <p className="mt-4 text-xs text-muted-foreground">
-                Trial ended on {new Date(data.subscription.trialEndsAt).toLocaleString()}
+              {/* ---- Heading ---- */}
+              <h2 className="mt-4 font-display text-xl font-medium sm:mt-5 sm:text-2xl md:text-3xl">
+                Trial period ended
+              </h2>
+
+              {/* ---- Description ---- */}
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:mt-4 sm:text-[15px]">
+                Your 3-day trial has expired. To continue using products, AI
+                features, and campaigns, please choose a plan.
               </p>
-            )}
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <Link to="/billing">
-                  <Sparkles className="mr-1.5 size-4" />
-                  Choose a plan <ArrowRight className="ml-1.5 size-4" />
-                </Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link to="/dashboard">Back to dashboard</Link>
-              </Button>
-            </div>
+              {/* ---- Trial end date ---- */}
+              {data.subscription?.trialEndsAt && (
+                <p className="mt-4 text-xs text-muted-foreground sm:mt-5 sm:text-[13px]">
+                  Trial ended on{' '}
+                  <span className="font-medium text-foreground/80">
+                    {new Date(data.subscription.trialEndsAt).toLocaleString()}
+                  </span>
+                </p>
+              )}
 
-            <div className="mt-6 flex items-start gap-2 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-              <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
-              <span>Your data is safe. Everything will be restored when you upgrade.</span>
+              {/* ---- Action buttons ---- */}
+              <div className="mt-6 flex w-full max-w-sm flex-col gap-3 sm:mt-8 sm:max-w-none sm:flex-row sm:justify-center">
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-full justify-center sm:w-auto sm:min-w-[180px]"
+                >
+                  <Link to="/billing">
+                    <Sparkles className="mr-1.5 size-4" />
+                    Choose a plan
+                    <ArrowRight className="ml-1.5 size-4" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  asChild
+                  size="lg"
+                  className="w-full justify-center sm:w-auto sm:min-w-[180px]"
+                >
+                  <Link to="/dashboard">Back to dashboard</Link>
+                </Button>
+              </div>
+
+              {/* ---- Info note ---- */}
+              <div className="mt-6 flex w-full max-w-md items-start gap-2 rounded-md border border-border bg-muted/30 px-3 py-2.5 text-left text-[11px] text-muted-foreground sm:mt-8 sm:px-4 sm:py-3 sm:text-xs">
+                <AlertCircle className="mt-0.5 size-3.5 shrink-0 sm:size-4" />
+                <span>
+                  Your data is safe. Everything will be restored when you
+                  upgrade.
+                </span>
+              </div>
             </div>
-          </div>
-        </Panel>
-      </>
+          </Panel>
+        </div>
+      </div>
     </ProtectedRoute>
   );
 }

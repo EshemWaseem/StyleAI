@@ -8,6 +8,7 @@ const { emitNotification, notifyUser, notifyAdmins } = require('./emit');
 const { listMyNotifications, getUnreadCount } = require('./list');
 const { markRead, markAllRead } = require('./markRead');
 const { deleteNotification } = require('./delete');
+const preferences = require('./preferences');
 
 module.exports = {
   // write side
@@ -23,6 +24,8 @@ module.exports = {
   deleteNotification,
   // utilities
   shapeNotification,
+  // preferences (email opt-out + unsubscribe)
+  preferences,
   // realtime
   eventBus: require('./eventBus'),
   sse: require('./sse'),

@@ -6,7 +6,7 @@ Responsibilities:
 - Initialize FastAPI app
 - Configure CORS + logging
 - Mount routes
-- Warm Ollama models on startup (text always, vision only if local)
+- Warm models on startup (only if Ollama is the active provider)
 - Clean shutdown
 
 NO business logic here.
@@ -81,23 +81,35 @@ async def _warmup_one(kind: str, model: str) -> None:
 
 
 async def _warmup_all() -> None:
-    """Warm only the models we actually use."""
+    """Warm only the models we actually use.
+
+    Cloud providers (groq, gemini) don't need warmup — no local inference.
+    Only Ollama (local) needs a warmup call.
+    """
     tasks = []
 
-    # TEXT: always warm
-    text_model = settings.OLLAMA_TEXT_MODEL
-    if text_model:
-        tasks.append(_warmup_one("text", text_model))
+    # ---- TEXT ----
+    if settings.LLM_PROVIDER == "ollama":
+        text_model = settings.OLLAMA_TEXT_MODEL
+        if text_model:
+            tasks.append(_warmup_one("text", text_model))
+        else:
+            WARMUP_STATE["text_model"] = "failed"
+            WARMUP_STATE["errors"]["text"] = "OLLAMA_TEXT_MODEL not set"
     else:
-        WARMUP_STATE["text_model"] = "failed"
-        WARMUP_STATE["errors"]["text"] = "OLLAMA_TEXT_MODEL not set"
+        WARMUP_STATE["text_model"] = "skipped"
+        logger.info(
+            "Text warmup skipped — LLM_PROVIDER=%s (cloud, model=%s)",
+            settings.LLM_PROVIDER,
+            settings.text_model,
+        )
 
-    # VISION: only warm if local Ollama is the vision provider
+    # ---- VISION ----
     if settings.VISION_PROVIDER == "ollama":
         vision_model = settings.OLLAMA_VISION_MODEL
-        if vision_model and vision_model != text_model:
+        if vision_model and vision_model != settings.OLLAMA_TEXT_MODEL:
             tasks.append(_warmup_one("vision", vision_model))
-        elif vision_model == text_model:
+        elif vision_model == settings.OLLAMA_TEXT_MODEL:
             WARMUP_STATE["vision_model"] = "ready"
         else:
             WARMUP_STATE["vision_model"] = "failed"
@@ -105,8 +117,9 @@ async def _warmup_all() -> None:
     else:
         WARMUP_STATE["vision_model"] = "skipped"
         logger.info(
-            "Vision warmup skipped — VISION_PROVIDER=%s (cloud)",
+            "Vision warmup skipped — VISION_PROVIDER=%s (cloud, model=%s)",
             settings.VISION_PROVIDER,
+            settings.vision_model,
         )
 
     if tasks:
@@ -119,13 +132,22 @@ async def _warmup_all() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
-    logger.info("Ollama URL:    %s", settings.OLLAMA_URL)
-    logger.info("Text model:    %s", settings.OLLAMA_TEXT_MODEL)
-    logger.info("Vision provider: %s", settings.VISION_PROVIDER)
-    if settings.VISION_PROVIDER == "ollama":
-        logger.info("Vision model:  %s", settings.OLLAMA_VISION_MODEL)
-    else:
-        logger.info("Vision model:  (cloud — %s)", settings.VISION_PROVIDER)
+    logger.info(
+        "LLM provider:    %s (model=%s)",
+        settings.LLM_PROVIDER,
+        settings.text_model,
+    )
+    logger.info(
+        "Vision provider: %s (model=%s)",
+        settings.VISION_PROVIDER,
+        settings.vision_model,
+    )
+    logger.info(
+        "Image provider:  %s",
+        settings.IMAGE_PROVIDER,
+    )
+    if settings.LLM_PROVIDER == "ollama" or settings.VISION_PROVIDER == "ollama":
+        logger.info("Ollama URL:      %s", settings.OLLAMA_URL)
 
     global _warmup_task
     _warmup_task = asyncio.create_task(_warmup_all())
@@ -178,8 +200,6 @@ app.include_router(platform_content_routes.router)
 app.include_router(product_photography_routes.router)
 app.include_router(embeddings_routes.router)
 app.include_router(chat_routes.router)
-
-
 
 
 @app.get("/", include_in_schema=False)

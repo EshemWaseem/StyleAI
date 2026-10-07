@@ -1,4 +1,5 @@
 // frontend/src/routes/dashboard.tsx
+import { Briefcase, Camera } from "lucide-react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { influencersApi, type Influencer } from "@/lib/influencers";
@@ -533,6 +534,28 @@ function InfluencerWorkspace() {
         </div>
       )}
 
+            {/* ✅ NEW: Agency hire card (photography/videography) */}
+      <section className="mt-6">
+        <div className="rounded-xl border border-border bg-gradient-to-r from-purple-500/5 via-transparent to-transparent p-5">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-purple-500/15 text-purple-500">
+              <Camera className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-lg font-medium">Need a photoshoot or video?</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Hire photographers and videographers for professional content.
+              </p>
+            </div>
+            <Button asChild>
+              <Link to="/agency/browse">
+                Hire creators <ArrowRight className="ml-1 size-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       <Panel className="mt-6">
         <SectionTitle
           title="Your pricing"
@@ -945,9 +968,31 @@ function BrandWorkspace({
       }))
     : [];
 
-  return (
+    return (
     <>
       <ProductLoop />
+
+      {/* ✅ NEW: Agency hire card */}
+      <section className="mt-6">
+        <div className="rounded-xl border border-border bg-gradient-to-r from-accent/5 via-transparent to-transparent p-5">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-accent/15 text-accent">
+              <Briefcase className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-lg font-medium">Need agency support?</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Hire agencies for website management, campaigns, and system ops.
+              </p>
+            </div>
+            <Button asChild>
+              <Link to="/agency/browse">
+                Browse agencies <ArrowRight className="ml-1 size-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
         <TrendPanel

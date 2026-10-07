@@ -9,6 +9,7 @@ import { OfferStatusBadge } from "@/components/offers/OfferStatusBadge";
 import { offersApi } from "@/lib/offers";
 import type { Offer } from "@/lib/offers";
 import { useRole } from "@/lib/role";
+import { useRealtimeEvent } from "@/lib/websocket/hooks";
 
 export const Route = createFileRoute("/offers/$id")({
   head: () => ({ meta: [{ title: "Offer — StyleAI" }] }),
@@ -24,19 +25,27 @@ function OfferDetailPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function load() {
-    setLoading(true);
+  async function load(silent = false) {
+    if (!silent) setLoading(true);
     try {
       const r = await offersApi.get(id);
       setOffer(r.offer);
     } catch (e: any) {
       setError(e?.message || "Failed to load offer");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // ✅ Real-time: refetch when THIS offer changes
+  useRealtimeEvent<any>("offer:updated", (data) => {
+    if (data?.offerId === id) load(true); // silent — no spinner flash
+  });
 
   async function act(fn: () => Promise<any>) {
     setBusy(true);
@@ -61,10 +70,16 @@ function OfferDetailPage() {
     !!offer?.influencer?.userId &&
     offer.influencer.userId === user.id;
 
+  // ---- Permission flags ----
   const canSubmitForReview = isBrandOwner && offer?.status === "DRAFT";
-  const canCancel = isBrandOwner && ["DRAFT", "PENDING_ADMIN", "ADMIN_APPROVED"].includes(offer?.status || "");
+
+  // ✅ Cancel ONLY allowed before influencer accepts
+  const canCancel =
+    isBrandOwner && ["DRAFT", "PENDING"].includes(offer?.status || "");
+
   const canAdminReview = isAdmin && offer?.status === "PENDING_ADMIN";
-  const canInfluencerReview = isTargetInfluencer && offer?.status === "ADMIN_APPROVED";
+  const canInfluencerReview =
+    isTargetInfluencer && offer?.status === "PENDING";
 
   if (loading) {
     return (
@@ -96,6 +111,7 @@ function OfferDetailPage() {
   if (!offer) return null;
 
   const items = Array.isArray(offer.items) ? offer.items : [];
+  const status = offer.status;
 
   return (
     <ProtectedRoute>
@@ -105,7 +121,9 @@ function OfferDetailPage() {
         description={`Between ${offer.brand?.name || "—"} and ${offer.influencer?.displayName || "—"}`}
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/offers"><ArrowLeft className="mr-1 size-4" /> Back</Link>
+            <Link to="/offers">
+              <ArrowLeft className="mr-1 size-4" /> Back
+            </Link>
           </Button>
         }
       />
@@ -276,31 +294,60 @@ function OfferDetailPage() {
           </>
         )}
 
-        {offer.status === "PENDING_ADMIN" && isBrandOwner && !isAdmin && (
-          <p className="text-xs text-muted-foreground">Waiting for admin approval…</p>
+        {/* ---- Status messages ---- */}
+        {status === "DRAFT" && isBrandOwner && (
+          <p className="text-xs text-muted-foreground">
+            Draft — click "Submit for review" to send this offer.
+          </p>
         )}
-        {offer.status === "PENDING_ADMIN" && !isBrandOwner && !isAdmin && (
-          <p className="text-xs text-muted-foreground">Waiting for admin approval…</p>
-        )}
-        {offer.status === "ADMIN_APPROVED" && isBrandOwner && (
+        {status === "PENDING" && isBrandOwner && (
           <p className="text-xs text-muted-foreground">
             Sent to influencer — waiting for their response.
           </p>
         )}
-        {offer.status === "ADMIN_APPROVED" && !isBrandOwner && !isAdmin && !isTargetInfluencer && (
+        {status === "PENDING" && isTargetInfluencer && (
+          <p className="text-xs font-medium text-accent">
+            Action required — review and respond to this offer.
+          </p>
+        )}
+        {status === "PENDING" && !isBrandOwner && !isAdmin && !isTargetInfluencer && (
           <p className="text-xs text-muted-foreground">Waiting for influencer to respond…</p>
         )}
-        {offer.status === "INFLUENCER_ACCEPTED" && (
-          <p className="text-xs font-medium text-emerald-500">✓ Offer accepted</p>
+        {status === "IN_PROGRESS" && (
+          <p className="text-xs font-medium text-blue-500">
+            ✓ Offer accepted — work in progress
+          </p>
         )}
-        {offer.status === "INFLUENCER_DECLINED" && (
+        {status === "COMPLETED" && (
+          <p className="text-xs font-medium text-emerald-500">
+            ✓ Offer completed
+          </p>
+        )}
+        {status === "DECLINED" && (
           <p className="text-xs font-medium text-destructive">Offer declined</p>
         )}
-        {offer.status === "ADMIN_REJECTED" && (
-          <p className="text-xs font-medium text-destructive">Rejected by admin</p>
+        {status === "EXPIRED" && (
+          <p className="text-xs font-medium text-muted-foreground">Offer expired</p>
         )}
-        {offer.status === "CANCELLED" && (
+        {status === "CANCELLED" && (
           <p className="text-xs font-medium text-muted-foreground">Offer cancelled</p>
+        )}
+
+        {/* Legacy statuses (just in case old data) */}
+        {status === "PENDING_ADMIN" && (
+          <p className="text-xs text-muted-foreground">Waiting for admin approval…</p>
+        )}
+        {status === "ADMIN_APPROVED" && (
+          <p className="text-xs text-muted-foreground">Waiting for influencer to respond…</p>
+        )}
+        {status === "INFLUENCER_ACCEPTED" && (
+          <p className="text-xs font-medium text-emerald-500">✓ Offer accepted</p>
+        )}
+        {status === "INFLUENCER_DECLINED" && (
+          <p className="text-xs font-medium text-destructive">Offer declined</p>
+        )}
+        {status === "ADMIN_REJECTED" && (
+          <p className="text-xs font-medium text-destructive">Rejected by admin</p>
         )}
       </div>
     </ProtectedRoute>

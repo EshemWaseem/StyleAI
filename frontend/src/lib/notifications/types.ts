@@ -32,3 +32,26 @@ export interface NotificationListResponse {
   limit: number;
   offset: number;
 }
+
+// ======================================================
+// Preferences
+// ======================================================
+export interface NotificationPreference {
+  emailTrial: boolean;
+  emailOffers: boolean;
+  emailCampaigns: boolean;
+  emailWallet: boolean;
+  emailPayments: boolean;
+  emailSystem: boolean;
+  unsubscribeToken: string;
+  updatedAt: string;
+}
+
+export interface UpdatePreferenceInput {
+  emailTrial?: boolean;
+  emailOffers?: boolean;
+  emailCampaigns?: boolean;
+  emailWallet?: boolean;
+  emailPayments?: boolean;
+  emailSystem?: boolean;
+}

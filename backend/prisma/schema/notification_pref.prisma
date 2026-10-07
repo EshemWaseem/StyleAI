@@ -1,0 +1,25 @@
+// notification_pref.prisma
+// ======================================================
+// Per-user notification preferences.
+// Only EMAIL is controllable — in-app is always on (audit trail).
+// ======================================================
+
+model NotificationPreference {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Email categories (default = true, opt-out model)
+  emailTrial     Boolean @default(true)
+  emailOffers    Boolean @default(true)
+  emailCampaigns Boolean @default(true)
+  emailWallet    Boolean @default(true)
+  emailPayments  Boolean @default(true)
+  emailSystem    Boolean @default(true)
+
+  // One-click unsubscribe token (opaque, persistent)
+  unsubscribeToken String @unique @default(uuid())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

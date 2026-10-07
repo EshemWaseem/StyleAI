@@ -49,10 +49,18 @@ function DiscoverPage() {
   const userRoles = user?.roles ?? [];
   const isInfluencer = userRoles.includes("INFLUENCER");
   const isSuperAdmin = userRoles.includes("SUPER_ADMIN");
-  const isBrandSide = userRoles.some((r) =>
-    ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
-  );
+  const isBrandOwner = userRoles.includes("BRAND_OWNER");
+  const isBrandTeamMember = userRoles.includes("BRAND_TEAM_MEMBER");
+  const isBrandSide = isBrandOwner || isBrandTeamMember;
   const isAgency = userRoles.includes("AGENCY");
+
+  // ✅ FIX: Can browse = any of these roles OR has permission
+  const canBrowse =
+    isSuperAdmin ||
+    isBrandSide ||
+    isAgency ||
+    isInfluencer ||
+    !!user?.permissions?.includes("influencer.read");
 
   const canSeeAddButton = isInfluencer || isSuperAdmin;
 
@@ -78,24 +86,26 @@ function DiscoverPage() {
     profileChecked &&
     (isSuperAdmin || (isInfluencer && hasProfile === false));
 
-  const canSave = !!user?.permissions.includes("influencer.save");
+  const canSave = !!user?.permissions?.includes("influencer.save");
 
+  // ✅ FIX: Only redirect if can't browse at all
   useEffect(() => {
     if (authLoading || !user) return;
     if (user.pendingApproval) {
       navigate({ to: "/pending" });
       return;
     }
-    if (!user.permissions.includes("influencer.read")) {
+    if (!canBrowse) {
       navigate({ to: "/dashboard" });
     }
-  }, [authLoading, user, navigate]);
+  }, [authLoading, user, navigate, canBrowse]);
 
   useEffect(() => {
     if (authLoading || !user || user.pendingApproval) return;
+    if (!canBrowse) return;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, user, platform, category, minFollowers, savedOnly]);
+  }, [authLoading, user, platform, category, minFollowers, savedOnly, canBrowse]);
 
   async function load() {
     setLoading(true);
@@ -143,9 +153,7 @@ function DiscoverPage() {
   );
 
   if (authLoading || (!user && loading)) {
-    return (
-      <p className="text-sm text-muted-foreground">Loading…</p>
-    );
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
   if (!user || user.pendingApproval) return null;
 

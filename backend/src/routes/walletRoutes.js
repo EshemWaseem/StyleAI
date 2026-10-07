@@ -1,3 +1,4 @@
+// routes/walletRoutes.js
 const router = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const ctrl = require('../controllers/walletController');
@@ -7,6 +8,7 @@ router.use(authenticate);
 // ----- Owner-facing -----
 router.get('/me', ctrl.getMe);
 router.get('/me/transactions', ctrl.listTransactions);
+router.post('/me/topup', ctrl.topUp);              // NEW
 router.post('/me/withdraw', ctrl.requestWithdrawal);
 
 // ----- Admin-only -----

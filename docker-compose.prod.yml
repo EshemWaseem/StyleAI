@@ -1,0 +1,172 @@
+# docker-compose.prod.yml
+# ======================================================
+# StyleAI — full production stack
+# ======================================================
+
+services:
+  # ====================================================
+  # DATABASE
+  # ====================================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: styleai-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - styleai_postgres_data:/var/lib/postgresql/data
+    networks:
+      - styleai-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ====================================================
+  # REDIS (queues)
+  # ====================================================
+  redis:
+    image: redis:7-alpine
+    container_name: styleai-redis
+    restart: always
+    volumes:
+      - styleai_redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy noeviction
+    networks:
+      - styleai-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ====================================================
+  # BACKEND (Node.js)
+  # ====================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: styleai-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+    networks:
+      - styleai-net
+    volumes:
+      - styleai_backend_uploads:/app/uploads
+
+  # ====================================================
+  # FRONTEND (TanStack Start)
+  # ====================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: styleai-frontend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    networks:
+      - styleai-net
+
+  # ====================================================
+  # AI SERVICE (FastAPI)
+  # ====================================================
+  ai-services:
+    build:
+      context: ./ai-services
+      dockerfile: Dockerfile
+    container_name: styleai-ai
+    restart: always
+    env_file:
+      - ./ai-services/.env
+    environment:
+      AI_ENV: production
+    networks:
+      - styleai-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   
+    # If Ollama runs on host (not in Docker), uncomment:
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+
+  # ====================================================
+  # OLLAMA (OPTIONAL — for local LLM)
+  # Remove if using cloud providers (Groq, Gemini)
+  # ====================================================
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: styleai-ollama
+  #   restart: always
+  #   volumes:
+  #     - styleai_ollama_data:/root/.ollama
+  #   networks:
+  #     - styleai-net
+  #   # For GPU, add:
+  #   # deploy:
+  #   #   resources:
+  #   #     reservations:
+  #   #       devices:
+  #   #         - driver: nvidia
+  #   #           count: 1
+  #   #           capabilities: [gpu]
+
+  # ====================================================
+  # NGINX — reverse proxy + SSL
+  # ====================================================
+  nginx:
+    image: nginx:alpine
+    container_name: styleai-nginx
+    restart: always
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/www:/var/www/certbot:ro
+      - ./nginx/logs:/var/log/nginx
+    networks:
+      - styleai-net
+
+  # ====================================================
+  # CERTBOT — Let's Encrypt SSL
+  # Run manually to issue/renew certs (see DEPLOYMENT.md)
+  # ====================================================
+  certbot:
+    image: certbot/certbot:latest
+    container_name: styleai-certbot
+    volumes:
+      - ./nginx/certs:/etc/letsencrypt
+      - ./nginx/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done;'"
+    networks:
+      - styleai-net
+
+networks:
+  styleai-net:
+    driver: bridge
+
+volumes:
+  styleai_postgres_data:
+  styleai_redis_data:
+  styleai_backend_uploads:
+  # styleai_ollama_data:

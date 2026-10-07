@@ -15,7 +15,6 @@ async function resolveActiveBrand(user, actingBrandId) {
     return brand;
   }
 
-  // Fall back to user's own org's first brand
   if (!user.organizationId) {
     throw httpError('No organization linked to your account', 403, 'NO_ORG');
   }

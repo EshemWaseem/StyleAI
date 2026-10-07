@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EngagementsRouteImport } from './routes/engagements'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MatchedProductsRouteImport } from './routes/matched-products'
@@ -44,9 +45,11 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminWalletsRouteImport } from './routes/admin/wallets'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin/withdrawals'
 import { Route as AgencyIndexRouteImport } from './routes/agency.index'
+import { Route as AgencyBrowseRouteImport } from './routes/agency.browse'
 import { Route as AgencyCampaignsRouteImport } from './routes/agency.campaigns'
 import { Route as AgencyClientsRouteImport } from './routes/agency.clients'
 import { Route as AgencyEditingRouteImport } from './routes/agency.editing'
+import { Route as AgencyEngagementsRouteImport } from './routes/agency.engagements'
 import { Route as BrandsIndexRouteImport } from './routes/brands.index'
 import { Route as BrandsBrandIdRouteImport } from './routes/brands.$brandId'
 import { Route as CampaignsIndexRouteImport } from './routes/campaigns.index'
@@ -85,6 +88,11 @@ const BillingRoute = BillingRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EngagementsRoute = EngagementsRouteImport.update({
+  id: '/engagements',
+  path: '/engagements',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KnowledgeRoute = KnowledgeRouteImport.update({
@@ -242,6 +250,11 @@ const AgencyIndexRoute = AgencyIndexRouteImport.update({
   path: '/agency/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgencyBrowseRoute = AgencyBrowseRouteImport.update({
+  id: '/agency/browse',
+  path: '/agency/browse',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgencyCampaignsRoute = AgencyCampaignsRouteImport.update({
   id: '/agency/campaigns',
   path: '/agency/campaigns',
@@ -255,6 +268,11 @@ const AgencyClientsRoute = AgencyClientsRouteImport.update({
 const AgencyEditingRoute = AgencyEditingRouteImport.update({
   id: '/agency/editing',
   path: '/agency/editing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgencyEngagementsRoute = AgencyEngagementsRouteImport.update({
+  id: '/agency/engagements',
+  path: '/agency/engagements',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrandsIndexRoute = BrandsIndexRouteImport.update({
@@ -358,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
+  '/engagements': typeof EngagementsRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/matched-products': typeof MatchedProductsRoute
@@ -387,9 +406,11 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agency/browse': typeof AgencyBrowseRoute
   '/agency/campaigns': typeof AgencyCampaignsRoute
   '/agency/clients': typeof AgencyClientsRoute
   '/agency/editing': typeof AgencyEditingRoute
+  '/agency/engagements': typeof AgencyEngagementsRoute
   '/brands/$brandId': typeof BrandsBrandIdRoute
   '/campaigns/$id': typeof CampaignsIdRoute
   '/influencer/offers': typeof InfluencerOffersRoute
@@ -417,6 +438,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
+  '/engagements': typeof EngagementsRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/matched-products': typeof MatchedProductsRoute
@@ -446,9 +468,11 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agency/browse': typeof AgencyBrowseRoute
   '/agency/campaigns': typeof AgencyCampaignsRoute
   '/agency/clients': typeof AgencyClientsRoute
   '/agency/editing': typeof AgencyEditingRoute
+  '/agency/engagements': typeof AgencyEngagementsRoute
   '/brands/$brandId': typeof BrandsBrandIdRoute
   '/campaigns/$id': typeof CampaignsIdRoute
   '/influencer/offers': typeof InfluencerOffersRoute
@@ -477,6 +501,7 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
+  '/engagements': typeof EngagementsRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/matched-products': typeof MatchedProductsRoute
@@ -506,9 +531,11 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/wallets': typeof AdminWalletsRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
+  '/agency/browse': typeof AgencyBrowseRoute
   '/agency/campaigns': typeof AgencyCampaignsRoute
   '/agency/clients': typeof AgencyClientsRoute
   '/agency/editing': typeof AgencyEditingRoute
+  '/agency/engagements': typeof AgencyEngagementsRoute
   '/brands/$brandId': typeof BrandsBrandIdRoute
   '/campaigns/$id': typeof CampaignsIdRoute
   '/influencer/offers': typeof InfluencerOffersRoute
@@ -538,6 +565,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/billing'
     | '/dashboard'
+    | '/engagements'
     | '/knowledge'
     | '/login'
     | '/matched-products'
@@ -567,9 +595,11 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallets'
     | '/admin/withdrawals'
+    | '/agency/browse'
     | '/agency/campaigns'
     | '/agency/clients'
     | '/agency/editing'
+    | '/agency/engagements'
     | '/brands/$brandId'
     | '/campaigns/$id'
     | '/influencer/offers'
@@ -597,6 +627,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/billing'
     | '/dashboard'
+    | '/engagements'
     | '/knowledge'
     | '/login'
     | '/matched-products'
@@ -626,9 +657,11 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallets'
     | '/admin/withdrawals'
+    | '/agency/browse'
     | '/agency/campaigns'
     | '/agency/clients'
     | '/agency/editing'
+    | '/agency/engagements'
     | '/brands/$brandId'
     | '/campaigns/$id'
     | '/influencer/offers'
@@ -656,6 +689,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/billing'
     | '/dashboard'
+    | '/engagements'
     | '/knowledge'
     | '/login'
     | '/matched-products'
@@ -685,9 +719,11 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/wallets'
     | '/admin/withdrawals'
+    | '/agency/browse'
     | '/agency/campaigns'
     | '/agency/clients'
     | '/agency/editing'
+    | '/agency/engagements'
     | '/brands/$brandId'
     | '/campaigns/$id'
     | '/influencer/offers'
@@ -716,6 +752,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   BillingRoute: typeof BillingRoute
   DashboardRoute: typeof DashboardRoute
+  EngagementsRoute: typeof EngagementsRoute
   KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
   MatchedProductsRoute: typeof MatchedProductsRoute
@@ -745,9 +782,11 @@ export interface RootRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWalletsRoute: typeof AdminWalletsRoute
   AdminWithdrawalsRoute: typeof AdminWithdrawalsRoute
+  AgencyBrowseRoute: typeof AgencyBrowseRoute
   AgencyCampaignsRoute: typeof AgencyCampaignsRoute
   AgencyClientsRoute: typeof AgencyClientsRoute
   AgencyEditingRoute: typeof AgencyEditingRoute
+  AgencyEngagementsRoute: typeof AgencyEngagementsRoute
   BrandsBrandIdRoute: typeof BrandsBrandIdRoute
   CampaignsIdRoute: typeof CampaignsIdRoute
   InfluencerOffersRoute: typeof InfluencerOffersRoute
@@ -799,6 +838,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/engagements': {
+      id: '/engagements'
+      path: '/engagements'
+      fullPath: '/engagements'
+      preLoaderRoute: typeof EngagementsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/knowledge': {
@@ -1018,6 +1064,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgencyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agency/browse': {
+      id: '/agency/browse'
+      path: '/agency/browse'
+      fullPath: '/agency/browse'
+      preLoaderRoute: typeof AgencyBrowseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agency/campaigns': {
       id: '/agency/campaigns'
       path: '/agency/campaigns'
@@ -1037,6 +1090,13 @@ declare module '@tanstack/react-router' {
       path: '/agency/editing'
       fullPath: '/agency/editing'
       preLoaderRoute: typeof AgencyEditingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agency/engagements': {
+      id: '/agency/engagements'
+      path: '/agency/engagements'
+      fullPath: '/agency/engagements'
+      preLoaderRoute: typeof AgencyEngagementsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brands/': {
@@ -1180,6 +1240,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   BillingRoute: BillingRoute,
   DashboardRoute: DashboardRoute,
+  EngagementsRoute: EngagementsRoute,
   KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
   MatchedProductsRoute: MatchedProductsRoute,
@@ -1209,9 +1270,11 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   AdminWalletsRoute: AdminWalletsRoute,
   AdminWithdrawalsRoute: AdminWithdrawalsRoute,
+  AgencyBrowseRoute: AgencyBrowseRoute,
   AgencyCampaignsRoute: AgencyCampaignsRoute,
   AgencyClientsRoute: AgencyClientsRoute,
   AgencyEditingRoute: AgencyEditingRoute,
+  AgencyEngagementsRoute: AgencyEngagementsRoute,
   BrandsBrandIdRoute: BrandsBrandIdRoute,
   CampaignsIdRoute: CampaignsIdRoute,
   InfluencerOffersRoute: InfluencerOffersRoute,

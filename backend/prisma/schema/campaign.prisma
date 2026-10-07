@@ -1,9 +1,6 @@
 // campaign.prisma
 // ======================================================
-// CAMPAIGN — auto-created when an offer is accepted
-// Multi-party workflow:
-//   Influencer SHOOTS raw → Agency EDITS → Brand APPROVES
-//   → Agency PUBLISHES → Metrics entered → Complete
+// CAMPAIGN — shipping flow + content iteration tracking
 // ======================================================
 
 model Campaign {
@@ -34,9 +31,17 @@ model Campaign {
   dueDate     DateTime?
   completedAt DateTime?
 
-  status CampaignStatus @default(ACTIVE)
+  status CampaignStatus @default(AWAITING_ADDRESS)
 
-  // Aggregate metrics (denormalized from DeliverableMetric)
+  // SHIPPING FLOW
+  shippingAddress Json?
+  shippingCarrier String?
+  trackingNumber  String?
+  shippedAt       DateTime?
+  receivedAt      DateTime?
+  contentDeadline DateTime?
+
+  // Aggregate metrics
   reach       Int     @default(0)
   impressions Int     @default(0)
   clicks      Int     @default(0)
@@ -58,6 +63,10 @@ model Campaign {
 }
 
 enum CampaignStatus {
+  AWAITING_ADDRESS
+  ADDRESS_SUBMITTED
+  SHIPPED
+  IN_PRODUCTION
   ACTIVE
   IN_REVIEW
   DELIVERED
@@ -90,7 +99,6 @@ model CampaignDeliverable {
 
 enum DeliverableStatus {
   PENDING
-  // Agency multi-party workflow stages
   RAW_UPLOADED
   AGENCY_EDITING
   FINAL_UPLOADED
@@ -100,7 +108,6 @@ enum DeliverableStatus {
   PUBLISHED
   METRICS_ENTERED
   COMPLETED
-  // Legacy / simple-mode stages
   IN_PROGRESS
   SUBMITTED
   APPROVED
@@ -117,7 +124,11 @@ model ContentSubmission {
   caption String?
   notes   String?
 
-  stage SubmissionStage @default(RAW) // RAW (influencer) | FINAL (agency)
+  stage SubmissionStage @default(RAW)
+
+  // Multi-iteration tracking
+  iteration Int     @default(1)
+  isLatest  Boolean @default(true)
 
   status     SubmissionStatus @default(PENDING)
   feedback   String?
@@ -125,7 +136,7 @@ model ContentSubmission {
   reviewedAt DateTime?
 
   submittedBy         String
-  submittedByRole     String? // "INFLUENCER" | "AGENCY" | "BRAND"
+  submittedByRole     String?
   submittedByAgencyId String?
   submittedByAgency   Organization? @relation("AgencyContentSubmissions", fields: [submittedByAgencyId], references: [id], onDelete: SetNull)
 
@@ -133,6 +144,7 @@ model ContentSubmission {
   updatedAt DateTime @updatedAt
 
   @@index([deliverableId, status])
+  @@index([deliverableId, stage, isLatest])
   @@index([stage])
   @@index([submittedByAgencyId])
 }
@@ -184,7 +196,7 @@ model DeliverableMetric {
   conversions Int     @default(0)
   revenue     Decimal @default(0) @db.Decimal(12, 2)
 
-  source            String        @default("MANUAL") // "MANUAL" | "API"
+  source            String        @default("MANUAL")
   enteredByUserId   String
   enteredByAgencyId String?
   enteredByAgency   Organization? @relation("AgencyMetrics", fields: [enteredByAgencyId], references: [id], onDelete: SetNull)

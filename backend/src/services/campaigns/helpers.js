@@ -2,9 +2,9 @@
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
 
-// ------------------------------------------------------
-// Auth: is user allowed to see this campaign?
-// ------------------------------------------------------
+// ======================================================
+// AUTH GUARDS
+// ======================================================
 async function assertCanViewCampaign(user, campaign) {
   const isAdmin = user.roles?.includes('SUPER_ADMIN');
   if (isAdmin) return;
@@ -46,9 +46,9 @@ function assertIsAgencySide(user, campaign) {
   }
 }
 
-// ------------------------------------------------------
-// Shaping
-// ------------------------------------------------------
+// ======================================================
+// SHAPING
+// ======================================================
 function shapeSubmission(s) {
   return {
     id: s.id,
@@ -58,6 +58,8 @@ function shapeSubmission(s) {
     notes: s.notes,
     stage: s.stage,
     status: s.status,
+    iteration: s.iteration ?? 1,
+    isLatest: s.isLatest ?? true,
     submittedByRole: s.submittedByRole,
     submittedByAgencyId: s.submittedByAgencyId,
     feedback: s.feedback,
@@ -156,6 +158,15 @@ function shapeCampaign(c, { withRelations = true } = {}) {
     dueDate: c.dueDate,
     completedAt: c.completedAt,
     status: c.status,
+
+    // Shipping flow
+    shippingAddress: c.shippingAddress ?? null,
+    shippingCarrier: c.shippingCarrier ?? null,
+    trackingNumber: c.trackingNumber ?? null,
+    shippedAt: c.shippedAt ?? null,
+    receivedAt: c.receivedAt ?? null,
+    contentDeadline: c.contentDeadline ?? null,
+
     reach: c.reach,
     impressions: c.impressions,
     clicks: c.clicks,

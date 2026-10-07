@@ -1,6 +1,6 @@
 // services/payments/stripe/checkout.js
 // ======================================================
-// Stripe checkout — subscription + one-off
+// Stripe checkout — subscription + one-off (wallet top-up, orders)
 // ======================================================
 
 const stripe = require('./client');
@@ -9,6 +9,7 @@ const { pkrToUsd } = require('../shared/currency');
 
 const STRIPE_CURRENCY = 'usd';
 
+// ---------- Helpers ----------
 function normalizeAmountAndCurrency(plan, cycle) {
   const rawAmount = cycle === 'YEARLY' ? plan.priceYearly : plan.priceMonthly;
   if (rawAmount == null || rawAmount <= 0) {
@@ -29,6 +30,13 @@ function isValidStripePriceId(priceId) {
   if (!s.startsWith('price_')) return false;
   if (s.includes('xxxxx')) return false;
   return true;
+}
+
+/** Safely append session_id placeholder to a URL. */
+function appendSessionId(url) {
+  const base = String(url || '').trim() || 'http://localhost:3000';
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}session_id={CHECKOUT_SESSION_ID}`;
 }
 
 // ------------------------------------------------------
@@ -70,12 +78,9 @@ async function subscriptionCheckout({ organization, plan, cycle, successUrl, can
     mode: 'subscription',
     customer: customerId,
     line_items: lineItems,
-    // ── Proper success URL with session_id placeholder ──
-    success_url: `${successUrl}${successUrl.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: cancelUrl,
-    // ── Top-level metadata (webhook reads this) ──
+    success_url: appendSessionId(successUrl),
+    cancel_url: cancelUrl || 'http://localhost:3000',
     metadata,
-    // ── Subscription-level metadata (for subscription.* webhooks) ──
     subscription_data: { metadata },
     allow_promotion_codes: true,
     billing_address_collection: 'auto',
@@ -90,36 +95,54 @@ async function subscriptionCheckout({ organization, plan, cycle, successUrl, can
 }
 
 // ------------------------------------------------------
-// One-off checkout (orders)
+// One-off checkout (wallet top-up, orders)
 // ------------------------------------------------------
 async function oneOffCheckout({
   organization,
+  user,                        // ← optional; used if no organization
   amount,
-  currency = 'usd',
+  currency = 'pkr',
   description,
   metadata = {},
   successUrl,
   cancelUrl,
 }) {
-  const customerId = await customer.ensure(organization);
+  // ---- Resolve Stripe customer (org or user) ----
+  let customerId = null;
+  try {
+    if (organization) {
+      customerId = await customer.ensure(organization);
+    } else if (user) {
+      customerId = await customer.ensureForUser(user);
+    }
+  } catch (e) {
+    console.warn('[stripe.oneOffCheckout] customer.ensure failed (continuing without customer):', e.message);
+    customerId = null;
+  }
 
-  const session = await stripe.checkout.sessions.create({
+  // ---- Build session payload ----
+  const sessionPayload = {
     mode: 'payment',
-    customer: customerId,
     line_items: [
       {
         price_data: {
           currency: String(currency).toLowerCase(),
-          product_data: { name: description },
+          product_data: { name: description || 'Payment' },
           unit_amount: Math.round(Number(amount) * 100),
         },
         quantity: 1,
       },
     ],
-    success_url: `${successUrl}${successUrl.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: cancelUrl,
+    success_url: appendSessionId(successUrl),
+    cancel_url: cancelUrl || 'http://localhost:3000',
     metadata,
-  });
+  };
+
+  if (customerId) {
+    sessionPayload.customer = customerId;
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionPayload);
 
   return {
     url: session.url,

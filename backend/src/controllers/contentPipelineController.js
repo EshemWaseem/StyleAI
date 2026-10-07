@@ -49,4 +49,16 @@ async function metrics(req, res, next) {
   } catch (e) { next(e); }
 }
 
-module.exports = { submitRaw, startEditing, submitFinal, approve, reject, publish, metrics };
+async function submitFinalAsInfluencer(req, res, next) {
+  try {
+    const d = await svc.submitFinalAsInfluencer(
+      req.user,
+      req.params.deliverableId,
+      req.body
+    );
+    res.json({ message: 'Final content submitted', deliverable: d });
+  } catch (e) { next(e); }
+}
+
+
+module.exports = { submitRaw, startEditing, submitFinal, approve, reject, submitFinalAsInfluencer, publish, metrics };

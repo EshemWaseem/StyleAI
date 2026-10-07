@@ -25,6 +25,7 @@ model Document {
   chunks DocumentChunk[]
 
   @@index([organizationId, createdAt])
+  @@index([organizationId, type])   // NEW — filter by docType
   @@index([status])
 }
 
@@ -44,7 +45,7 @@ model DocumentChunk {
   content    String   @db.Text
   tokens     Int      @default(0)
 
-  // pgvector column (768 dims for Gemini text-embedding-004)
+  // pgvector column (768 dims)
   embedding  Unsupported("vector(768)")?
 
   createdAt  DateTime @default(now())

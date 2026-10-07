@@ -1,3 +1,4 @@
+// offers.index.tsx
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, FileText, Plus } from "lucide-react";
@@ -6,6 +7,7 @@ import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { offersApi } from "@/lib/offers";
 import type { Offer } from "@/lib/offers";
+import { useRole } from "@/lib/role";
 
 export const Route = createFileRoute("/offers/")({
   head: () => ({ meta: [{ title: "Offers — StyleAI" }] }),
@@ -13,9 +15,16 @@ export const Route = createFileRoute("/offers/")({
 });
 
 function OffersListPage() {
+  const { user } = useRole();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const userRoles = (user?.roles ?? []) as string[];
+  const isInfluencerOnly =
+    userRoles.includes("INFLUENCER") &&
+    !userRoles.some((r) => ["SUPER_ADMIN", "BRAND_OWNER", "AGENCY", "BRAND_TEAM_MEMBER"].includes(r));
+  const canCreateOffer = !isInfluencerOnly;
 
   useEffect(() => {
     offersApi
@@ -30,14 +39,20 @@ function OffersListPage() {
       <>
         <PageHeader
           eyebrow="Collaborations"
-          title="Custom offers"
-          description="Offers between brands and influencers — track their status end-to-end."
+          title={isInfluencerOnly ? "My offers" : "Custom offers"}
+          description={
+            isInfluencerOnly
+              ? "Offers sent to you by brands — accept, decline, or deliver content."
+              : "Offers between brands and influencers — track their status end-to-end."
+          }
           actions={
-            <Button asChild>
-              <Link to="/offers/new">
-                <Plus className="mr-1 size-4" /> New offer
-              </Link>
-            </Button>
+            canCreateOffer ? (
+              <Button asChild>
+                <Link to="/offers/new">
+                  <Plus className="mr-1 size-4" /> New offer
+                </Link>
+              </Button>
+            ) : null
           }
         />
 
@@ -55,7 +70,18 @@ function OffersListPage() {
         ) : offers.length === 0 ? (
           <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
             <FileText className="mx-auto size-6 text-muted-foreground" />
-            <p className="mt-3 text-sm text-muted-foreground">No offers yet.</p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {isInfluencerOnly
+                ? "No offers yet. Brands will send you offers when they want to work with you."
+                : "No offers yet. Create your first offer to get started."}
+            </p>
+            {canCreateOffer && (
+              <Button asChild className="mt-4">
+                <Link to="/offers/new">
+                  <Plus className="mr-1 size-4" /> New offer
+                </Link>
+              </Button>
+            )}
           </div>
         ) : (
           <Panel className="mt-6 overflow-hidden">
@@ -64,7 +90,9 @@ function OffersListPage() {
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
                     <th className="p-3 font-medium">Title</th>
-                    <th className="p-3 font-medium">Brand</th>
+                    <th className="p-3 font-medium">
+                      {isInfluencerOnly ? "Brand" : "Brand"}
+                    </th>
                     <th className="p-3 font-medium">Influencer</th>
                     <th className="p-3 font-medium text-right">Items</th>
                     <th className="p-3 font-medium text-right">Total</th>
@@ -111,17 +139,32 @@ function OffersListPage() {
 export function OfferStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     DRAFT: "bg-muted text-muted-foreground",
+    PENDING: "bg-amber-500/15 text-amber-500",
+    IN_PROGRESS: "bg-blue-500/15 text-blue-500",
+    COMPLETED: "bg-emerald-500/15 text-emerald-500",
+    DECLINED: "bg-destructive/15 text-destructive",
+    EXPIRED: "bg-muted text-muted-foreground",
+    CANCELLED: "bg-muted text-muted-foreground",
+    // legacy
     PENDING_ADMIN: "bg-amber-500/15 text-amber-500",
     ADMIN_APPROVED: "bg-blue-500/15 text-blue-500",
     ADMIN_REJECTED: "bg-destructive/15 text-destructive",
     INFLUENCER_ACCEPTED: "bg-emerald-500/15 text-emerald-500",
     INFLUENCER_DECLINED: "bg-destructive/15 text-destructive",
-    EXPIRED: "bg-muted text-muted-foreground",
-    CANCELLED: "bg-muted text-muted-foreground",
   };
+  const labels: Record<string, string> = {
+    DRAFT: "Draft",
+    PENDING: "Pending",
+    IN_PROGRESS: "In progress",
+    COMPLETED: "Completed",
+    DECLINED: "Declined",
+    EXPIRED: "Expired",
+    CANCELLED: "Cancelled",
+  };
+  const label = labels[status] || status.replace(/_/g, " ");
   return (
     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${styles[status] || "bg-muted"}`}>
-      {status.replace(/_/g, " ")}
+      {label}
     </span>
   );
 }

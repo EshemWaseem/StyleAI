@@ -1,11 +1,11 @@
 // lib/offers/types.ts
+
 export type OfferStatus =
   | "DRAFT"
-  | "PENDING_ADMIN"
-  | "ADMIN_APPROVED"
-  | "ADMIN_REJECTED"
-  | "INFLUENCER_ACCEPTED"
-  | "INFLUENCER_DECLINED"
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "DECLINED"
   | "EXPIRED"
   | "CANCELLED";
 
@@ -20,7 +20,7 @@ export interface OfferItem {
 
 export interface OfferBrand {
   id: string;
-  organizationId: string;   // ← ADDED
+  organizationId: string;
   name: string;
   slug: string;
   logoUrl: string | null;
@@ -28,12 +28,11 @@ export interface OfferBrand {
 
 export interface OfferInfluencer {
   id: string;
-  userId: string;           // ← ADDED
+  userId: string | null;
   displayName: string;
   username: string;
   slug: string;
   avatarUrl: string | null;
-  currency: string;
 }
 
 export interface Offer {
@@ -62,32 +61,6 @@ export interface Offer {
   updatedAt: string;
   brand?: OfferBrand;
   influencer?: OfferInfluencer;
-}
-
-export interface OfferEstimate {
-  items: OfferItem[];
-  subtotal: number;
-  discountPct: number;
-  discountAmount: number;
-  adminFeePct: number;
-  adminFee: number;
-  total: number;
-  currency: string;
-}
-
-export interface CreateOfferPayload {
-  brandId: string;
-  influencerId: string;
-  productId?: string;
-  title?: string;
-  items: Array<{
-    platform: string;
-    contentType: string;
-    quantity: number;
-    unitPrice: number;
-  }>;
-  brandNote?: string;
-  expiresAt?: string;
 }
 
 export interface OfferListResponse {

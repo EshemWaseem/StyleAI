@@ -1,2 +1,3 @@
-export { campaignsApi , agencyApi } from "./api";
-export type * from "./types";
+// lib/campaigns/index.ts
+export * from "./types";
+export { campaignsApi, agencyApi } from "./api";

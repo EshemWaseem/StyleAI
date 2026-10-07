@@ -1,6 +1,6 @@
-// enums.prisma 30-09
+// enums.prisma 06-10
 // ======================================================
-// ENUMS — all in one place for easy reference
+// ENUMS — all in one place
 // ======================================================
 
 enum RoleName {
@@ -27,9 +27,6 @@ enum PaymentStatus {
   REFUNDED
 }
 
-// ======================================================
-// PAYMENTS — gateway / context / cycle (Sprint 24)
-// ======================================================
 enum PaymentProvider {
   STRIPE
   JAZZCASH
@@ -39,10 +36,11 @@ enum PaymentProvider {
 }
 
 enum PaymentContext {
-  SUBSCRIPTION   // brand/agency/influencer → StyleAI
-  ORDER          // shopper → brand (ecommerce)
-  PAYOUT         // StyleAI → influencer withdrawal
-  ESCROW         // brand → wallet escrow for a campaign
+  SUBSCRIPTION
+  ORDER
+  PAYOUT
+  ESCROW
+  WALLET_TOPUP
 }
 
 enum BillingCycle {
@@ -94,6 +92,27 @@ enum AgencyTaskStatus {
   CANCELLED
 }
 
+// ======================================================
+// AGENCY SERVICE CATEGORIES
+// ======================================================
+enum AgencyServiceType {
+  BRAND_SYSTEM_MANAGEMENT
+  BRAND_WEBSITE
+  BRAND_CAMPAIGN_OPS
+  INFLUENCER_PHOTOSHOOT
+  INFLUENCER_VIDEOGRAPHY
+}
+
+enum AgencyEngagementStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
 enum InfluencerPlatform {
   INSTAGRAM
   TIKTOK
@@ -119,23 +138,22 @@ enum InfluencerAvailability {
   UNAVAILABLE
 }
 
+// ======================================================
+// OFFER STATUS — Option A (simplified flow)
+// ======================================================
 enum OfferStatus {
   DRAFT
-  PENDING_ADMIN
-  ADMIN_APPROVED
-  ADMIN_REJECTED
-  INFLUENCER_ACCEPTED
-  INFLUENCER_DECLINED
+  PENDING          // brand sent offer, awaiting influencer
+  IN_PROGRESS      // influencer accepted, working on content
+  COMPLETED        // content uploaded / campaign done
+  DECLINED         // influencer rejected
   EXPIRED
   CANCELLED
 }
 
-
-// ======================================================
-// BILLING ROLE — Sprint 27 SaaS plans
-// ======================================================
 enum BillingRole {
   BRAND
   AGENCY
   INFLUENCER
 }
+

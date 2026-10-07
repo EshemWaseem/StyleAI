@@ -1,0 +1,39 @@
+# frontend/Dockerfile
+# ======================================================
+# TanStack Start frontend — production
+# Builds a Nitro server, runs on Node
+# ======================================================
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# ======================================================
+# Runtime stage
+# ======================================================
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Nitro output
+COPY --from=builder /app/.output ./.output
+COPY --from=builder /app/package.json ./package.json
+
+RUN chown -R nodejs:nodejs /app
+USER nodejs
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
+
+EXPOSE 3000
+
+CMD ["node", ".output/server/index.mjs"]

@@ -1,3 +1,4 @@
+// controllers/knowledgeController.js
 const svc = require('../services/knowledge');
 
 async function list(req, res, next) {
@@ -33,9 +34,13 @@ async function remove(req, res, next) {
 
 async function search(req, res, next) {
   try {
-    const q = req.query.q || req.body?.q || "";
+    const q = req.query.q || req.body?.q || '';
     const result = await svc.search(req.user, q, {
       limit: req.query.limit ? Number(req.query.limit) : undefined,
+      docType: req.query.docType || undefined,
+      documentId: req.query.documentId || undefined,
+      expand: req.query.expand !== 'false',
+      rerank: req.query.rerank !== 'false',
     });
     res.json(result);
   } catch (e) { next(e); }

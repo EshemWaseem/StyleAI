@@ -1,15 +1,30 @@
 // services/offers/cancel.js
 // ======================================================
 // Cancel an offer — brand-side only, before influencer reviews.
-// Releases escrow back to brand wallet.
+// Allowed only: DRAFT, PENDING (influencer hasn't responded yet).
+// Escrow is released back to brand wallet.
 // ======================================================
 
 const prisma = require('../../config/prisma');
 const { httpError, shapeOffer } = require('./helpers');
 const { writeAudit } = require('../admin/helpers');
-
-// Cancellable states — as long as influencer hasn't touched it yet
-const CANCELLABLE_STATUSES = ['DRAFT', 'PENDING_ADMIN', 'ADMIN_APPROVED'];
+const CANCELLABLE_STATUSES = ['DRAFT', 'PENDING'];
+const { emitOfferUpdated } = require('../websocket/broadcast');
+const STATUS_LABELS = {
+  DRAFT: 'Draft',
+  PENDING: 'Pending',
+  IN_PROGRESS: 'Accepted',
+  COMPLETED: 'Completed',
+  DECLINED: 'Declined',
+  EXPIRED: 'Expired',
+  CANCELLED: 'Cancelled',
+  // legacy
+  PENDING_ADMIN: 'Pending review',
+  ADMIN_APPROVED: 'Sent to influencer',
+  ADMIN_REJECTED: 'Rejected',
+  INFLUENCER_ACCEPTED: 'Accepted',
+  INFLUENCER_DECLINED: 'Declined',
+};
 
 async function cancelOffer(user, offerId, options = {}) {
   const { reason = null } = options;
@@ -18,7 +33,9 @@ async function cancelOffer(user, offerId, options = {}) {
     where: { id: offerId },
     include: { brand: true, influencer: true },
   });
-  if (!offer) throw httpError('Offer not found', 404, 'NOT_FOUND');
+  if (!offer) {
+    throw httpError('Offer not found.', 404, 'NOT_FOUND');
+  }
 
   // ---- Permission ----
   const isAdmin = user.roles?.includes('SUPER_ADMIN');
@@ -26,41 +43,80 @@ async function cancelOffer(user, offerId, options = {}) {
 
   if (!isAdmin && !isBrandOwner) {
     throw httpError(
-      'Forbidden: only the offering brand or an admin can cancel',
+      "You don't have permission to cancel this offer. Only the brand that sent it can cancel.",
       403,
       'FORBIDDEN'
     );
   }
 
-  // ---- Status check ----
-  if (!CANCELLABLE_STATUSES.includes(offer.status)) {
+  // ---- Status checks with user-friendly messages ----
+  if (offer.status === 'CANCELLED') {
     throw httpError(
-      `Offer cannot be cancelled in status "${offer.status}". ` +
-        `Only ${CANCELLABLE_STATUSES.join(', ')} can be cancelled.`,
+      'This offer is already cancelled.',
+      400,
+      'ALREADY_CANCELLED'
+    );
+  }
+
+  if (offer.status === 'IN_PROGRESS' || offer.status === 'INFLUENCER_ACCEPTED') {
+    throw httpError(
+      "You can't cancel this offer anymore — the influencer has already accepted it and is working on your content. If you need to stop the collaboration, please reach out to our support team.",
+      400,
+      'CANNOT_CANCEL_AFTER_ACCEPT'
+    );
+  }
+
+  if (offer.status === 'COMPLETED') {
+    throw httpError(
+      "This offer is already completed and can't be cancelled.",
+      400,
+      'ALREADY_COMPLETED'
+    );
+  }
+
+  if (offer.status === 'DECLINED' || offer.status === 'INFLUENCER_DECLINED') {
+    throw httpError(
+      "The influencer already declined this offer — no action needed.",
+      400,
+      'ALREADY_DECLINED'
+    );
+  }
+
+  if (offer.status === 'EXPIRED') {
+    throw httpError(
+      'This offer has already expired.',
+      400,
+      'ALREADY_EXPIRED'
+    );
+  }
+
+  if (!CANCELLABLE_STATUSES.includes(offer.status)) {
+    // Fallback — unknown status
+    const label = STATUS_LABELS[offer.status] || offer.status;
+    throw httpError(
+      `This offer can't be cancelled right now. Current status: ${label}.`,
       400,
       'NOT_CANCELLABLE'
     );
   }
 
   // ---- Release escrow if it was held ----
-  // Escrow is held during createOffer (Sprint 27 direct-to-influencer flow).
-  // For DRAFT offers that were never submitted (legacy), escrow may not exist.
-  let escrowReleased = false;
-  if (offer.status !== 'DRAFT') {
+  // Escrow is held during createOffer.
+  // Refund the full amount back to brand wallet.
+  let escrowRefunded = false;
+  if (offer.escrowHeldAt && !offer.escrowReleasedAt) {
     try {
       const walletSvc = require('../wallet');
-      if (typeof walletSvc.releaseEscrowForOffer === 'function') {
-        await walletSvc.releaseEscrowForOffer(user.id, offerId, {
-          reason: 'offer_cancelled',
-        });
-        escrowReleased = true;
+      if (typeof walletSvc.refundEscrowForOffer === 'function') {
+        await walletSvc.refundEscrowForOffer(user.id, offerId);
+        escrowRefunded = true;
       } else {
         console.warn(
-          '[offers.cancel] releaseEscrowForOffer not found in wallet service — skipping'
+          '[offers.cancel] refundEscrowForOffer not found in wallet service — skipping'
         );
       }
     } catch (escrowErr) {
-      console.error('[offers.cancel] escrow release failed:', escrowErr.message);
+      console.error('[offers.cancel] escrow refund failed:', escrowErr.message);
       // Don't block cancel — escrow can be reconciled separately
       // But log it clearly
     }
@@ -72,13 +128,13 @@ async function cancelOffer(user, offerId, options = {}) {
     data: {
       status: 'CANCELLED',
       adminNote: reason
-        ? `Cancelled by brand: ${reason}`.slice(0, 500)
+        ? `Cancelled by brand: ${String(reason).trim().slice(0, 400)}`
         : offer.adminNote,
     },
     include: { brand: true, influencer: true },
   });
 
-  // ---- Audit ----
+  //  Audit 
   await writeAudit({
     actorId: user.id,
     action: 'offer.cancel',
@@ -88,12 +144,47 @@ async function cancelOffer(user, offerId, options = {}) {
       previousStatus: offer.status,
       newStatus: 'CANCELLED',
       reason: reason || null,
-      escrowReleased,
+      escrowRefunded,
       cancelledBy: isAdmin ? 'admin' : 'brand',
     },
   });
 
-  return shapeOffer(updated, { brand: updated.brand, influencer: updated.influencer });
+  // Notify influencer 
+  if (offer.influencer.userId) {
+    try {
+      const { notifyUser } = require('../notifications');
+      await notifyUser(offer.influencer.userId, {
+        type: 'SYSTEM',
+        title: 'Offer cancelled',
+        body: `${offer.brand.name} cancelled their offer${
+          reason ? ` — ${String(reason).trim()}` : ''
+        }.`,
+        link: `/offers/${offerId}`,
+        meta: { offerId, reason: reason || null },
+      });
+    } catch (notifyErr) {
+      console.warn(
+        '[offers.cancelOffer] influencer notify failed:',
+        notifyErr.message
+      );
+    }
+  }
+    //  Real-time: notify influencer
+  await emitOfferUpdated({
+    id: updated.id,
+    status: updated.status,
+    title: updated.title,
+    brand: updated.brand,
+    influencer: updated.influencer,
+    createdByAgencyId: updated.createdByAgencyId,
+  }, 'cancelled').catch((e) =>
+    console.warn('[emitOfferUpdated] failed:', e.message)
+  );
+
+  return shapeOffer(updated, {
+    brand: updated.brand,
+    influencer: updated.influencer,
+  });
 }
 
 module.exports = { cancelOffer, CANCELLABLE_STATUSES };

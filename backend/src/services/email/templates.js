@@ -1,15 +1,16 @@
 // services/email/templates.js
 // ======================================================
-// Email templates — plain HTML, mobile-friendly
+// Email templates — plain HTML, mobile-friendly.
+// Layout footer includes <!--UNSUBSCRIBE_LINK--> placeholder;
+// it is replaced at send time by email/index.js.
 // ======================================================
 
-// Brand colors
 const C = {
   bg: '#0a0a0a',
   card: '#ffffff',
   text: '#1a1a1a',
   muted: '#6b7280',
-  accent: '#c9a86a', // gold
+  accent: '#c9a86a',
   border: '#e5e7eb',
   success: '#059669',
   danger: '#dc2626',
@@ -52,7 +53,6 @@ function layout({ preheader, title, bodyHtml, ctaText, ctaUrl }) {
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
                style="max-width:600px;background:${C.card};border-radius:12px;overflow:hidden;
                       box-shadow:0 4px 24px rgba(0,0,0,0.15);">
-          <!-- Header -->
           <tr>
             <td style="padding:24px 32px;border-bottom:1px solid ${C.border};">
               <span style="font-size:20px;font-weight:700;letter-spacing:-0.5px;">
@@ -60,18 +60,20 @@ function layout({ preheader, title, bodyHtml, ctaText, ctaUrl }) {
               </span>
             </td>
           </tr>
-          <!-- Body -->
           <tr>
             <td style="padding:32px 32px 8px;">
               ${bodyHtml}
             </td>
           </tr>
           ${cta}
-          <!-- Footer -->
           <tr>
             <td style="padding:24px 32px;border-top:1px solid ${C.border};
                        font-size:12px;color:${C.muted};text-align:center;">
               You're receiving this because you have a StyleAI account.<br>
+              <span style="display:inline-block;margin-top:6px;">
+                <!--UNSUBSCRIBE_LINK-->
+              </span>
+              <br><br>
               © ${new Date().getFullYear()} StyleAI. All rights reserved.
             </td>
           </tr>
@@ -113,10 +115,9 @@ function infoBox(rows) {
 }
 
 // ------------------------------------------------------
-// Templates
+// Templates (unchanged logic, just re-emitted)
 // ------------------------------------------------------
 
-/** Welcome — on signup */
 function welcome({ name, role }) {
   const roleLabel = {
     BRAND: 'Brand',
@@ -149,7 +150,6 @@ function welcome({ name, role }) {
   };
 }
 
-/** Trial expiring soon (3 days / 1 day before) */
 function trialExpiring({ name, role, daysLeft, planName }) {
   const body = `
     ${pill(`⏰ ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`, C.warning)}
@@ -174,7 +174,6 @@ function trialExpiring({ name, role, daysLeft, planName }) {
   };
 }
 
-/** Trial expired */
 function trialExpired({ name, role }) {
   const body = `
     ${pill('Trial expired', C.danger)}
@@ -194,7 +193,6 @@ function trialExpired({ name, role }) {
   };
 }
 
-/** Offer received (influencer) */
 function offerReceived({ influencerName, brandName, offerTitle, amount, currency }) {
   const body = `
     ${pill('New offer', C.info)}
@@ -219,7 +217,6 @@ function offerReceived({ influencerName, brandName, offerTitle, amount, currency
   };
 }
 
-/** Offer accepted (brand) */
 function offerAccepted({ brandName, influencerName, offerTitle, amount, currency }) {
   const body = `
     ${pill('Offer accepted', C.success)}
@@ -244,7 +241,6 @@ function offerAccepted({ brandName, influencerName, offerTitle, amount, currency
   };
 }
 
-/** Offer declined (brand) */
 function offerDeclined({ brandName, influencerName, offerTitle, reason }) {
   const body = `
     ${pill('Offer declined', C.danger)}
@@ -268,7 +264,6 @@ function offerDeclined({ brandName, influencerName, offerTitle, reason }) {
   };
 }
 
-/** Content submitted (brand/agency) */
 function contentSubmitted({ brandName, influencerName, campaignTitle, stage }) {
   const stageLabel = {
     RAW: 'raw content',
@@ -299,7 +294,6 @@ function contentSubmitted({ brandName, influencerName, campaignTitle, stage }) {
   };
 }
 
-/** Content approved (influencer) */
 function contentApproved({ influencerName, campaignTitle, amount, currency }) {
   const body = `
     ${pill('Content approved 🎉', C.success)}
@@ -323,7 +317,6 @@ function contentApproved({ influencerName, campaignTitle, amount, currency }) {
   };
 }
 
-/** Payment receipt (subscription) */
 function paymentReceipt({ name, planLabel, amount, currency, cycle, invoiceNumber, paidAt, provider }) {
   const body = `
     ${pill('Payment received', C.success)}
@@ -351,7 +344,6 @@ function paymentReceipt({ name, planLabel, amount, currency, cycle, invoiceNumbe
   };
 }
 
-/** Withdrawal requested (admin) */
 function withdrawalRequested({ userName, amount, currency, reference }) {
   const body = `
     ${pill('Action required', C.warning)}
@@ -376,7 +368,6 @@ function withdrawalRequested({ userName, amount, currency, reference }) {
   };
 }
 
-/** Withdrawal approved/rejected (user) */
 function withdrawalReviewed({ name, amount, currency, approved, reference, reason }) {
   const ok = approved === true;
   const body = `

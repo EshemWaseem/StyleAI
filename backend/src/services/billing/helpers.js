@@ -13,19 +13,9 @@ function generateInvoiceNumber() {
   return `INV-${ym}-${rand}`;
 }
 
-/**
- * Ensure a subscription exists for the given user/org + role.
- * Creates a trial (brands/agencies) or free (influencers) subscription on first use.
- *
- * @param {Object} opts
- * @param {string} opts.role       - 'BRAND' | 'AGENCY' | 'INFLUENCER'
- * @param {string} [opts.organizationId] - required for BRAND/AGENCY
- * @param {string} [opts.userId]         - required for INFLUENCER
- */
 async function ensureSubscription({ role, organizationId, userId }) {
   if (!role) throw new Error('role is required');
 
-  // Find existing
   let sub = null;
   if (role === 'INFLUENCER') {
     if (!userId) throw new Error('userId required for INFLUENCER');
@@ -36,7 +26,6 @@ async function ensureSubscription({ role, organizationId, userId }) {
   }
   if (sub) return sub;
 
-  // Create new — start with trial (or free for influencers)
   const trialPlan = getTrialPlanForRole(role);
   const defaultPlan = getDefaultPlanForRole(role);
 
@@ -64,23 +53,38 @@ async function ensureSubscription({ role, organizationId, userId }) {
 }
 
 /**
- * Determine the "effective" state of a subscription:
- *  - 'active'          — paid plan, within period
- *  - 'trial'           — trial, days remaining > 0
- *  - 'trial_expired'   — trial ended, must upgrade
- *  - 'past_due'        — payment failed
- *  - 'cancelled'       — cancelled at period end
+ * Determine the effective state of a subscription.
+ * Priority:
+ *   1. PAST_DUE / CANCELLED / EXPIRED (status)
+ *   2. Stripe says active + paid plan → TRUST STRIPE (bypass stale currentPeriodEnd)
+ *   3. Trial logic
+ *   4. Paid period check
  */
 function computeEffectiveState(sub) {
   if (!sub) return 'none';
+
+  // Hard negative statuses
   if (sub.status === 'PAST_DUE') return 'past_due';
   if (sub.status === 'CANCELLED' || sub.status === 'EXPIRED') return 'cancelled';
 
+  // ✅ FIX: If Stripe confirms active + paid plan, trust it.
+  // This prevents "expired" when currentPeriodEnd is stale after upgrade.
+  if (
+    sub.stripeStatus === 'active' &&
+    !sub.isTrial &&
+    sub.planName &&
+    sub.planName !== 'free'
+  ) {
+    return 'active';
+  }
+
+  // Trial
   if (sub.isTrial) {
     if (!sub.trialEndsAt) return 'trial';
     return new Date() < new Date(sub.trialEndsAt) ? 'trial' : 'trial_expired';
   }
 
+  // Paid plan without Stripe sync (or free tier) — check period
   if (sub.currentPeriodEnd && new Date() > new Date(sub.currentPeriodEnd)) {
     return 'expired';
   }

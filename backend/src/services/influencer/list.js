@@ -1,5 +1,6 @@
+// services/influencer/list.js
 const prisma = require('../../config/prisma');
-const { shapeInfluencer, getSavedSet } = require('./helpers');
+const { shapeInfluencer, getSavedSet, getRatingMap } = require('./helpers');
 
 async function listInfluencers(user, filters = {}) {
   const {
@@ -67,15 +68,25 @@ async function listInfluencers(user, filters = {}) {
     prisma.influencer.count({ where }),
   ]);
 
-  const savedSet = await getSavedSet(
-    user.organizationId,
-    influencers.map((i) => i.id)
-  );
+  const influencerIds = influencers.map((i) => i.id);
+
+  // Parallel: saved set + rating map
+  const [savedSet, ratingMap] = await Promise.all([
+    getSavedSet(user.organizationId, influencerIds),
+    getRatingMap(influencerIds),
+  ]);
 
   return {
     count: influencers.length,
     total,
-    influencers: influencers.map((i) => shapeInfluencer(i, savedSet)),
+    influencers: influencers.map((i) => {
+      const rating = ratingMap.get(i.id) || { rating: null, totalOrders: 0 };
+      return shapeInfluencer(i, {
+        savedSet,
+        rating: rating.rating,
+        totalOrders: rating.totalOrders,
+      });
+    }),
   };
 }
 

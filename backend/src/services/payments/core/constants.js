@@ -12,6 +12,7 @@ const PaymentContext = Object.freeze({
   ORDER: 'ORDER',
   PAYOUT: 'PAYOUT',
   ESCROW: 'ESCROW',
+  WALLET_TOPUP: 'WALLET_TOPUP',   // NEW
 });
 
 const BillingCycle = Object.freeze({

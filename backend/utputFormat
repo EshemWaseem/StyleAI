@@ -1,0 +1,25 @@
+HTTP/1.1 400 Bad Request
+Content-Security-Policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: cross-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+Vary: Origin, Accept-Encoding
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: X-Request-Id
+X-Request-Id: e65221cae3e31a07
+Content-Type: application/json; charset=utf-8
+Content-Length: 1024
+ETag: W/"400-Ah13u5QDA8jZN2pxh9n8eM1cgSA"
+Date: Tue, 06 Oct 2026 07:28:53 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"message":"Expected property name or '}' in JSON at position 1 (line 1 column 2)","stack":"SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)\n    at JSON.parse (<anonymous>)\n    at parse (C:\\Users\\ESHEM-PC\\Desktop\\StyleAI\\backend\\node_modules\\body-parser\\lib\\types\\json.js:91:21)\n    at C:\\Users\\ESHEM-PC\\Desktop\\StyleAI\\backend\\node_modules\\body-parser\\lib\\read.js:162:18\n    at AsyncResource.runInAsyncScope (node:async_hooks:227:14)\n    at invokeCallback (C:\\Users\\ESHEM-PC\\Desktop\\StyleAI\\backend\\node_modules\\raw-body\\index.js:238:16)\n    at done (C:\\Users\\ESHEM-PC\\Desktop\\StyleAI\\backend\\node_modules\\raw-body\\index.js:227:7)\n    at IncomingMessage.onEnd (C:\\Users\\ESHEM-PC\\Desktop\\StyleAI\\backend\\node_modules\\raw-body\\index.js:287:7)\n    at IncomingMessage.emit (node:events:514:28)\n    at endReadableNT (node:internal/streams/readable:1764:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)"}

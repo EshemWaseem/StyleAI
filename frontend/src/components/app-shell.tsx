@@ -2,44 +2,18 @@
 import { Link } from "@tanstack/react-router";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
 import {
-  BadgeDollarSign,
-  Banknote,
-  BarChart3,
-  Bell,
-  Briefcase,
-  Camera,
-  Command,
-  CreditCard,
-  FileClock,
-  FileText,
-  HelpCircle,
-  LayoutDashboard,
-  LogOut,
-  Megaphone,
-  MessageCircle,
-  Package,
-  Palette,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Search,
-  Settings,
-  Shapes,
-  ShieldCheck,
-  Sliders,
-  Sparkles,
-  Target,
-  TrendingUp,
-  UsersRound,
-  Wallet,
+  BadgeDollarSign, Banknote, BarChart3, Bell, Briefcase, Camera,
+  Command, CreditCard, FileClock, FileText, Globe, HelpCircle,
+  Inbox, LayoutDashboard, LogOut, Megaphone, MessageCircle, Package,
+  Palette, PanelLeftClose, PanelLeftOpen, Search, Settings,
+  Shapes, ShieldCheck, Sliders, Sparkles, Star, Target, TrendingUp,
+  UsersRound, Video, Wallet,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -56,9 +30,6 @@ type NavItem = {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
-  permissions?: string[];
-  roles?: string[];
-  excludeRoles?: string[];
 };
 
 type NavGroup = {
@@ -82,10 +53,7 @@ const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
     ],
   },
-  {
-    group: "Marketplace",
-    items: [{ to: "/admin/offers", label: "Offers", icon: FileText }],
-  },
+  { group: "Marketplace", items: [{ to: "/admin/offers", label: "Offers", icon: FileText }] },
   {
     group: "Finance",
     items: [
@@ -103,228 +71,186 @@ const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/audit", label: "Audit log", icon: FileClock },
     ],
   },
-  {
-    group: "Account",
-    items: [{ to: "/settings", label: "My Account", icon: Settings }],
-  },
+  { group: "Account", items: [{ to: "/settings", label: "My Account", icon: Settings }] },
 ];
 
 // ======================================================
-// APP NAV
+// BRAND NAV
 // ======================================================
-const APP_NAV: NavGroup[] = [
+const BRAND_NAV: NavGroup[] = [
   {
     group: "Workspace",
     items: [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/messages", label: "Messages", icon: MessageCircle, excludeRoles: ["SHOPPER"] },
+      { to: "/messages", label: "Messages", icon: MessageCircle },
       { to: "/notifications", label: "Notifications", icon: Bell },
-    ],
-  },
-  {
-    group: "Agency portfolio",
-    items: [
-      { to: "/agency", label: "Agency home", icon: Briefcase, roles: ["AGENCY"] },
-      { to: "/agency/clients", label: "Client brands", icon: UsersRound, roles: ["AGENCY"] },
-      { to: "/agency/campaigns", label: "All campaigns", icon: Megaphone, roles: ["AGENCY"] },
-      { to: "/agency/editing", label: "Editing queue", icon: Camera, roles: ["AGENCY"] },
     ],
   },
   {
     group: "Commerce",
     items: [
-      { to: "/brands", label: "Brand", icon: Palette, permissions: ["brand.read"], excludeRoles: ["INFLUENCER", "AGENCY"] },
-      { to: "/products", label: "Products", icon: Shapes, permissions: ["product.read"], excludeRoles: ["INFLUENCER", "AGENCY"] },
-    ],
-  },
-  {
-    group: "Influencer intelligence",
-    items: [
-      { to: "/influencers", label: "Discover", icon: Search, permissions: ["influencer.read"], excludeRoles: ["INFLUENCER", "AGENCY"] },
-      { to: "/matching", label: "AI matching", icon: Target, permissions: ["influencer.read"], excludeRoles: ["INFLUENCER", "AGENCY"] },
+      { to: "/brands", label: "Brand profile", icon: Palette },
+      { to: "/products", label: "Products", icon: Shapes },
     ],
   },
   {
     group: "Collaborations",
     items: [
-      { to: "/offers", label: "Offers", icon: FileText, permissions: ["influencer.read"], excludeRoles: ["SHOPPER", "AGENCY"] },
-      { to: "/offers/browse", label: "Browse offers", icon: Package, roles: ["BRAND_OWNER", "BRAND_TEAM_MEMBER"] },
+      { to: "/offers", label: "Offers (sent)", icon: FileText },
+      { to: "/campaigns", label: "Campaigns", icon: Megaphone },
+      { to: "/offers/browse", label: "Browse listings", icon: Package },
+    ],
+  },
+  {
+    group: "Discover",
+    items: [
+      { to: "/influencers", label: "Influencers", icon: Search },
+      { to: "/matching", label: "AI Matching", icon: Target },
+      { to: "/agency/browse", label: "Hire agencies", icon: Briefcase },
     ],
   },
   {
     group: "AI Studio",
     items: [
-      { to: "/studio/content", label: "Content Studio", icon: Sparkles, roles: ["BRAND_OWNER", "BRAND_TEAM_MEMBER"] },
-      { to: "/studio/photography", label: "AI Photography", icon: Camera, roles: ["BRAND_OWNER", "BRAND_TEAM_MEMBER"] },
+      { to: "/studio/content", label: "Content Studio", icon: Sparkles },
+      { to: "/studio/photography", label: "AI Photography", icon: Camera },
+      { to: "/knowledge", label: "Knowledge Base", icon: FileText },
     ],
   },
   {
-    group: "Marketing",
+    group: "Finance",
     items: [
-      { to: "/campaigns", label: "Campaigns", icon: Megaphone, excludeRoles: ["SHOPPER", "AGENCY"] },
-      { to: "/analytics", label: "Analytics", icon: BarChart3, excludeRoles: ["SHOPPER", "AGENCY"] },
+      { to: "/wallet", label: "Wallet", icon: Wallet },
+      { to: "/billing", label: "Billing", icon: BadgeDollarSign },
     ],
   },
   {
-    group: "Finances",
-    items: [{ to: "/wallet", label: "Wallet", icon: Wallet, excludeRoles: ["SHOPPER"] }],
-  },
-  {
-    group: "My account",
+    group: "Account",
     items: [
-      { to: "/influencers", label: "My Profile", icon: UsersRound, permissions: ["influencer.read"], roles: ["INFLUENCER"] },
-      { to: "/influencer/pricing", label: "My Pricing", icon: BadgeDollarSign, permissions: ["influencer.read"], roles: ["INFLUENCER"] },
-      { to: "/influencer/offers", label: "My Offers", icon: Package, permissions: ["influencer.read"], roles: ["INFLUENCER"] },
-      { to: "/matched-products", label: "Matched Products", icon: Sparkles, permissions: ["influencer.read"], roles: ["INFLUENCER"] },
-    ],
-  },
-  {
-    group: "Administration",
-    items: [
-      { to: "/team", label: "Team", icon: UsersRound, excludeRoles: ["INFLUENCER", "SHOPPER"] },
-      { to: "/billing", label: "Billing", icon: BadgeDollarSign, roles: ["BRAND_OWNER"] },
-      { to: "/plans", label: "Plans & Pricing", icon: Sparkles, roles: ["BRAND_OWNER"] },
-      { to: "/settings", label: "Settings", icon: Settings, excludeRoles: ["SHOPPER"] },
+      { to: "/team", label: "Team", icon: UsersRound },
+      { to: "/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
 
-const OWNER_ROLES: RoleName[] = ["SUPER_ADMIN", "BRAND_OWNER", "AGENCY"];
+// ======================================================
+// INFLUENCER NAV
+// ======================================================
+const INFLUENCER_NAV: NavGroup[] = [
+  {
+    group: "Workspace",
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/messages", label: "Messages", icon: MessageCircle },
+      { to: "/notifications", label: "Notifications", icon: Bell },
+    ],
+  },
+  {
+    group: "Collaborations",
+    items: [
+      { to: "/offers", label: "Offers received", icon: FileText },
+      { to: "/campaigns", label: "Campaigns", icon: Megaphone },
+      { to: "/matched-products", label: "Matched products", icon: Sparkles },
+    ],
+  },
+  {
+    group: "My profile",
+    items: [
+      { to: "/influencers", label: "Public profile", icon: UsersRound },
+      { to: "/influencer/pricing", label: "My pricing", icon: BadgeDollarSign },
+      { to: "/influencer/offers", label: "My listings", icon: Package },
+    ],
+  },
+  {
+    group: "Hire services",
+    items: [
+      { to: "/agency/browse", label: "Photographers & videographers", icon: Camera },
+      { to: "/engagements", label: "My engagements", icon: Briefcase },
+    ],
+  },
+  {
+    group: "Finance",
+    items: [
+      { to: "/wallet", label: "Wallet", icon: Wallet },
+      { to: "/billing", label: "Billing", icon: BadgeDollarSign },
+    ],
+  },
+  {
+    group: "Account",
+    items: [{ to: "/settings", label: "Settings", icon: Settings }],
+  },
+];
 
 // ======================================================
-// SIDEBAR NAV
+// AGENCY NAV (Clean & Professional)
+// ======================================================
+const AGENCY_NAV: NavGroup[] = [
+  {
+    group: "Workspace",
+    items: [
+      { to: "/agency", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/messages", label: "Messages", icon: MessageCircle },
+      { to: "/notifications", label: "Notifications", icon: Bell },
+    ],
+  },
+  {
+    group: "Portfolio",
+    items: [
+      { to: "/agency/clients", label: "Clients", icon: UsersRound },
+      { to: "/agency/campaigns", label: "Campaigns", icon: Megaphone },
+      { to: "/agency/editing", label: "Editing queue", icon: Camera },
+    ],
+  },
+  {
+    group: "Hire requests",
+    items: [
+      { to: "/agency/engagements", label: "Engagements", icon: Inbox },
+    ],
+  },
+  {
+    group: "Finance",
+    items: [
+      { to: "/wallet", label: "Wallet", icon: Wallet },
+    ],
+  },
+  {
+    group: "Account",
+    items: [
+      { to: "/team", label: "Team", icon: UsersRound },
+      { to: "/settings", label: "Settings", icon: Settings },
+    ],
+  },
+];
+
+// ======================================================
+// Sidebar Nav
 // ======================================================
 function SidebarNav({
-  collapsed,
-  onNavigate,
+  collapsed, onNavigate,
 }: {
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
   const { user } = useRole();
+  const userRoles = (user?.roles ?? []) as RoleName[];
 
-  const userPermissions = user?.permissions ?? [];
-  const userRoles = user?.roles ?? [];
   const isSuperAdmin = userRoles.includes("SUPER_ADMIN");
-  const isOwner = userRoles.some((r) => OWNER_ROLES.includes(r));
-  const isTeamMember = userRoles.includes("BRAND_TEAM_MEMBER") && !isOwner;
-  const isInfluencer = userRoles.includes("INFLUENCER") && !isOwner;
-  const isAgencyRole = userRoles.includes("AGENCY");
+  const isAgency = userRoles.includes("AGENCY");
+  const isBrandOwner = userRoles.includes("BRAND_OWNER");
+  const isBrandTeamMember = userRoles.includes("BRAND_TEAM_MEMBER");
+  const isInfluencer = userRoles.includes("INFLUENCER");
 
-  // ---------- SUPER ADMIN → dedicated admin nav ----------
-  if (isSuperAdmin) {
-    return (
-      <nav className="flex flex-col gap-6 px-3 py-5" aria-label="Admin">
-        {ADMIN_NAV.map((group) => (
-          <div key={group.group}>
-            {!collapsed && (
-              <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
-                {group.group}
-              </p>
-            )}
-            <ul className="space-y-0.5">
-              {group.items.map((item) => (
-                <li key={`${group.group}-${item.to}`}>
-                  <Link
-                    to={item.to as "/admin"}
-                    onClick={onNavigate}
-                    title={item.label}
-                    className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
-                      collapsed && "justify-center px-0"
-                    )}
-                    activeProps={{
-                      className: "bg-sidebar-accent font-medium text-foreground",
-                    }}
-                  >
-                    <item.icon className="size-4 shrink-0" aria-hidden="true" />
-                    {!collapsed && <span className="truncate">{item.label}</span>}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </nav>
-    );
-  }
-
-  // ---------- NON-ADMIN → role-filtered app nav ----------
-  function canSeeItem(item: NavItem): boolean {
-    if (user?.pendingApproval) return false;
-
-    // Explicit role allow-list
-    if (item.roles?.length) {
-      const allowed = item.roles.some((r) => userRoles.includes(r as RoleName));
-      if (!allowed) return false;
-      if (item.permissions?.length) {
-        return item.permissions.every((p) => userPermissions.includes(p));
-      }
-      return true;
-    }
-
-    // Explicit role block
-    if (item.excludeRoles?.length) {
-      const blocked = item.excludeRoles.some((r) => userRoles.includes(r as RoleName));
-      if (blocked) return false;
-    }
-
-    // Influencer whitelist
-    if (isInfluencer) {
-      const allowed = [
-        "/dashboard",
-        "/messages",
-        "/notifications",
-        "/influencers",
-        "/influencer/pricing",
-        "/influencer/offers",
-        "/matched-products",
-        "/offers",
-        "/campaigns",
-        "/analytics",
-        "/wallet",
-        "/settings",
-      ];
-      return allowed.includes(item.to);
-    }
-
-    // Agency whitelist — only their own portfolio tools
-    if (isAgencyRole) {
-      const allowed = [
-        "/dashboard",
-        "/messages",
-        "/notifications",
-        "/agency",
-        "/agency/clients",
-        "/agency/campaigns",
-        "/agency/editing",
-        "/wallet",
-        "/team",
-        "/settings",
-      ];
-      return allowed.includes(item.to);
-    }
-
-    if (isOwner) return true;
-
-    if (isTeamMember) {
-      if (!item.permissions || item.permissions.length === 0) {
-        return item.to === "/dashboard";
-      }
-      return item.permissions.some((p) => userPermissions.includes(p));
-    }
-
-    return item.to === "/dashboard";
-  }
-
-  const visibleGroups = APP_NAV.map((group) => ({
-    ...group,
-    items: group.items.filter(canSeeItem),
-  })).filter((group) => group.items.length > 0);
+  let navToRender: NavGroup[] = [];
+  if (isSuperAdmin) navToRender = ADMIN_NAV;
+  else if (isAgency) navToRender = AGENCY_NAV;
+  else if (isBrandOwner) navToRender = BRAND_NAV;
+  else if (isBrandTeamMember) navToRender = BRAND_NAV;
+  else if (isInfluencer) navToRender = INFLUENCER_NAV;
+  else navToRender = BRAND_NAV;
 
   return (
     <nav className="flex flex-col gap-6 px-3 py-5" aria-label="Main">
-      {visibleGroups.map((group) => (
+      {navToRender.map((group) => (
         <div key={group.group}>
           {!collapsed && (
             <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
@@ -359,11 +285,10 @@ function SidebarNav({
 }
 
 // ======================================================
-// AGENCY BRAND SWITCHER (header quick-switch)
+// AGENCY BRAND SWITCHER
 // ======================================================
 function AgencyBrandSwitcher() {
   const { isAgency, clients, activeBrandId, setActiveBrand } = useAgency();
-
   if (!isAgency) return null;
 
   const allBrands = clients.flatMap((c) =>
@@ -400,7 +325,7 @@ function AgencyBrandSwitcher() {
 }
 
 // ======================================================
-// AGENCY ACTING-AS BANNER (below header)
+// AGENCY ACTING-AS BANNER
 // ======================================================
 function AgencyActingBanner() {
   const { isAgency, activeBrandId, activeBrandName, setActiveBrand } = useAgency();
@@ -434,11 +359,7 @@ function AgencyActingBanner() {
 // ======================================================
 function Brandmark({ collapsed }: { collapsed?: boolean }) {
   return (
-    <Link
-      to="/dashboard"
-      className="flex items-center gap-2.5"
-      aria-label="StyleAI workspace"
-    >
+    <Link to="/dashboard" className="flex items-center gap-2.5" aria-label="StyleAI workspace">
       <span className="grid size-8 shrink-0 place-items-center rounded-md bg-foreground text-background">
         <span className="font-display text-sm leading-none">S</span>
       </span>
@@ -537,8 +458,7 @@ function Assistant() {
 // APP SHELL
 // ======================================================
 export function AppShell({
-  children,
-  breadcrumb = [],
+  children, breadcrumb = [],
 }: {
   children: ReactNode;
   breadcrumb?: string[];
@@ -551,8 +471,7 @@ export function AppShell({
 }
 
 function AppShellInner({
-  children,
-  breadcrumb = [],
+  children, breadcrumb = [],
 }: {
   children: ReactNode;
   breadcrumb?: string[];
@@ -564,14 +483,12 @@ function AppShellInner({
   const isAdmin = userRoles.includes("SUPER_ADMIN");
   const isBrandOwner = userRoles.includes("BRAND_OWNER");
 
-  // ---- WebSocket: connect when user is present ----
   useEffect(() => {
     if (user) {
       connectSocket();
     }
   }, [user]);
 
-  // ---- Logout handler — disconnect socket first ----
   function handleLogout() {
     disconnectSocket();
     logout();
@@ -580,7 +497,6 @@ function AppShellInner({
   return (
     <TooltipProvider delayDuration={300}>
       <div className="min-h-screen bg-background text-foreground">
-        {/* Sidebar */}
         <aside
           className={cn(
             "fixed inset-y-0 left-0 z-30 hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 lg:flex",
@@ -605,11 +521,7 @@ function AppShellInner({
               className="w-full justify-start gap-3 text-muted-foreground"
               onClick={() => setCollapsed((c) => !c)}
             >
-              {collapsed ? (
-                <PanelLeftOpen className="size-4" />
-              ) : (
-                <PanelLeftClose className="size-4" />
-              )}
+              {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
               {!collapsed && "Collapse"}
             </Button>
           </div>
@@ -621,17 +533,11 @@ function AppShellInner({
             collapsed ? "lg:pl-[68px]" : "lg:pl-[248px]"
           )}
         >
-          {/* Header */}
           <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
             <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="lg:hidden"
-                    aria-label="Open navigation"
-                  >
+                  <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation">
                     <Command />
                   </Button>
                 </SheetTrigger>
@@ -672,12 +578,7 @@ function AppShellInner({
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Help"
-                      className="hidden sm:inline-flex"
-                    >
+                    <Button variant="ghost" size="icon" aria-label="Help" className="hidden sm:inline-flex">
                       <HelpCircle />
                     </Button>
                   </TooltipTrigger>
@@ -693,29 +594,18 @@ function AppShellInner({
                       aria-label="Open user menu"
                     >
                       {user?.name
-                        ? user.name
-                            .split(" ")
-                            .map((p) => p[0])
-                            .slice(0, 2)
-                            .join("")
-                            .toUpperCase()
+                        ? user.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()
                         : "S"}
                     </button>
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent align="end" className="w-60">
                     <div className="border-b border-border px-3 py-2.5">
-                      <p className="truncate text-sm font-medium">
-                        {user?.name ?? "User"}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {user?.email ?? ""}
-                      </p>
+                      <p className="truncate text-sm font-medium">{user?.name ?? "User"}</p>
+                      <p className="truncate text-xs text-muted-foreground">{user?.email ?? ""}</p>
                       {user?.roles?.length ? (
                         <p className="mt-1 inline-flex rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
-                          {user.roles
-                            .map((r) => r.replace(/_/g, " ").toLowerCase())
-                            .join(" · ")}
+                          {user.roles.map((r) => r.replace(/_/g, " ").toLowerCase()).join(" · ")}
                         </p>
                       ) : null}
                     </div>
@@ -769,7 +659,6 @@ function AppShellInner({
             </div>
           </header>
 
-          {/* Agency acting-as banner */}
           <AgencyActingBanner />
 
           <main className="mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 lg:py-10">

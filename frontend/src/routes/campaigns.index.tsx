@@ -41,6 +41,13 @@ function CampaignsListPage() {
         eyebrow="Marketing"
         title="Campaigns"
         description="Live campaigns created from accepted offers. Track deliverables and progress."
+        actions={
+          <Button asChild>
+            <Link to="/offers/new">
+              <Plus className="mr-1.5 size-4" /> Create offer
+            </Link>
+          </Button>
+        }
       />
 
       <div className="mt-6 flex items-center gap-2">
@@ -56,6 +63,11 @@ function CampaignsListPage() {
           <option value="COMPLETED">Completed</option>
           <option value="CANCELLED">Cancelled</option>
           <option value="DISPUTED">Disputed</option>
+          {/* New shipping flow statuses */}
+          <option value="AWAITING_ADDRESS">Awaiting address</option>
+          <option value="ADDRESS_SUBMITTED">Address submitted</option>
+          <option value="SHIPPED">Shipped</option>
+          <option value="IN_PRODUCTION">In production</option>
         </select>
       </div>
 
@@ -78,8 +90,8 @@ function CampaignsListPage() {
             Campaigns appear automatically when an offer is accepted by the influencer.
           </p>
           <Button asChild className="mt-4">
-            <Link to="/offers">
-              <Plus className="mr-1 size-4" /> Go to offers
+            <Link to="/offers/new">
+              <Plus className="mr-1 size-4" /> Create offer
             </Link>
           </Button>
         </div>
@@ -96,7 +108,9 @@ function CampaignsListPage() {
 
 function CampaignCard({ campaign }: { campaign: Campaign }) {
   const total = campaign.deliverables?.length ?? 0;
-  const approved = (campaign.deliverables ?? []).filter((d) => d.status === "APPROVED").length;
+  const approved = (campaign.deliverables ?? []).filter((d) =>
+    ["APPROVED", "BRAND_APPROVED", "PUBLISHED", "METRICS_ENTERED", "COMPLETED"].includes(d.status)
+  ).length;
   const progress = total > 0 ? (approved / total) * 100 : 0;
   const daysLeft = campaign.dueDate
     ? Math.max(0, Math.ceil((new Date(campaign.dueDate).getTime() - Date.now()) / 86400000))
@@ -147,6 +161,12 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
 
 function CampaignStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
+    // Shipping flow (new)
+    AWAITING_ADDRESS: "bg-amber-500/15 text-amber-500",
+    ADDRESS_SUBMITTED: "bg-amber-500/15 text-amber-500",
+    SHIPPED: "bg-purple-500/15 text-purple-500",
+    IN_PRODUCTION: "bg-blue-500/15 text-blue-500",
+    // Legacy
     ACTIVE: "bg-blue-500/15 text-blue-500",
     IN_REVIEW: "bg-amber-500/15 text-amber-500",
     DELIVERED: "bg-purple-500/15 text-purple-500",

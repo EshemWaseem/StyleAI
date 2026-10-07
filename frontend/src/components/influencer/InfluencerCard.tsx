@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Bookmark, BookmarkCheck } from "lucide-react";
+import { Bookmark, BookmarkCheck, Star } from "lucide-react";
 import {
   formatFollowers,
   formatEngagement,
@@ -77,6 +77,25 @@ export function InfluencerCard({
                 <Bookmark className="size-3.5" />
               )}
             </button>
+          )}
+        </div>
+
+        {/* ✅ NEW: Rating + orders */}
+        <div className="flex items-center gap-2 text-xs">
+          {inf.rating != null ? (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 font-medium text-amber-500">
+                <Star className="size-3 fill-current" />
+                {inf.rating.toFixed(1)}
+              </span>
+              <span className="text-muted-foreground">
+                {inf.totalOrders} {inf.totalOrders === 1 ? "order" : "orders"}
+              </span>
+            </>
+          ) : (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
+              New
+            </span>
           )}
         </div>
 

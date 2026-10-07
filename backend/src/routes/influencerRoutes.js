@@ -1,12 +1,20 @@
 // routes/influencerRoutes.js
 const router = require('express').Router();
-const { authenticate, requirePermission, authorize } = require('../middleware/auth');
+const {
+  authenticate,
+  requirePermission,
+  requirePermissionOrRole,
+  authorize,
+} = require('../middleware/auth');
 const ctrl = require('../controllers/influencerController');
 const pricingCtrl = require('../controllers/pricingController');
 
 router.use(authenticate);
 
-// ----- Avatar upload (any authenticated user with influencer.create) -----
+// Roles that can browse creators (brand side + agency)
+const BROWSE_ROLES = ['SUPER_ADMIN', 'BRAND_OWNER', 'AGENCY', 'BRAND_TEAM_MEMBER'];
+
+// ----- Avatar upload -----
 router.post(
   '/upload-avatar',
   requirePermission('influencer.create'),
@@ -14,16 +22,26 @@ router.post(
   ctrl.uploadAvatar
 );
 
-// ----- List (discover) -----
-router.get('/', requirePermission('influencer.read'), ctrl.list);
+// ----- List (discover) — allow roles OR permission -----
+router.get(
+  '/',
+  requirePermissionOrRole({
+    permissions: ['influencer.read'],
+    roles: BROWSE_ROLES,
+  }),
+  ctrl.list
+);
 
-// ----- My profile (MUST come before /:idOrSlug) -----
+// ----- My profile (influencer-only) -----
 router.get('/me', requirePermission('influencer.read'), ctrl.getMe);
 
-// ----- Pricing (must come before /:idOrSlug) -----
+// ----- Pricing -----
 router.get(
   '/:influencerId/pricing',
-  requirePermission('influencer.read'),
+  requirePermissionOrRole({
+    permissions: ['influencer.read'],
+    roles: BROWSE_ROLES,
+  }),
   pricingCtrl.getPricing
 );
 router.patch(
@@ -32,11 +50,7 @@ router.patch(
   pricingCtrl.updatePricing
 );
 
-// ======================================================
-// CREATE — STRICT ROLE GUARD
-// Only INFLUENCER role (or SUPER_ADMIN) can create.
-// Service layer ALSO enforces this — defense in depth.
-// ======================================================
+// ----- Create -----
 router.post(
   '/',
   authorize('INFLUENCER', 'SUPER_ADMIN'),
@@ -45,7 +59,14 @@ router.post(
 );
 
 // ----- Detail -----
-router.get('/:idOrSlug', requirePermission('influencer.read'), ctrl.getOne);
+router.get(
+  '/:idOrSlug',
+  requirePermissionOrRole({
+    permissions: ['influencer.read'],
+    roles: BROWSE_ROLES,
+  }),
+  ctrl.getOne
+);
 
 // ----- Update -----
 router.patch('/:influencerId', requirePermission('influencer.update'), ctrl.update);
@@ -54,7 +75,21 @@ router.patch('/:influencerId', requirePermission('influencer.update'), ctrl.upda
 router.delete('/:influencerId', requirePermission('influencer.delete'), ctrl.remove);
 
 // ----- Save / unsave -----
-router.post('/:influencerId/save', requirePermission('influencer.save'), ctrl.save);
-router.delete('/:influencerId/save', requirePermission('influencer.save'), ctrl.unsave);
+router.post(
+  '/:influencerId/save',
+  requirePermissionOrRole({
+    permissions: ['influencer.save'],
+    roles: BROWSE_ROLES,
+  }),
+  ctrl.save
+);
+router.delete(
+  '/:influencerId/save',
+  requirePermissionOrRole({
+    permissions: ['influencer.save'],
+    roles: BROWSE_ROLES,
+  }),
+  ctrl.unsave
+);
 
 module.exports = router;

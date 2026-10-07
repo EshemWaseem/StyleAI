@@ -7,6 +7,7 @@ const { updateCampaign } = require('./update');
 const { completeCampaign } = require('./complete');
 const pipeline = require('./contentPipeline');
 const chat = require('./chat');
+const shipping = require('./shipping');
 
 module.exports = {
   createCampaignFromOffer,
@@ -14,6 +15,14 @@ module.exports = {
   getCampaign,
   updateCampaign,
   completeCampaign,
+  submitFinalAsInfluencer: pipeline.submitFinalAsInfluencer,
+
+  // Shipping flow (Sprint B)
+  submitShippingAddress: shipping.submitShippingAddress,
+  markShipped: shipping.markShipped,
+  markReceived: shipping.markReceived,
+  setContentDeadline: shipping.setContentDeadline,
+
   // Content pipeline
   submitRawContent: pipeline.submitRawContent,
   startEditing: pipeline.startEditing,
@@ -23,11 +32,13 @@ module.exports = {
   publishContent: pipeline.publishContent,
   enterMetrics: pipeline.enterMetrics,
   recomputeCampaignAggregates: pipeline.recomputeCampaignAggregates,
+
   // Chat
   listChatMessages: chat.listMessages,
   sendChatMessage: chat.sendMessage,
   markChatRead: chat.markChatRead,
   getChatUnreadCount: chat.getUnreadCount,
+
   // Shaping
   shapeCampaign: helpers.shapeCampaign,
   shapeDeliverable: helpers.shapeDeliverable,
@@ -36,3 +47,4 @@ module.exports = {
   shapeMetric: helpers.shapeMetric,
   shapeMessage: helpers.shapeMessage,
 };
+

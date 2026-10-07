@@ -1,5 +1,4 @@
 // services/payments/stripe/handlers/invoicePaid.js
-// ✅ NEW: payment receipt email to brand owner on renewals.
 const prisma = require('../../../../config/prisma');
 const { creditPlatformWallet } = require('../../../wallet/platform');
 const { sendToUser } = require('../../../email');
@@ -27,8 +26,10 @@ async function handle(invoice) {
   const stripeCurrency = (invoice.currency || 'usd').toUpperCase();
   const platform = toPlatformCurrency(stripeAmount, stripeCurrency);
 
+  const periodStart = invoice.period_start ? new Date(invoice.period_start * 1000) : null;
+  const periodEnd = invoice.period_end ? new Date(invoice.period_end * 1000) : null;
+
   let paymentInvoiceNumber = `ST-INV-${invoice.id}`;
-  let paymentId = null;
 
   await prisma.$transaction(async (tx) => {
     const payment = await tx.payment.upsert({
@@ -52,12 +53,8 @@ async function handle(invoice) {
         stripeInvoiceId: invoice.id,
         stripePaymentIntentId: invoice.payment_intent || null,
         paidAt: new Date(),
-        periodStart: invoice.period_start
-          ? new Date(invoice.period_start * 1000)
-          : null,
-        periodEnd: invoice.period_end
-          ? new Date(invoice.period_end * 1000)
-          : null,
+        periodStart,
+        periodEnd,
         metadata: {
           stripeAmount,
           stripeCurrency,
@@ -65,8 +62,21 @@ async function handle(invoice) {
         },
       },
     });
-    paymentId = payment.id;
     paymentInvoiceNumber = payment.invoiceNumber;
+
+    // ✅ FIX: Update subscription period on renewal
+    if (periodStart && periodEnd) {
+      await tx.subscription.updateMany({
+        where: { organizationId },
+        data: {
+          currentPeriodStart: periodStart,
+          currentPeriodEnd: periodEnd,
+          stripeCurrentPeriodEnd: periodEnd,
+          status: 'ACTIVE',
+          stripeStatus: 'active',
+        },
+      });
+    }
 
     await creditPlatformWallet(tx, {
       amount: platform.amount,
@@ -86,10 +96,10 @@ async function handle(invoice) {
   });
 
   console.log(
-    `[stripe.invoicePaid] credited PKR ${platform.amount.toFixed(2)} (from ${stripeCurrency} ${stripeAmount.toFixed(2)}) for org ${organizationId}`
+    `[stripe.invoicePaid] credited PKR ${platform.amount.toFixed(2)} for org ${organizationId}`
   );
 
-  // ✅ Receipt email to brand owner (non-blocking)
+  // Receipt email
   const owner = await prisma.user.findFirst({
     where: {
       organizationId,
@@ -112,104 +122,3 @@ async function handle(invoice) {
 }
 
 module.exports = { handle };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// 02-10
-// // services/payments/stripe/handlers/invoicePaid.js
-// const prisma = require('../../../../config/prisma');
-// const { creditPlatformWallet } = require('../../../wallet/platform');
-
-// const USD_PKR_RATE = Number(process.env.USD_PKR_RATE || 278);
-
-// function toPlatformCurrency(amountMajor, fromCurrency) {
-//   const from = String(fromCurrency || 'usd').toUpperCase();
-//   if (from === 'PKR') return { amount: amountMajor, currency: 'PKR' };
-//   if (from === 'USD') return { amount: amountMajor * USD_PKR_RATE, currency: 'PKR' };
-//   return { amount: amountMajor, currency: from };
-// }
-
-// async function handle(invoice) {
-//   const organizationId =
-//     invoice.subscription_details?.metadata?.organizationId ||
-//     invoice.metadata?.organizationId;
-
-//   if (!organizationId) {
-//     console.warn('[stripe.invoicePaid] no organizationId in invoice');
-//     return;
-//   }
-
-//   const stripeAmount = (invoice.amount_paid || 0) / 100;
-//   const stripeCurrency = (invoice.currency || 'usd').toUpperCase();
-//   const platform = toPlatformCurrency(stripeAmount, stripeCurrency);
-
-//   await prisma.$transaction(async (tx) => {
-//     const payment = await tx.payment.upsert({
-//       where: { invoiceNumber: `ST-INV-${invoice.id}` },
-//       update: {
-//         status: 'SUCCEEDED',
-//         amount: platform.amount,
-//         currency: platform.currency,
-//         paidAt: new Date(),
-//       },
-//       create: {
-//         organizationId,
-//         invoiceNumber: `ST-INV-${invoice.id}`,
-//         amount: platform.amount,
-//         currency: platform.currency,
-//         status: 'SUCCEEDED',
-//         description: invoice.description || 'Stripe invoice',
-//         provider: 'STRIPE',
-//         context: 'SUBSCRIPTION',
-//         externalId: invoice.id,
-//         stripeInvoiceId: invoice.id,
-//         stripePaymentIntentId: invoice.payment_intent || null,
-//         paidAt: new Date(),
-//         periodStart: invoice.period_start
-//           ? new Date(invoice.period_start * 1000)
-//           : null,
-//         periodEnd: invoice.period_end
-//           ? new Date(invoice.period_end * 1000)
-//           : null,
-//         metadata: {
-//           stripeAmount,
-//           stripeCurrency,
-//           exchangeRate: USD_PKR_RATE,
-//         },
-//       },
-//     });
-
-//     await creditPlatformWallet(tx, {
-//       amount: platform.amount,
-//       currency: platform.currency,
-//       paymentId: payment.id,
-//       reference: `STRIPE_INV_${invoice.id}`,
-//       note: invoice.description || 'Stripe subscription renewal',
-//       meta: {
-//         invoiceId: invoice.id,
-//         subscriptionId: invoice.subscription,
-//         organizationId,
-//         stripeAmount,
-//         stripeCurrency,
-//         exchangeRate: USD_PKR_RATE,
-//       },
-//     });
-//   });
-
-//   console.log(
-//     `[stripe.invoicePaid] credited PKR ${platform.amount.toFixed(2)} (from ${stripeCurrency} ${stripeAmount.toFixed(2)}) for org ${organizationId}`
-//   );
-// }
-
-// module.exports = { handle };

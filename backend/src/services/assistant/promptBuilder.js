@@ -1,13 +1,22 @@
 // services/assistant/promptBuilder.js
 // ======================================================
 // Build the full LLM prompt: system + RAG + memory + user
+// Better citations — numbered + source + docType.
 // ======================================================
 
 const MAX_HISTORY = 10;
 
 function buildPrompt({ text, docChunks, recentMessages }) {
   const docBlock = docChunks.length
-    ? docChunks.map((c, i) => `[${i + 1}] (${c.source}) ${c.content}`).join('\n\n')
+    ? docChunks
+        .map((c, i) => {
+          const type = c.docType ? ` · ${c.docType}` : '';
+          const sim = c.similarity != null
+            ? ` · relevance ${Math.round(c.similarity * 100)}%`
+            : '';
+          return `[${i + 1}] (${c.source}${type}${sim})\n${c.content}`;
+        })
+        .join('\n\n')
     : '(no brand documents uploaded yet)';
 
   const historyBlock = recentMessages.length
@@ -20,15 +29,16 @@ function buildPrompt({ text, docChunks, recentMessages }) {
 
 RULES - follow all of them strictly:
 1. Be concise. Reply in 2 to 6 sentences, or a short numbered list.
-2. Never repeat a word twice in a row (for example "multiple multiple" is WRONG).
+2. Never repeat a word twice in a row.
 3. Never invent facts about the brand.
 4. Do not mention "chunks", "context", "documents", or "brand knowledge".
 5. Do not use markdown headings, bold titles, or code fences.
 6. If greeted, reply briefly and ask how you can help.
-7. If a fact is not in the brand knowledge and you are unsure, say so plainly.
-8. Stop cleanly after your answer. Do not continue with "User:" or new sections.
+7. When citing brand knowledge, use the numbered form [1], [2] etc. inline.
+8. If a fact is not in the brand knowledge and you are unsure, say so plainly.
+9. Stop cleanly after your answer.
 
-BRAND KNOWLEDGE (use only if relevant):
+BRAND KNOWLEDGE (use only if relevant; cite as [1], [2]):
 ${docBlock}
 
 RECENT CONVERSATION:

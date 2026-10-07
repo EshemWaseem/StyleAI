@@ -1,31 +1,33 @@
 // services/campaigns/create.js
-// ======================================================
-// Auto-create campaign when an offer is accepted.
-// Idempotent — safe to call twice.
-// Propagates product + agency from the offer.
-// ======================================================
-
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
 const { shapeCampaign } = require('./helpers');
 
 const DEFAULT_DURATION_DAYS = 14;
 
+// ✅ FIX: Accept both new + legacy accepted statuses
+const ACCEPTED_STATUSES = ['IN_PROGRESS', 'INFLUENCER_ACCEPTED'];
+
 async function createCampaignFromOffer(offerId, actorUserId) {
   const offer = await prisma.customOffer.findUnique({
     where: { id: offerId },
-    include: {
-      brand: true,
-      influencer: true,
-      campaign: true,
-    },
+    include: { brand: true, influencer: true, campaign: true },
   });
 
   if (!offer) throw httpError('Offer not found', 404, 'NOT_FOUND');
 
-  if (offer.status !== 'INFLUENCER_ACCEPTED') {
-    throw httpError('Offer must be accepted first', 400, 'OFFER_NOT_ACCEPTED');
+  if (!ACCEPTED_STATUSES.includes(offer.status)) {
+    throw httpError(
+      `Offer must be accepted first (current: ${offer.status})`,
+      400,
+      'OFFER_NOT_ACCEPTED'
+    );
   }
+
+  // // Idempotent
+  // if (offer.campaign) return shapeCampaign(offer.campaign);
+
+  // ... rest of function stays same
 
   // Idempotent — if already created, return it
   if (offer.campaign) {
@@ -42,9 +44,6 @@ async function createCampaignFromOffer(offerId, actorUserId) {
     now.getTime() + DEFAULT_DURATION_DAYS * 24 * 60 * 60 * 1000
   );
 
-  // ------------------------------------------------------
-  // Create campaign + deliverables in one transaction
-  // ------------------------------------------------------
   const campaign = await prisma.campaign.create({
     data: {
       offerId: offer.id,
@@ -56,7 +55,7 @@ async function createCampaignFromOffer(offerId, actorUserId) {
       description: null,
       currency: offer.currency,
       totalAmount: Number(offer.total),
-      status: 'ACTIVE',
+      status: 'AWAITING_ADDRESS',
       startDate: now,
       dueDate,
       deliverables: {

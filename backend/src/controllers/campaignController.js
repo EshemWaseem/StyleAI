@@ -24,4 +24,49 @@ async function complete(req, res, next) {
   } catch (e) { next(e); }
 }
 
-module.exports = { list, getOne, update, complete };
+// ======================================================
+// SHIPPING FLOW (Sprint B)
+// ======================================================
+async function submitAddress(req, res, next) {
+  try {
+    const campaign = await svc.submitShippingAddress(
+      req.user, req.params.id, req.body
+    );
+    res.json({ message: 'Shipping address submitted', campaign });
+  } catch (e) { next(e); }
+}
+
+async function ship(req, res, next) {
+  try {
+    const campaign = await svc.markShipped(req.user, req.params.id, req.body);
+    res.json({ message: 'Product marked as shipped', campaign });
+  } catch (e) { next(e); }
+}
+
+async function receive(req, res, next) {
+  try {
+    const campaign = await svc.markReceived(req.user, req.params.id, req.body);
+    res.json({ message: 'Product marked as received', campaign });
+  } catch (e) { next(e); }
+}
+
+async function setDeadline(req, res, next) {
+  try {
+    const campaign = await svc.setContentDeadline(
+      req.user, req.params.id, req.body
+    );
+    res.json({ message: 'Content deadline set', campaign });
+  } catch (e) { next(e); }
+}
+
+module.exports = {
+  list,
+  getOne,
+  update,
+  complete,
+  // Shipping
+  submitAddress,
+  ship,
+  receive,
+  setDeadline,
+};

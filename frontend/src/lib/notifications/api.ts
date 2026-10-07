@@ -1,5 +1,10 @@
 import { http } from "../api";
-import type { Notification, NotificationListResponse } from "./types";
+import type {
+  Notification,
+  NotificationListResponse,
+  NotificationPreference,
+  UpdatePreferenceInput,
+} from "./types";
 
 export const notificationsApi = {
   list: (filters: { unread?: boolean; limit?: number; offset?: number } = {}) => {
@@ -18,4 +23,13 @@ export const notificationsApi = {
     http.post<{ message: string; updated: number }>("/api/notifications/read-all", {}),
   remove: (id: string) =>
     http.delete<{ message: string; id: string }>(`/api/notifications/${id}`),
+
+  // ---- Preferences ----
+  getPreferences: () =>
+    http.get<{ preferences: NotificationPreference }>("/api/notifications/preferences"),
+  updatePreferences: (updates: UpdatePreferenceInput) =>
+    http.patch<{ message: string; preferences: NotificationPreference }>(
+      "/api/notifications/preferences",
+      updates
+    ),
 };

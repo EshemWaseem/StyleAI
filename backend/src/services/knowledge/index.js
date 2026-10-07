@@ -2,6 +2,7 @@
 const ingest = require('./ingest');
 const search = require('./search');
 const brandContext = require('./brandContext');
+const { expandQuery, invalidateAll: invalidateExpandCache } = require('./queryExpander');
 
 module.exports = {
   // write
@@ -17,4 +18,7 @@ module.exports = {
   getBrandContext: brandContext.getBrandContext,
   buildQuery: brandContext.buildQuery,
   invalidateBrandContext: brandContext.invalidate,
+  // advanced RAG
+  expandQuery,
+  invalidateExpandCache,
 };

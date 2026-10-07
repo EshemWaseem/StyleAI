@@ -190,10 +190,39 @@ function requireApproved(req, res, next) {
   next();
 }
 
+/**
+ * Pass if user has ANY of the permissions OR ANY of the roles.
+ * Useful for routes shared across roles with different permission sets.
+ */
+function requirePermissionOrRole({ permissions = [], roles: allowedRoles = [] } = {}) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    const hasPerm =
+      permissions.length > 0 &&
+      permissions.every((p) => req.user.permissions.includes(p));
+    const hasRole =
+      allowedRoles.length > 0 &&
+      req.user.roles.some((r) => allowedRoles.includes(r));
+
+    if (hasPerm || hasRole) return next();
+
+    return res.status(403).json({
+      message: 'Forbidden: insufficient permissions or role',
+      code: 'FORBIDDEN',
+      requiredPermissions: permissions,
+      requiredRoles: allowedRoles,
+    });
+  };
+}
+
+
 module.exports = {
   authenticate,
   authorize,
   requirePermission,
+  requirePermissionOrRole,
   requireBrandContext,
   requireApproved,
 };

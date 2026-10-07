@@ -1,4 +1,11 @@
+// controllers/walletController.js
 const service = require('../services/wallet');
+
+function getFrontendOrigin() {
+  return (process.env.FRONTEND_URL || 'http://localhost:3000')
+    .split(',')[0]
+    .trim();
+}
 
 async function getMe(req, res, next) {
   try {
@@ -11,6 +18,27 @@ async function listTransactions(req, res, next) {
   try {
     const result = await service.listMyTransactions(req.user, req.query);
     res.json(result);
+  } catch (err) { next(err); }
+}
+
+// ======================================================
+// WALLET TOP-UP
+// ======================================================
+async function topUp(req, res, next) {
+  try {
+    const frontend = getFrontendOrigin();
+
+    // Inject default success/cancel URLs if not provided
+    const body = {
+      ...req.body,
+      successUrl:
+        req.body?.successUrl || `${frontend}/wallet?topup=success`,
+      cancelUrl:
+        req.body?.cancelUrl || `${frontend}/wallet?topup=cancelled`,
+    };
+
+    const session = await service.createTopUpCheckout(req.user, body);
+    res.json({ session });
   } catch (err) { next(err); }
 }
 
@@ -52,6 +80,7 @@ async function listAll(req, res, next) {
 module.exports = {
   getMe,
   listTransactions,
+  topUp,
   requestWithdrawal,
   reviewWithdrawal,
   listWithdrawals,

@@ -6,11 +6,12 @@ import {
   createRootRouteWithContext,
   useRouter,
   useRouterState,
+  useNavigate,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-
+import { installSwalShim } from "@/lib/swal-shim";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { RoleProvider, useRole } from "../lib/role";
@@ -18,16 +19,16 @@ import { CartProvider } from "../lib/cart";
 import { AppShell } from "../components/app-shell";
 
 // ======================================================
-// Paths that render WITHOUT the app shell (public / pre-auth)
+// Public paths — no auth required, no shell
 // ======================================================
 const PUBLIC_PATHS = [
-  "/",              // storefront home
+  "/",
   "/login",
   "/register",
-  "/pending",       // pending approval screen
-  "/trial-expired", // blocking screen
-  "/invite",        // public invitation accept flow
-  "/payments/result", // payment gateway return page
+  "/pending",
+  "/trial-expired",
+  "/invite",
+  "/payments/result",
 ];
 
 function isPublicPath(pathname: string): boolean {
@@ -167,6 +168,10 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    installSwalShim();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <RoleProvider>
@@ -178,14 +183,94 @@ function RootComponent() {
   );
 }
 
+// ======================================================
+// Full-screen loader — used while auth is resolving
+// or while redirecting. Shell is NOT rendered.
+// ======================================================
+function FullScreenLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="inline-block size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        Loading…
+      </div>
+    </div>
+  );
+}
+
 /**
- * Decides whether to wrap children in AppShell or render them bare.
- * Must be rendered INSIDE <RoleProvider> so useRole() works.
+ * STRICT gate:
+ * - Public path → render bare (no shell)
+ * - Not public + no user → redirect to /login, shell NEVER renders
+ * - Not public + loading → loader, shell NEVER renders
+ * - Not public + user pendingApproval → redirect to /pending
+ * - /dashboard specific redirects (admin, agency, shopper, no-org brand)
+ * - Otherwise → render shell + outlet
  */
 function AppShellGate() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { user, loading } = useRole();
+  const navigate = useNavigate();
 
-  if (isPublicPath(pathname)) {
+  const isPublic = isPublicPath(pathname);
+  const isDashboard = pathname === "/dashboard";
+
+  // ------------------------------------------------------
+  // Compute redirect target — pure function of state + path
+  // ------------------------------------------------------
+  const redirectTarget: string | null = (() => {
+    // Public paths never redirect
+    if (isPublic) return null;
+
+    // Still resolving auth → don't redirect yet, show loader
+    if (loading) return null;
+
+    // No user, protected path → login
+    if (!user) return "/login";
+
+    // Pending brand team member → /pending
+    if (user.pendingApproval) return "/pending";
+
+    // /dashboard role-based redirects
+    if (isDashboard) {
+      if (user.roles.includes("SUPER_ADMIN")) return "/admin";
+      if (user.roles.includes("AGENCY")) return "/agency";
+
+      const isOnlyShopper =
+        user.roles.includes("SHOPPER") &&
+        user.roles.every((r) => r === "SHOPPER");
+      if (isOnlyShopper) return "/";
+
+      const isBrandUser = user.roles.some((r) =>
+        ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
+      );
+      if (isBrandUser && !user.organizationId) return "/brands";
+    }
+
+    return null;
+  })();
+
+  useEffect(() => {
+    if (redirectTarget) {
+      navigate({ to: redirectTarget as any, replace: true });
+    }
+  }, [redirectTarget, navigate]);
+
+  // ------------------------------------------------------
+  // Block shell when:
+  //   - auth is resolving (loading), OR
+  //   - we're about to redirect, OR
+  //   - we're on a protected path with no user
+  // ------------------------------------------------------
+  const blockShell =
+    !isPublic &&
+    (loading || !!redirectTarget || !user);
+
+  if (blockShell) {
+    return <FullScreenLoader />;
+  }
+
+  if (isPublic) {
     return <Outlet />;
   }
 

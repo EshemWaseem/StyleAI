@@ -38,6 +38,7 @@ module.exports = {
   sendChatMessage: chat.sendMessage,
   markChatRead: chat.markChatRead,
   getChatUnreadCount: chat.getUnreadCount,
+  getTotalUnreadForUser: chat.getTotalUnreadForUser, 
 
   // Shaping
   shapeCampaign: helpers.shapeCampaign,
@@ -47,4 +48,3 @@ module.exports = {
   shapeMetric: helpers.shapeMetric,
   shapeMessage: helpers.shapeMessage,
 };
-

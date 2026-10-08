@@ -1,3 +1,4 @@
+import { swalError , swalConfirm } from "@/lib/swal";
 // frontend/src/routes/team.tsx
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -115,43 +116,42 @@ function TeamPage() {
   }
 
   async function handleDeleteRole(role: BrandTeamRole) {
-    if (!confirm(`Delete role "${role.name}"?`)) return;
+    if (!(await swalConfirm(`Delete role "${role.name}"?`))) return;
     try {
       await brandTeamApi.deleteRole(role.id);
       setRoles((prev) => prev.filter((r) => r.id !== role.id));
     } catch (err: any) {
-      alert(err?.message || "Delete failed");
+      swalError(err?.message || "Delete failed");
     }
   }
 
   async function handleRejectRequest(id: string) {
-    if (!confirm("Reject this request?")) return;
+    if (!(await swalConfirm("Reject this request?"))) return;
     try {
       await joinRequestsApi.reject(id);
       setPending((prev) => prev.filter((r) => r.id !== id));
     } catch (err: any) {
-      alert(err?.message || "Reject failed");
+      swalError(err?.message || "Reject failed");
     }
   }
 
   async function handleCancelInvite(id: string) {
-    if (!confirm("Cancel this invitation?")) return;
+    if (!(await swalConfirm("Cancel this invitation?"))) return;
     try {
       await invitationsApi.cancel(id);
       setInvites((prev) => prev.filter((i) => i.id !== id));
     } catch (err: any) {
-      alert(err?.message || "Cancel failed");
+      swalError(err?.message || "Cancel failed");
     }
   }
 
   async function handleRemoveMember(member: BrandTeamMember) {
-    if (!confirm(`Remove ${member.user?.name ?? "this member"} from the team?`))
-      return;
+    if (!(await swalConfirm(`Remove ${member.user?.name ?? "this member"} from the team?`))) return;
     try {
       await brandTeamApi.removeMember(member.id);
       setMembers((prev) => prev.filter((m) => m.id !== member.id));
     } catch (err: any) {
-      alert(err?.message || "Remove failed");
+      swalError(err?.message || "Remove failed");
     }
   }
 
@@ -162,7 +162,7 @@ function TeamPage() {
         prev.map((m) => (m.id === member.id ? res.member : m))
       );
     } catch (err: any) {
-      alert(err?.message || "Failed to change role");
+      swalError(err?.message || "Failed to change role");
     }
   }
 
@@ -173,7 +173,7 @@ function TeamPage() {
       setApprovingRequest(null);
       await refreshMembers();
     } catch (err: any) {
-      alert(err?.message || "Approve failed");
+      swalError(err?.message || "Approve failed");
     }
   }
 

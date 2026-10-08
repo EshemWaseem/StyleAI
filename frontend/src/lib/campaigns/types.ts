@@ -31,12 +31,21 @@ export type DeliverableStatus =
 
 export interface ShippingAddress {
   fullName: string;
-  phone: string;
+  phone: string;              // E.164 format, e.g. "+923001234567"
   street: string;
-  city: string;
+
+  city: string;               // city name
+  cityId?: number | null;     // for re-selecting
+
   state?: string | null;
+  stateId?: number | null;
+
   postalCode?: string | null;
-  country: string;
+
+  country: string;            // country name
+  countryId?: number | null;
+  countryCode?: string | null; // "PK", "US" — for phone input default
+
   notes?: string | null;
 }
 

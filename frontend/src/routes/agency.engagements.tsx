@@ -1,3 +1,4 @@
+import { swalError } from "@/lib/swal";
 // routes/agency.engagements.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { useRealtimeEvent } from "@/lib/websocket/hooks";
@@ -78,7 +79,7 @@ function AgencyEngagementsPage() {
       await fn();
       await refresh();
     } catch (e: any) {
-      alert(e?.message || "Action failed");
+      swalError(e?.message || "Action failed");
     } finally {
       setActionId(null);
     }

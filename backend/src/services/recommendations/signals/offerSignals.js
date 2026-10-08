@@ -1,20 +1,30 @@
 // services/recommendations/signals/offerSignals.js
 // ======================================================
-// Offer-related real-data signals
+// Offer signals — enriched, dynamic confidence
 // ======================================================
 
-/**
- * Offers pending influencer decision (any age)
- */
+const { computeConfidence } = require('../confidence');
+
 function offersPending(offers) {
   const pending = offers.filter((o) => o.status === 'PENDING');
   if (pending.length === 0) return null;
 
+  const oldestDays = Math.max(
+    ...pending.map((o) => (Date.now() - new Date(o.createdAt).getTime()) / 86400000)
+  );
+  const sample = pending[0].influencerName;
+
   return {
     id: 'offers-pending',
     title: `${pending.length} offer${pending.length === 1 ? '' : 's'} awaiting influencer`,
-    reason: `Influencers haven't accepted your offers yet. Follow up or send new ones.`,
-    confidence: 85,
+    reason: sample
+      ? `${sample}${pending.length > 1 ? ` and ${pending.length - 1} more` : ''} haven't responded${oldestDays >= 1 ? ` (oldest: ${Math.floor(oldestDays)}d)` : ''}. Follow up or send new offers.`
+      : `Influencers haven't accepted your offers yet. Follow up or send new ones.`,
+    confidence: computeConfidence({
+      count: pending.length,
+      ageDays: oldestDays,
+      urgency: oldestDays > 3 ? 'high' : 'normal',
+    }),
     action: 'Open offers',
     category: 'offer',
     link: '/offers',
@@ -22,9 +32,6 @@ function offersPending(offers) {
   };
 }
 
-/**
- * Offers in progress (content being produced)
- */
 function offersInProgress(offers) {
   const active = offers.filter((o) => o.status === 'IN_PROGRESS');
   if (active.length === 0) return null;
@@ -33,7 +40,10 @@ function offersInProgress(offers) {
     id: 'offers-active',
     title: `${active.length} offer${active.length === 1 ? '' : 's'} in progress`,
     reason: 'Influencers are working on content. Track their campaign deliverables.',
-    confidence: 60,
+    confidence: computeConfidence({
+      count: active.length,
+      urgency: 'normal',
+    }),
     action: 'Open campaigns',
     category: 'offer',
     link: '/campaigns',
@@ -41,9 +51,6 @@ function offersInProgress(offers) {
   };
 }
 
-/**
- * Recently completed offers (celebratory / suggestions)
- */
 function offersRecentlyCompleted(offers) {
   const recent = offers.filter((o) => {
     if (o.status !== 'COMPLETED') return false;
@@ -56,7 +63,10 @@ function offersRecentlyCompleted(offers) {
     id: 'offers-completed-recent',
     title: `${recent.length} campaign${recent.length === 1 ? '' : 's'} completed recently 🎉`,
     reason: 'Great work! Review analytics and consider a follow-up campaign with the same creators.',
-    confidence: 80,
+    confidence: computeConfidence({
+      count: recent.length,
+      urgency: 'low',
+    }),
     action: 'View analytics',
     category: 'analytics',
     link: '/analytics',

@@ -1,17 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  AlertCircle, Loader2, Plus, Trash2, X, Sparkles, Clock, Eye, Save,
+  AlertCircle, Loader2, Plus, Trash2, X, Sparkles, Clock, Check, Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageHeader, Panel } from "@/components/ui-kit";
+import { PageHeader } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { listingsApi } from "@/lib/listings";
 import type { Listing } from "@/lib/listings";
 import { pricingApi } from "@/lib/pricing";
 import type { PlatformCatalogEntry } from "@/lib/pricing";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 
 export const Route = createFileRoute("/influencer/offers")({
   head: () => ({ meta: [{ title: "My Offers — StyleAI" }] }),
@@ -38,11 +39,20 @@ function MyListingsPage() {
   useEffect(() => { load(); }, []);
 
   async function cancel(id: string) {
-    if (!confirm("Cancel this offer? Brands will no longer see it.")) return;
+    const ok = await swalConfirm(
+      "Cancel this offer?",
+      "Brands will no longer see it."
+    );
+    if (!ok) return;
     try {
       await listingsApi.cancel(id);
-      setListings((prev) => prev.map((l) => l.id === id ? { ...l, status: "CANCELLED" as any } : l));
-    } catch (e: any) { alert(e?.message || "Failed"); }
+      setListings((prev) =>
+        prev.map((l) => (l.id === id ? { ...l, status: "CANCELLED" as any } : l))
+      );
+      swalSuccess("Offer cancelled");
+    } catch (e: any) {
+      swalError("Failed", e?.message);
+    }
   }
 
   return (
@@ -99,6 +109,9 @@ function MyListingsPage() {
 
 function ListingCard({ listing, onCancel }: { listing: Listing; onCancel: (id: string) => void }) {
   const expired = new Date(listing.expiresAt) < new Date();
+  const isClaimed = listing.status === "CLAIMED";
+  const isCancelled = listing.status === "CANCELLED";
+
   const statusColor: Record<string, string> = {
     ACTIVE: expired ? "bg-muted text-muted-foreground" : "bg-emerald-500/15 text-emerald-500",
     EXPIRED: "bg-muted text-muted-foreground",
@@ -106,7 +119,10 @@ function ListingCard({ listing, onCancel }: { listing: Listing; onCancel: (id: s
     CLAIMED: "bg-blue-500/15 text-blue-500",
   };
   const badge = expired ? "EXPIRED" : listing.status;
-  const daysLeft = Math.max(0, Math.ceil((new Date(listing.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+  const daysLeft = Math.max(
+    0,
+    Math.ceil((new Date(listing.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  );
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -143,19 +159,33 @@ function ListingCard({ listing, onCancel }: { listing: Listing; onCancel: (id: s
         </div>
       </div>
 
-      <div className="border-t border-border px-4 py-3 flex items-center justify-between text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <Clock className="size-3" />
-          {expired ? "Expired" : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Eye className="size-3" /> {listing.viewCount}
-        </span>
+      {/* ✅ Status footer — claimed / cancelled / expiry */}
+      <div className="border-t border-border px-4 py-3 text-xs">
+        {isClaimed ? (
+          <span className="inline-flex items-center gap-1 text-blue-500">
+            <Check className="size-3" />
+            Claimed by a brand
+          </span>
+        ) : isCancelled ? (
+          <span className="inline-flex items-center gap-1 text-muted-foreground">
+            Cancelled
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-muted-foreground">
+            <Clock className="size-3" />
+            {expired ? "Expired" : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`}
+          </span>
+        )}
       </div>
 
       {listing.status === "ACTIVE" && !expired && (
         <div className="border-t border-border px-4 py-2">
-          <Button variant="ghost" size="sm" className="w-full text-destructive" onClick={() => onCancel(listing.id)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-destructive"
+            onClick={() => onCancel(listing.id)}
+          >
             <Trash2 className="mr-1 size-3" /> Cancel offer
           </Button>
         </div>
@@ -224,16 +254,17 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
     setSaving(true);
     try {
       const payload: any = {
-  title: title.trim(),
-  validDays,
-  items: items.map(({ platform, contentType, quantity, unitPrice }) => ({
+        title: title.trim(),
+        validDays,
+        items: items.map(({ platform, contentType, quantity, unitPrice }) => ({
           platform, contentType, quantity, unitPrice,
         })),
       };
       const descTrim = description.trim();
       if (descTrim) payload.description = descTrim;
-      
+
       await listingsApi.create(payload);
+      await swalSuccess("Offer published!", "Brands can now browse and claim it.");
       onCreated();
     } catch (e: any) {
       setError(e?.message || "Failed to create");
@@ -245,7 +276,6 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
       <div className="my-8 w-full max-w-2xl rounded-xl border border-border bg-card shadow-lift">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="font-display text-lg font-medium">Publish a new offer</h2>
-          {/* <Button variant="ghost" size="icon" onClick={onClose} disabled={saving}><X /></Button> */}
           <Button variant="ghost" size="icon" onClick={onClose} disabled={saving} title="Close" aria-label="Close">
             <X />
           </Button>

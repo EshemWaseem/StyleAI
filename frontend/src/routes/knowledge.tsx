@@ -1,3 +1,4 @@
+import { swalError , swalConfirm } from "@/lib/swal";
 // routes/knowledge.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -85,18 +86,18 @@ function KnowledgePage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this document and its indexed chunks?")) return;
+    if (!(await swalConfirm("Delete this document and its indexed chunks?"))) return;
     try {
       await knowledgeApi.remove(id);
       await load();
-    } catch (e: any) { alert(e?.message); }
+    } catch (e: any) { swalError(e?.message); }
   }
 
   async function reindex(id: string) {
     try {
       await knowledgeApi.reindex(id);
       await load();
-    } catch (e: any) { alert(e?.message); }
+    } catch (e: any) { swalError(e?.message); }
   }
 
   async function search() {

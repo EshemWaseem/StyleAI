@@ -1,11 +1,14 @@
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 // routes/campaigns.$id.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { getSocket } from "@/lib/websocket/client";
 import { useEffect, useState } from "react";
 import {
   AlertCircle, ArrowLeft, Loader2, CheckCircle2, Clock, Package,
   MessageSquare, BarChart3, FileText, Save, Flag, Calendar,
-  Upload, Pencil, Check, X, Send, ExternalLink, BarChart, Image as ImageIcon,
+  Upload, Pencil, Check, X, Send, ExternalLink, BarChart, ImageIcon,
   MapPin, Truck, PackageCheck, RefreshCw, ChevronDown, ChevronUp,
+  Download, Eye, File as FileIcon, Play, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +33,93 @@ export const Route = createFileRoute("/campaigns/$id")({
 
 type Tab = "overview" | "deliverables" | "messages" | "analytics";
 
+// ======================================================
+// FILE HELPERS
+// ======================================================
+type FileLike =
+  | string
+  | { url?: string; name?: string; type?: string; mimeType?: string; size?: number }
+  | null
+  | undefined;
+
+function normalizeFile(f: FileLike): { url: string; name: string; type: string } | null {
+  if (!f) return null;
+  if (typeof f === "string") {
+    const url = f;
+    const name = url.split("/").pop()?.split("?")[0] || "file";
+    const ext = name.split(".").pop()?.toLowerCase() || "";
+    const type = /\.(jpg|jpeg|png|gif|webp|svg)$/.test(ext)
+      ? "image"
+      : /\.(mp4|mov|webm|avi)$/.test(ext)
+      ? "video"
+      : "file";
+    return { url, name, type };
+  }
+  const url = f.url || "";
+  if (!url) return null;
+  const mime = (f.mimeType || f.type || "").toLowerCase();
+  const name = f.name || url.split("/").pop()?.split("?")[0] || "file";
+  const type = mime.startsWith("image/")
+    ? "image"
+    : mime.startsWith("video/")
+    ? "video"
+    : /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(name)
+    ? "image"
+    : /\.(mp4|mov|webm|avi)$/i.test(name)
+    ? "video"
+    : "file";
+  return { url, name, type };
+}
+
+function FileGrid({ files }: { files: FileLike[] }) {
+  const items = (files || []).map(normalizeFile).filter(Boolean) as {
+    url: string;
+    name: string;
+    type: string;
+  }[];
+  if (items.length === 0) return null;
+
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1.5 [scrollbar-width:thin]">
+      {items.map((f, i) => (
+        <a
+          key={i}
+          href={f.url}
+          target="_blank"
+          rel="noreferrer"
+          title={f.name}
+          className="group relative block size-20 shrink-0 overflow-hidden rounded border border-border bg-muted/20 transition hover:border-accent/50 sm:size-24"
+        >
+          {f.type === "image" ? (
+            <>
+              <img
+                src={f.url}
+                alt={f.name}
+                loading="lazy"
+                className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100">
+                <Eye className="size-4 text-white" />
+              </div>
+            </>
+          ) : f.type === "video" ? (
+            <div className="flex size-full items-center justify-center bg-muted/40">
+              <Play className="size-5 text-accent" />
+            </div>
+          ) : (
+            <div className="flex size-full items-center justify-center bg-muted/40">
+              <FileIcon className="size-5 text-accent" />
+            </div>
+          )}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+// ======================================================
+// MAIN PAGE
+// ======================================================
 function CampaignDetailPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -72,39 +162,83 @@ function CampaignDetailPage() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
 
-  useEffect(() => {
-    if (!campaign) return;
-    let cancelled = false;
-    const poll = () => {
-      campaignsApi.chatUnread(campaign.id)
-        .then((r) => { if (!cancelled) setChatUnread(r.unread); })
-        .catch(() => {});
+  // ── Chat unread: WS-driven, no polling ──
+useEffect(() => {
+  if (!campaign) return;
+
+  let off: (() => void) | null = null;
+  let intervalId: any = null;
+
+  // Initial snapshot (once)
+  campaignsApi.chatUnread(campaign.id)
+    .then((r) => setChatUnread(r.unread))
+    .catch(() => {});
+
+  const onNew = (payload: any) => {
+    if (payload?.kind !== "campaign" || payload?.campaignId !== campaign.id) return;
+    // Only bump if this user is not the sender
+    if (payload?.message?.senderUserId === (user as any)?.id) return;
+    // If currently on messages tab, mark read immediately
+    setChatUnread((n) => n + 1);
+  };
+
+  const onRead = () => setChatUnread(0);
+
+  const trySubscribe = (): boolean => {
+    const socket = getSocket();
+    if (!socket) return false;
+    socket.on("chat:new", onNew);
+    socket.on("read:campaign", onRead);
+    off = () => {
+      socket.off("chat:new", onNew);
+      socket.off("read:campaign", onRead);
     };
-    poll();
-    const t = setInterval(poll, 15000);
-    return () => { cancelled = true; clearInterval(t); };
-  }, [campaign?.id]);
+    return true;
+  };
+
+  if (!trySubscribe()) {
+    intervalId = setInterval(() => {
+      if (trySubscribe()) clearInterval(intervalId);
+    }, 500);
+  }
+
+  return () => {
+    if (intervalId) clearInterval(intervalId);
+    off?.();
+  };
+}, [campaign?.id]);
 
   async function markComplete() {
     if (!campaign) return;
-    if (!confirm("Mark this campaign as complete?")) return;
+    const ok = await swalConfirm(
+      "Mark campaign complete?",
+      "This action cannot be undone."
+    );
+    if (!ok) return;
     setBusy(true);
     try {
       const r = await campaignsApi.complete(campaign.id);
       setCampaign(r.campaign);
-    } catch (e: any) { alert(e?.message || "Failed"); }
-    finally { setBusy(false); }
+      swalSuccess("Campaign completed!");
+    } catch (e: any) {
+      swalError("Failed", e?.message || "Could not complete campaign");
+    } finally { setBusy(false); }
   }
 
   async function handleReceive() {
     if (!campaign) return;
-    if (!confirm("Confirm you have received the product?")) return;
+    const ok = await swalConfirm(
+      "Confirm product received?",
+      "Only confirm once you physically have the product in hand."
+    );
+    if (!ok) return;
     setReceiving(true);
     try {
       const r = await campaignsApi.receive(campaign.id, { note: "Product in good condition" });
       setCampaign(r.campaign);
+      swalSuccess("Product marked as received");
     } catch (e: any) {
-      alert(e?.message || "Failed");
+      swalError("Failed", e?.message || "Could not confirm receipt");
     } finally {
       setReceiving(false);
     }
@@ -172,12 +306,12 @@ function CampaignDetailPage() {
         }
       />
 
-      <section className="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Status" value={campaign.status.replace(/_/g, " ")} />
         <Stat label="Total value" value={`${campaign.currency} ${campaign.totalAmount.toFixed(2)}`} />
         <Stat
           label="Deliverables"
-          value={`${(campaign.deliverables ?? []).filter((d) => ["COMPLETED", "APPROVED", "METRICS_ENTERED", "BRAND_APPROVED", "PUBLISHED"].includes(d.status)).length}/${(campaign.deliverables ?? []).length} done`}
+          value={`${(campaign.deliverables ?? []).filter((d) => ["COMPLETED", "APPROVED", "METRICS_ENTERED", "BRAND_APPROVED", "PUBLISHED"].includes(d.status)).length}/${(campaign.deliverables ?? []).length}`}
         />
         <Stat
           label="Due"
@@ -329,7 +463,7 @@ function CampaignDetailPage() {
         </section>
       )}
 
-      <div className="mt-8 flex gap-1 border-b border-border">
+      <div className="mt-8 flex gap-1 overflow-x-auto border-b border-border">
         {tabs.map((t) => {
           const Icon = t.icon;
           const active = tab === t.key;
@@ -342,7 +476,7 @@ function CampaignDetailPage() {
                 setTab(t.key);
                 if (t.key === "messages") setChatUnread(0);
               }}
-              className={`flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
                 active
                   ? "border-accent text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -419,7 +553,7 @@ function StepCard({
       ? "border-amber-500/30 bg-amber-500/5 text-amber-500"
       : "border-border bg-card text-muted-foreground opacity-60";
   return (
-    <div className={`rounded-xl border p-4 ${color}`}>
+    <div className={`rounded-xl border p-3 sm:p-4 ${color}`}>
       <div className="flex items-center gap-2">
         <Icon className="size-4" />
         <p className="text-xs font-medium uppercase tracking-wide">{label}</p>
@@ -431,9 +565,11 @@ function StepCard({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
       <p className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</p>
-      <p className="mt-1.5 font-display text-lg font-medium tabular-nums">{value}</p>
+      <p className="mt-1.5 truncate font-display text-base font-medium tabular-nums sm:text-lg">
+        {value}
+      </p>
     </div>
   );
 }
@@ -464,8 +600,10 @@ function OverviewTab({
       });
       setEditing(false);
       onUpdate();
+      swalSuccess("Brief updated");
     } catch (e: any) {
       setError(e?.message || "Failed to save");
+      swalError("Failed", e?.message || "Could not save brief");
     } finally { setSaving(false); }
   }
 
@@ -725,7 +863,7 @@ function DeliverablesTab({
 }
 
 // ======================================================
-// DELIVERABLE CARD (with version history)
+// DELIVERABLE CARD — compact horizontal pipeline
 // ======================================================
 function DeliverableCard({
   d, isBrandSide, isAgencySide, isInfluencerSide, isAdmin,
@@ -744,8 +882,7 @@ function DeliverableCard({
   onUpdate: () => void;
 }) {
   const [busy, setBusy] = useState(false);
-  const [showRawHistory, setShowRawHistory] = useState(false);
-  const [showFinalHistory, setShowFinalHistory] = useState(false);
+  const [showFiles, setShowFiles] = useState(true);
 
   async function doAction(fn: () => Promise<any>) {
     setBusy(true);
@@ -753,7 +890,7 @@ function DeliverableCard({
       await fn();
       onUpdate();
     } catch (e: any) {
-      alert(e?.message || "Failed");
+      swalError("Failed", e?.message || "Action failed");
     } finally { setBusy(false); }
   }
 
@@ -785,9 +922,9 @@ function DeliverableCard({
 
   const canSubmitRaw = (isInfluencerSide || isAdmin) &&
     ["PENDING", "IN_PROGRESS", "CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
-  const canStartEdit = (isAgencySide || isAdmin) && d.status === "RAW_UPLOADED";
-  const canSubmitFinal = (isAgencySide || isAdmin) &&
-    ["RAW_UPLOADED", "AGENCY_EDITING", "CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
+  const canStartEdit = (isAgencySide || isInfluencerSide || isAdmin) && d.status === "RAW_UPLOADED";
+  const canSubmitFinal = (isAgencySide || isInfluencerSide || isAdmin) &&
+    ["AGENCY_EDITING", "CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
   const canApprove = (isBrandSide || isAdmin) && ["FINAL_UPLOADED", "BRAND_REVIEW"].includes(d.status);
   const canReject = (isBrandSide || isAdmin) && ["FINAL_UPLOADED", "BRAND_REVIEW"].includes(d.status);
   const canPublish = (isAgencySide || isAdmin) && d.status === "BRAND_APPROVED";
@@ -797,255 +934,275 @@ function DeliverableCard({
   const isRawRevision = rawSubs.length > 0 && ["CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
   const isFinalRevision = finalSubs.length > 0 && ["CHANGES_REQUESTED", "BRAND_REJECTED"].includes(d.status);
 
+  const rawFiles = Array.isArray(latestRaw?.files) ? latestRaw.files.filter(Boolean) : [];
+  const finalFiles = Array.isArray(latestFinal?.files) ? latestFinal.files.filter(Boolean) : [];
+
+  const step1Done = !!latestRaw;
+  const step2Done = ["FINAL_UPLOADED", "BRAND_REVIEW", "BRAND_APPROVED", "BRAND_REJECTED", "PUBLISHED", "METRICS_ENTERED", "COMPLETED"].includes(d.status);
+  const step2Active = d.status === "AGENCY_EDITING";
+  const step3Done = ["BRAND_APPROVED", "PUBLISHED", "METRICS_ENTERED", "COMPLETED"].includes(d.status);
+  const step3Active = ["FINAL_UPLOADED", "BRAND_REVIEW"].includes(d.status);
+
   return (
     <Panel className="overflow-hidden">
-      <div className="flex items-start justify-between gap-3 border-b border-border p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-accent/10 text-xs font-semibold uppercase text-accent">
+          <div className="grid size-9 shrink-0 place-items-center rounded bg-accent/10 text-[10px] font-semibold uppercase text-accent">
             {d.platform.slice(0, 3)}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium capitalize">
+            <p className="truncate text-sm font-medium capitalize">
               {d.contentType} × {d.quantity}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {d.dueDate ? `Due ${new Date(d.dueDate).toLocaleDateString()}` : "No due date"}
             </p>
           </div>
         </div>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${statusStyles[d.status] || "bg-muted"}`}>
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${statusStyles[d.status] || "bg-muted"}`}
+        >
           {d.status.replace(/_/g, " ")}
         </span>
       </div>
 
-      <div className="grid gap-3 p-4 sm:grid-cols-2">
-        {/* 1. RAW */}
-        <div className="rounded-lg border border-border p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-              1. Raw (Influencer)
-            </p>
-            {rawSubs.length > 1 && (
-              <button
-                type="button"
-                onClick={() => setShowRawHistory((s) => !s)}
-                className="inline-flex items-center gap-1 text-[10px] text-accent hover:underline"
-              >
-                {rawSubs.length} versions
-                {showRawHistory ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-              </button>
-            )}
-          </div>
+      <div className="border-b border-border px-4 py-4">
+        <div className="flex items-center gap-2 overflow-x-auto sm:gap-3">
+          <StepPill
+            n={1}
+            label="Influencer Shoot"
+            sub={
+              step1Done
+                ? `v${latestRaw?.iteration ?? 1} · ${rawFiles.length} file${rawFiles.length !== 1 ? "s" : ""}`
+                : "Pending"
+            }
+            state={step1Done ? "done" : "active"}
+          />
+          <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
 
-          {latestRaw ? (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold text-accent">
-                  v{latestRaw.iteration ?? 1}
-                </span>
-                <p className="text-xs">
-                  {Array.isArray(latestRaw.files) ? latestRaw.files.length : 0} file(s)
-                </p>
-              </div>
-              {latestRaw.notes && (
-                <p className="text-[11px] text-muted-foreground italic">
-                  "{latestRaw.notes}"
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">Not uploaded</p>
-          )}
+          <StepPill
+            n={2}
+            label="Editing Phase"
+            sub={
+              step2Done
+                ? "Completed"
+                : step2Active
+                ? "In progress"
+                : d.status === "RAW_UPLOADED"
+                ? "Ready to start"
+                : "Waiting"
+            }
+            state={step2Done ? "done" : step2Active ? "active" : d.status === "RAW_UPLOADED" ? "ready" : "pending"}
+          />
+          <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
 
-          {canSubmitRaw && (
-            <Button
-              size="sm"
-              className="mt-2 w-full"
-              onClick={onRawUpload}
-              disabled={busy}
-            >
-              {isRawRevision ? (
-                <><RefreshCw className="mr-1 size-3" /> Upload revised version</>
-              ) : (
-                <><Upload className="mr-1 size-3" /> Upload raw</>
-              )}
-            </Button>
-          )}
-
-          {showRawHistory && rawSubs.length > 1 && (
-            <div className="mt-3 space-y-1.5 border-t border-border pt-2">
-              {rawSubs.slice(1).map((s) => (
-                <div key={s.id} className="flex items-center justify-between text-[10px]">
-                  <span className="text-muted-foreground">v{s.iteration ?? 1}</span>
-                  <span className={`rounded-full px-1.5 py-0.5 uppercase ${statusStyles[s.status] || "bg-muted"}`}>
-                    {s.status.replace(/_/g, " ")}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {new Date(s.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+          <StepPill
+            n={3}
+            label="Delivered"
+            sub={
+              step3Done
+                ? "Approved"
+                : step3Active
+                ? "Awaiting review"
+                : d.status === "AGENCY_EDITING"
+                ? "Ready to upload"
+                : "Not delivered"
+            }
+            state={step3Done ? "done" : step3Active ? "active" : d.status === "AGENCY_EDITING" ? "ready" : "pending"}
+          />
         </div>
 
-        {/* 2. AGENCY EDIT */}
-        <div className="rounded-lg border border-border p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-              2. Agency edit
-            </p>
-            {finalSubs.length > 1 && (
-              <button
-                type="button"
-                onClick={() => setShowFinalHistory((s) => !s)}
-                className="inline-flex items-center gap-1 text-[10px] text-accent hover:underline"
-              >
-                {finalSubs.length} versions
-                {showFinalHistory ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-              </button>
-            )}
-          </div>
-
-          {latestFinal ? (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold text-accent">
-                  v{latestFinal.iteration ?? 1}
-                </span>
-                <p className="text-xs">
-                  {Array.isArray(latestFinal.files) ? latestFinal.files.length : 0} final file(s)
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">Not edited yet</p>
-          )}
-
-          {canStartEdit && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="mt-2 w-full"
-              onClick={() => doAction(() => campaignsApi.startEditing(d.id))}
-              disabled={busy}
-            >
-              <Pencil className="mr-1 size-3" /> Start editing
-            </Button>
-          )}
-          {canSubmitFinal && (
-            <Button
-              size="sm"
-              className="mt-2 w-full"
-              onClick={onFinalUpload}
-              disabled={busy}
-            >
-              {isFinalRevision ? (
-                <><RefreshCw className="mr-1 size-3" /> Upload revised final</>
-              ) : (
-                <><Upload className="mr-1 size-3" /> Upload final</>
-              )}
-            </Button>
-          )}
-
-          {showFinalHistory && finalSubs.length > 1 && (
-            <div className="mt-3 space-y-1.5 border-t border-border pt-2">
-              {finalSubs.slice(1).map((s) => (
-                <div key={s.id} className="flex items-center justify-between text-[10px]">
-                  <span className="text-muted-foreground">v{s.iteration ?? 1}</span>
-                  <span className={`rounded-full px-1.5 py-0.5 uppercase ${statusStyles[s.status] || "bg-muted"}`}>
-                    {s.status.replace(/_/g, " ")}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {new Date(s.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* 3. BRAND REVIEW */}
-        <div className="rounded-lg border border-border p-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase text-muted-foreground">
-            3. Brand review
-          </p>
-          {["BRAND_APPROVED", "PUBLISHED", "METRICS_ENTERED", "COMPLETED"].includes(d.status) ? (
-            <p className="text-xs text-emerald-500">Approved ✓</p>
-          ) : d.status === "BRAND_REJECTED" ? (
-            <p className="text-xs text-destructive">Rejected — awaiting changes</p>
-          ) : (
-            <p className="text-xs text-muted-foreground">Pending</p>
-          )}
-          {canApprove && (
-            <div className="mt-2 flex gap-2">
-              <Button size="sm" variant="outline" className="flex-1" onClick={onReject} disabled={busy}>
-                <X className="mr-1 size-3" /> Changes
+        {(canSubmitRaw || canStartEdit || canSubmitFinal) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {canSubmitRaw && (
+              <Button size="sm" onClick={onRawUpload} disabled={busy}>
+                {isRawRevision ? (
+                  <><RefreshCw className="mr-1 size-3.5" /> Re-upload shoot</>
+                ) : (
+                  <><Upload className="mr-1 size-3.5" /> Upload shoot</>
+                )}
               </Button>
+            )}
+            {canStartEdit && (
               <Button
                 size="sm"
-                className="flex-1"
-                onClick={() => doAction(() => campaignsApi.approveContent(d.id))}
+                variant="outline"
+                onClick={() => doAction(() => campaignsApi.startEditing(d.id))}
                 disabled={busy}
               >
-                <Check className="mr-1 size-3" /> Approve
+                <Pencil className="mr-1 size-3.5" /> Start editing
               </Button>
-            </div>
-          )}
-        </div>
-
-        {/* 4. PUBLISH & METRICS */}
-        <div className="rounded-lg border border-border p-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase text-muted-foreground">
-            4. Publish & metrics
-          </p>
-          {latestPublish ? (
-            <a
-              href={latestPublish.postUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
-            >
-              {latestPublish.platform} · view post <ExternalLink className="size-3" />
-            </a>
-          ) : (
-            <p className="text-xs text-muted-foreground">Not published</p>
-          )}
-          {latestMetric && (
-            <div className="mt-2 space-y-0.5 text-[11px] text-muted-foreground">
-              <p>Reach: <span className="tabular-nums text-foreground">{latestMetric.reach.toLocaleString()}</span></p>
-              <p>Impressions: <span className="tabular-nums text-foreground">{latestMetric.impressions.toLocaleString()}</span></p>
-              <p>Revenue: <span className="tabular-nums text-foreground">{latestMetric.revenue.toFixed(2)}</span></p>
-            </div>
-          )}
-          {canPublish && (
-            <Button size="sm" className="mt-2 w-full" onClick={onPublish} disabled={busy}>
-              <Send className="mr-1 size-3" /> Mark as published
-            </Button>
-          )}
-          {canEnterMetrics && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="mt-2 w-full"
-              onClick={onMetrics}
-              disabled={busy}
-            >
-              <BarChart className="mr-1 size-3" /> Enter metrics
-            </Button>
-          )}
-        </div>
+            )}
+            {canSubmitFinal && (
+              <Button size="sm" onClick={onFinalUpload} disabled={busy}>
+                {isFinalRevision ? (
+                  <><RefreshCw className="mr-1 size-3.5" /> Re-upload edited</>
+                ) : (
+                  <><Upload className="mr-1 size-3.5" /> Upload edited (final)</>
+                )}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
+      {(rawFiles.length > 0 || finalFiles.length > 0) && (
+        <div className="px-4 py-3">
+          <button
+            type="button"
+            onClick={() => setShowFiles((s) => !s)}
+            className="mb-2 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+          >
+            {showFiles ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+            {showFiles ? "Hide" : "Show"} files ({rawFiles.length + finalFiles.length})
+          </button>
+
+          {showFiles && (
+            <div className="space-y-3">
+              {rawFiles.length > 0 && (
+                <div>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Raw shoot · v{latestRaw?.iteration ?? 1}
+                  </p>
+                  <FileGrid files={rawFiles} />
+                </div>
+              )}
+              {finalFiles.length > 0 && (
+                <div>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                    Final content · v{latestFinal?.iteration ?? 1}
+                  </p>
+                  <FileGrid files={finalFiles} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {d.status === "BRAND_REJECTED" && latestFinal?.feedback && (
-        <div className="border-t border-border bg-destructive/5 p-3 text-xs">
+        <div className="border-t border-border bg-destructive/5 px-4 py-2.5 text-xs">
           <p className="font-medium text-destructive">Brand feedback</p>
-          <p className="mt-1 whitespace-pre-line text-muted-foreground">
+          <p className="mt-0.5 whitespace-pre-line text-muted-foreground">
             {latestFinal.feedback}
           </p>
         </div>
       )}
+
+      {(canApprove || canReject || canPublish || canEnterMetrics || latestPublish || latestMetric) && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-border bg-muted/20 px-4 py-2.5">
+          {canApprove && (
+            <Button
+              size="sm"
+              onClick={() => doAction(() => campaignsApi.approveContent(d.id))}
+              disabled={busy}
+            >
+              <Check className="mr-1 size-3.5" /> Approve
+            </Button>
+          )}
+          {canReject && (
+            <Button size="sm" variant="outline" onClick={onReject} disabled={busy}>
+              <X className="mr-1 size-3.5" /> Request changes
+            </Button>
+          )}
+          {canPublish && (
+            <Button size="sm" onClick={onPublish} disabled={busy}>
+              <Send className="mr-1 size-3.5" /> Mark as published
+            </Button>
+          )}
+          {canEnterMetrics && (
+            <Button size="sm" variant="outline" onClick={onMetrics} disabled={busy}>
+              <BarChart className="mr-1 size-3.5" /> Enter metrics
+            </Button>
+          )}
+
+          {latestPublish && (
+            <a
+              href={latestPublish.postUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline sm:ml-auto"
+            >
+              {latestPublish.platform} · view <ExternalLink className="size-3" />
+            </a>
+          )}
+          {latestMetric && (
+            <div className="flex gap-3 text-[11px] text-muted-foreground sm:ml-auto">
+              <p>
+                Reach:{" "}
+                <span className="tabular-nums text-foreground">
+                  {latestMetric.reach.toLocaleString()}
+                </span>
+              </p>
+              <p>
+                Revenue:{" "}
+                <span className="tabular-nums text-foreground">
+                  {latestMetric.revenue.toFixed(2)}
+                </span>
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </Panel>
+  );
+}
+
+// ======================================================
+// STEP PILL
+// ======================================================
+function StepPill({
+  n,
+  label,
+  sub,
+  state,
+}: {
+  n: number;
+  label: string;
+  sub: string;
+  state: "done" | "active" | "ready" | "pending";
+}) {
+  const styles = {
+    done: {
+      circle: "bg-emerald-500 text-white border-emerald-500",
+      label: "text-foreground",
+      sub: "text-emerald-600 dark:text-emerald-400",
+      ring: "",
+    },
+    active: {
+      circle: "bg-blue-500 text-white border-blue-500",
+      label: "text-foreground",
+      sub: "text-blue-600 dark:text-blue-400",
+      ring: "ring-2 ring-blue-500/30",
+    },
+    ready: {
+      circle: "bg-amber-500 text-white border-amber-500",
+      label: "text-foreground",
+      sub: "text-amber-600 dark:text-amber-400",
+      ring: "ring-2 ring-amber-500/30",
+    },
+    pending: {
+      circle: "bg-muted text-muted-foreground border-border",
+      label: "text-muted-foreground",
+      sub: "text-muted-foreground",
+      ring: "",
+    },
+  }[state];
+
+  return (
+    <div className={`flex shrink-0 items-center gap-2 rounded-lg border border-border px-2.5 py-1.5 ${styles.ring}`}>
+      <div
+        className={`grid size-6 shrink-0 place-items-center rounded-full border text-[11px] font-bold ${styles.circle}`}
+      >
+        {state === "done" ? <Check className="size-3.5" /> : n}
+      </div>
+      <div className="min-w-0">
+        <p className={`whitespace-nowrap text-[11px] font-semibold leading-tight ${styles.label}`}>
+          {label}
+        </p>
+        <p className={`whitespace-nowrap text-[10px] leading-tight ${styles.sub}`}>{sub}</p>
+      </div>
+    </div>
   );
 }
 

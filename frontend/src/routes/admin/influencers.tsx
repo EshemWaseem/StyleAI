@@ -1,3 +1,4 @@
+import { swalError , swalConfirm } from "@/lib/swal";
 // routes/admin/influencers.tsx
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -54,20 +55,20 @@ function AdminInfluencersPage() {
         prev.map((x) => (x.id === inf.id ? { ...x, status } : x))
       );
     } catch (err: any) {
-      alert(err?.message || "Failed to update status");
+      swalError(err?.message || "Failed to update status");
     } finally {
       setBusyId(null);
     }
   }
 
   async function handleDelete(inf: any) {
-    if (!confirm(`Delete ${inf.displayName} (@${inf.username})? This cannot be undone.`)) return;
+    if (!(await swalConfirm(`Delete ${inf.displayName} (@${inf.username})? This cannot be undone.`))) return;
     setBusyId(inf.id);
     try {
       await adminApi.deleteInfluencer(inf.id);
       setInfluencers((prev) => prev.filter((x) => x.id !== inf.id));
     } catch (err: any) {
-      alert(err?.message || "Failed to delete");
+      swalError(err?.message || "Failed to delete");
     } finally {
       setBusyId(null);
     }

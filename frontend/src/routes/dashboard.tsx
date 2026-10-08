@@ -169,29 +169,42 @@ function StatStrip({
     role === "owner" && analytics
       ? [
           {
+            label: "Total spend",
+            value: `${analytics.currency || "PKR"} ${(
+              (analytics.summary as any).totalSpend ?? 0
+            ).toLocaleString()}`,
+            note: `${analytics.campaignCount} campaign${analytics.campaignCount === 1 ? "" : "s"} created`,
+          },
+          {
+            label: "Active campaigns",
+            value: String(analytics.activeCampaigns ?? 0),
+            note: `${analytics.completedCampaigns ?? 0} completed`,
+          },
+          {
             label: "Attributed revenue",
-            value: `$${(analytics.summary.revenue || 0).toLocaleString()}`,
+            value: `${analytics.currency || "PKR"} ${(
+              analytics.summary.revenue || 0
+            ).toLocaleString()}`,
             note:
-              analytics.roi >= 1
+              (analytics.summary.revenue || 0) > 0
                 ? `ROI ${analytics.roi.toFixed(2)}×`
-                : "Below break-even",
-            tone: analytics.roi >= 1 ? "success" : "warning",
+                : "From published content",
+            tone:
+              analytics.roi >= 1
+                ? "success"
+                : (analytics.summary.revenue || 0) > 0
+                ? "warning"
+                : undefined,
           },
           {
-            label: "Campaign ROI",
-            value: `${analytics.roi.toFixed(2)}×`,
-            note: analytics.roi >= 1 ? "Profitable" : "Not yet profitable",
-            tone: analytics.roi >= 1 ? "success" : "warning",
-          },
-          {
-            label: "Conversions",
-            value: (analytics.summary.conversions || 0).toLocaleString(),
-            note: `${analytics.activeCampaigns} active campaigns`,
-          },
-          {
-            label: "Creator reach",
-            value: (analytics.summary.reach || 0).toLocaleString(),
-            note: `${analytics.campaignCount} campaigns total`,
+            label: "Deliverables",
+            value: String((analytics as any).deliverableCount ?? 0),
+            note:
+              ((analytics as any).pendingApprovals ?? 0) > 0
+                ? `${(analytics as any).pendingApprovals} awaiting review`
+                : "All caught up",
+            tone:
+              ((analytics as any).pendingApprovals ?? 0) > 0 ? "warning" : undefined,
           },
         ]
       : roleStats[role];
@@ -534,7 +547,6 @@ function InfluencerWorkspace() {
         </div>
       )}
 
-            {/* ✅ NEW: Agency hire card (photography/videography) */}
       <section className="mt-6">
         <div className="rounded-xl border border-border bg-gradient-to-r from-purple-500/5 via-transparent to-transparent p-5">
           <div className="flex flex-wrap items-center gap-4">
@@ -968,11 +980,10 @@ function BrandWorkspace({
       }))
     : [];
 
-    return (
+  return (
     <>
       <ProductLoop />
 
-      {/* ✅ NEW: Agency hire card */}
       <section className="mt-6">
         <div className="rounded-xl border border-border bg-gradient-to-r from-accent/5 via-transparent to-transparent p-5">
           <div className="flex flex-wrap items-center gap-4">
@@ -1219,30 +1230,54 @@ function Dashboard() {
   const [productsLoading, setProductsLoading] = useState(false);
   const [brandAnalytics, setBrandAnalytics] = useState<BrandAnalytics | null>(null);
 
+  // ✅ Guards against flash-of-wrong-dashboard during redirect
+  const [redirectChecked, setRedirectChecked] = useState(false);
+
+  // ------------------------------------------------------
+  // Redirect check — decide BEFORE rendering anything
+  // ------------------------------------------------------
   useEffect(() => {
     if (loading || !user) return;
+    if (redirectChecked) return;
+
+    let target: string | null = null;
 
     if (user.roles.includes("SUPER_ADMIN")) {
-      navigate({ to: "/admin" });
-      return;
+      target = "/admin";
+    } else if (user.roles.includes("AGENCY")) {
+      target = "/agency";
+    } else {
+      const isOnlyShopper =
+        user.roles.includes("SHOPPER") &&
+        user.roles.every((r) => r === "SHOPPER");
+
+      if (isOnlyShopper) {
+        target = "/";
+      } else if (
+        user.roles.some((r) =>
+          ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
+        ) &&
+        !user.organizationId
+      ) {
+        // Brand user without organization — send to brand setup
+        target = "/brands";
+      }
     }
 
-    if (user.roles.includes("AGENCY")) {
-      navigate({ to: "/agency" });
-      return;
+    if (target) {
+      navigate({ to: target as any, replace: true });
+      // Keep redirectChecked = false → loader stays until navigation
+    } else {
+      setRedirectChecked(true);
     }
+  }, [user, loading, navigate, redirectChecked]);
 
-    const isOnlyShopper =
-      user.roles.includes("SHOPPER") &&
-      user.roles.every((r) => r === "SHOPPER");
-    if (isOnlyShopper) {
-      navigate({ to: "/" });
-      return;
-    }
-  }, [user, loading, navigate]);
-
+  // ------------------------------------------------------
+  // Fetch products — only after redirect check passed
+  // ------------------------------------------------------
   useEffect(() => {
-    if (loading || !user) return;
+    if (!redirectChecked || !user) return;
+
     const isBrandUser = user.roles.some((r) =>
       ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
     );
@@ -1254,18 +1289,29 @@ function Dashboard() {
       .then((res) => setRealProducts(res.products))
       .catch(() => setRealProducts([]))
       .finally(() => setProductsLoading(false));
-  }, [user, loading]);
+  }, [redirectChecked, user]);
 
+  // ------------------------------------------------------
+  // Fetch analytics — only after redirect check passed
+  // ------------------------------------------------------
   useEffect(() => {
-    if (loading || !user) return;
+    if (!redirectChecked || !user) return;
+
     const isBrandUser = user.roles.some((r) =>
       ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
     );
     if (!isBrandUser) return;
-    analyticsApi.brand().then(setBrandAnalytics).catch(() => setBrandAnalytics(null));
-  }, [user, loading]);
 
-  if (loading || !user) {
+    analyticsApi
+      .brand()
+      .then(setBrandAnalytics)
+      .catch(() => setBrandAnalytics(null));
+  }, [redirectChecked, user]);
+
+  // ------------------------------------------------------
+  // Render — loader until we know this user belongs here
+  // ------------------------------------------------------
+  if (loading || !user || !redirectChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-sm text-muted-foreground">Loading workspace…</p>

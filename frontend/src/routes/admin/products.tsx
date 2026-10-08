@@ -1,3 +1,4 @@
+import { swalError , swalConfirm } from "@/lib/swal";
 // admin/products.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -33,11 +34,11 @@ function AdminProductsPage() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
   async function handleDelete(p: any) {
-    if (!confirm(`Delete product "${p.name}"? This cannot be undone.`)) return;
+    if (!(await swalConfirm(`Delete product "${p.name}"? This cannot be undone.`))) return;
     try {
       await adminApi.deleteProduct(p.id);
       setProducts((prev) => prev.filter((x) => x.id !== p.id));
-    } catch (err: any) { alert(err?.message); }
+    } catch (err: any) { swalError(err?.message); }
   }
 
   return (

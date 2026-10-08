@@ -1,3 +1,4 @@
+import { swalError , swalConfirm } from "@/lib/swal";
 // routes/admin/users.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -46,15 +47,15 @@ function AdminUsersPage() {
       if (u.isActive) await adminApi.deactivateUser(u.id);
       else await adminApi.activateUser(u.id);
       setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, isActive: !x.isActive } : x));
-    } catch (err: any) { alert(err?.message); }
+    } catch (err: any) { swalError(err?.message); }
   }
 
   async function handleDelete(u: any) {
-    if (!confirm(`Delete ${u.email}? This cannot be undone.`)) return;
+    if (!(await swalConfirm(`Delete ${u.email}? This cannot be undone.`))) return;
     try {
       await adminApi.deleteUser(u.id);
       setUsers((prev) => prev.filter((x) => x.id !== u.id));
-    } catch (err: any) { alert(err?.message); }
+    } catch (err: any) { swalError(err?.message); }
   }
 
   return (

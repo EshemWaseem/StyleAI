@@ -16,16 +16,31 @@ import {
   notificationsSSE,
   type Notification,
 } from "@/lib/notifications";
+import { useRole } from "@/lib/role";
 
 export function NotificationBell() {
   const navigate = useNavigate();
+  const { user } = useRole();
+
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Initial snapshot (once)
+  // ------------------------------------------------------
+  // Initial snapshot — only when a user is signed in
+  // ------------------------------------------------------
   useEffect(() => {
+    if (!user) {
+      // Not signed in → don't fetch, don't keep stale state
+      setNotifs([]);
+      setUnread(0);
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
+    setLoading(true);
+
     (async () => {
       try {
         const [list, count] = await Promise.all([
@@ -36,31 +51,47 @@ export function NotificationBell() {
         setNotifs(list.notifications);
         setUnread(count.unread);
       } catch {
-        // silent — bell isn't critical
+        // silent — 401/403 handled globally
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user?.id]);
 
-  // Live updates via SSE — no polling
+  // ------------------------------------------------------
+  // Live updates via SSE — only when a user is signed in
+  // ------------------------------------------------------
   useEffect(() => {
+    if (!user) return;
+
     const offNotif = notificationsSSE.onNotification((n) => {
       setNotifs((prev) => {
-        // Avoid dup if we already have it
         if (prev.some((x) => x.id === n.id)) return prev;
         return [n, ...prev].slice(0, 8);
       });
     });
     const offUnread = notificationsSSE.onUnread((u) => setUnread(u));
+
     return () => {
       offNotif();
       offUnread();
     };
-  }, []);
+  }, [user?.id]);
+
+  // ------------------------------------------------------
+  // If user signs out → close the SSE stream
+  // ------------------------------------------------------
+  useEffect(() => {
+    if (user) return;
+    // user just became null (logout) → kill SSE so it doesn't spam 401s
+    try {
+      notificationsSSE.disconnect();
+    } catch { /* ignore */ }
+  }, [user]);
 
   async function openNotif(n: Notification) {
     if (!n.read) {
@@ -82,6 +113,9 @@ export function NotificationBell() {
       setUnread(0);
     } catch {}
   }
+
+  // If no user → don't render bell at all
+  if (!user) return null;
 
   return (
     <DropdownMenu>

@@ -7,6 +7,7 @@ import type { OfferEstimate } from "@/lib/offers";
 import { pricingApi } from "@/lib/pricing";
 import type { PlatformCatalogEntry, PricingTiers } from "@/lib/pricing";
 import { productsApi, type Product } from "@/lib/products";
+import { swalConfirm } from "@/lib/swal";
 
 interface DraftItem {
   id: string;
@@ -140,11 +141,11 @@ export function OfferBuilder({
       setError("Wait for the estimate before sending.");
       return;
     }
-    const ok = confirm(
-      `Send this offer to ${influencerName}?\n\n` +
-      `Total: ${estimate.currency} ${estimate.total.toFixed(2)}\n\n` +
-      `Escrow will be held from your wallet immediately. ` +
-      `The influencer will be notified and can accept or decline.`
+
+    // ✅ Swal confirm instead of native confirm
+    const ok = await swalConfirm(
+      `Send offer to ${influencerName}?`,
+      `Total: ${estimate.currency} ${estimate.total.toFixed(2)} — Escrow will be held from your wallet immediately. The influencer can accept or decline.`
     );
     if (!ok) return;
 

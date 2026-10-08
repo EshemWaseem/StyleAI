@@ -93,7 +93,7 @@ async function sendMessage(user, campaignId, payload = {}) {
   const role = resolveSenderRole(user, campaign);
   if (!role) throw httpError('Forbidden: cannot send messages on this campaign', 403, 'FORBIDDEN');
 
-  const body = (payload.body || '').trim();
+  const body = String(payload.body ?? '').trim();
   if (!body) throw httpError('Message body cannot be empty', 400, 'EMPTY_BODY');
   if (body.length > MAX_BODY) {
     throw httpError(`Message too long (max ${MAX_BODY} chars)`, 400, 'TOO_LONG');
@@ -120,7 +120,6 @@ async function sendMessage(user, campaignId, payload = {}) {
 
   const shaped = shapeMessage(created, { currentUserId: user.id });
 
-  // ── Push to all other participants over WebSocket (fire-and-forget) ──
   if (broadcastCampaignMessage) {
     broadcastCampaignMessage(campaign, shaped, user.id).catch((err) => {
       console.warn('[campaigns.chat] WS broadcast failed:', err.message);
@@ -197,10 +196,61 @@ async function getUnreadCount(user, campaignId) {
   return { unread: count };
 }
 
+// ------------------------------------------------------
+// TOTAL UNREAD — across all user's campaigns
+// ------------------------------------------------------
+async function getTotalUnreadForUser(user) {
+  const roles = user.roles || [];
+  const isAdmin = roles.includes('SUPER_ADMIN');
+  const isInfluencer = roles.includes('INFLUENCER');
+  const orgId = user.organizationId;
+
+  const orClauses = [];
+  if (!isAdmin) {
+    if (isInfluencer) {
+      orClauses.push({ influencer: { userId: user.id } });
+    }
+    if (orgId) {
+      orClauses.push({ brand: { organizationId: orgId } });
+      orClauses.push({ agencyId: orgId });
+    }
+  }
+
+  const campaigns = await prisma.campaign.findMany({
+    where: isAdmin ? {} : { OR: orClauses },
+    select: { id: true },
+  });
+
+  if (campaigns.length === 0) return { unread: 0 };
+
+  const campaignIds = campaigns.map((c) => c.id);
+
+  const field =
+    isInfluencer ? 'readByInfluencer'
+    : roles.includes('AGENCY') ? 'readByAgency'
+    : 'readByBrand';
+
+  const myRole =
+    isInfluencer ? 'INFLUENCER'
+    : roles.includes('AGENCY') ? 'AGENCY'
+    : 'BRAND';
+
+  const count = await prisma.campaignMessage.count({
+    where: {
+      campaignId: { in: campaignIds },
+      [field]: false,
+      NOT: { senderRole: myRole },
+    },
+  });
+
+  return { unread: count };
+}
+
 module.exports = {
   listMessages,
   sendMessage,
   markChatRead,
   getUnreadCount,
+  getTotalUnreadForUser,
   shapeMessage,
 };

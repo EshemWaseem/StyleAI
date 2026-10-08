@@ -1,6 +1,7 @@
 // components/assistant/AssistantConversationList.tsx
 import { Loader2, MessageSquare, Plus, Trash2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { swalConfirm } from "@/lib/swal";
 import type { Conversation } from "@/lib/assistant";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,16 @@ export function AssistantConversationList({
   onDelete,
   onNew,
 }: Props) {
+  // ✅ Async delete handler with Swal confirm
+  async function handleDeleteClick(e: React.MouseEvent, id: string) {
+    e.stopPropagation();
+    const ok = await swalConfirm(
+      "Delete this conversation?",
+      "This cannot be undone."
+    );
+    if (ok) onDelete(id);
+  }
+
   return (
     <div className="flex h-full w-60 shrink-0 flex-col border-r border-border">
       <div className="border-b border-border p-2">
@@ -77,10 +88,7 @@ export function AssistantConversationList({
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm("Delete this conversation?")) onDelete(c.id);
-                    }}
+                    onClick={(e) => handleDeleteClick(e, c.id)}
                     className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-background/80 hover:text-destructive group-hover:opacity-100"
                     title="Delete"
                   >

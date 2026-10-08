@@ -1,12 +1,12 @@
 // services/recommendations/forBrand.js
 // ======================================================
-// Main orchestrator — builds REAL data-driven recommendations
-// No fake generic tips. Only signals backed by actual data.
+// Main orchestrator — REAL data-driven recommendations
+// Priority-sorted, performance-aware.
 // ======================================================
 
 const prisma = require('../../config/prisma');
-const { product, campaign, offer, tips } = require('./signals');
-const { safeSignal, compactSignals, shapeResponse } = require('./helpers');
+const { product, campaign, offer, performance, tips } = require('./signals');
+const { safeSignal, compactSignals, shapeResponse, sortByPriority } = require('./helpers');
 
 async function forBrand(user) {
   const empty = shapeResponse([]);
@@ -31,6 +31,7 @@ async function forBrand(user) {
     prisma.campaign.findMany({
       where: { brandId: brand.id },
       include: {
+        influencer: { select: { id: true, displayName: true } },
         deliverables: {
           include: {
             submissions: true,
@@ -39,7 +40,7 @@ async function forBrand(user) {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 20,
+      take: 30,
     }),
     prisma.product.findMany({
       where: { brandId: brand.id },
@@ -67,42 +68,40 @@ async function forBrand(user) {
     }).catch(() => 0),
   ]);
 
-  // Add influencerName to offers for better messaging
   const offersWithNames = offers.map((o) => ({
     ...o,
     influencerName: o.influencer?.displayName,
   }));
 
-  // ---- Real signals ----
+  // ---- Signals (ordered by impact) ----
   const signals = [
-    // Products
-    safeSignal(product.noProducts, products),
-    safeSignal(product.productsMissingAi, products),
-    safeSignal(product.productsWithoutCategory, products),
-    safeSignal(tips.fewProducts, products),
-
-    // Campaigns
+    // 🔴 Critical — blockers
+    safeSignal(performance.lowRoiCampaigns, campaigns),
     safeSignal(campaign.campaignsNeedingApproval, campaigns),
-    safeSignal(campaign.campaignsWithoutDeliverables, campaigns),
-    safeSignal(campaign.draftCampaigns, campaigns),
-    safeSignal(campaign.noCampaignsYet, campaigns, products),
-
-    // Offers (NEW)
-    safeSignal(offer.offersPending, offersWithNames),
-    safeSignal(offer.offersInProgress, offersWithNames),
-    safeSignal(offer.offersRecentlyCompleted, offersWithNames),
-    safeSignal(tips.stalePendingOffers, offersWithNames),
-
-    // Wallet / Finance (NEW)
     safeSignal(tips.lowWalletBalance, wallet),
 
-    // Strategy (NEW)
+    // 🟠 High — needs action soon
+    safeSignal(campaign.campaignsWithoutDeliverables, campaigns),
+    safeSignal(offer.offersPending, offersWithNames),
+    safeSignal(tips.stalePendingOffers, offersWithNames),
+    safeSignal(product.productsMissingAi, products),
+    safeSignal(product.productsWithoutCategory, products),
+
+    // 🟡 Medium — optimization
+    safeSignal(performance.topPerformingInfluencer, campaigns),
+    safeSignal(offer.offersInProgress, offersWithNames),
+    safeSignal(campaign.draftCampaigns, campaigns),
+    safeSignal(tips.fewProducts, products),
+
+    // 🟢 Low — strategy / growth
+    safeSignal(campaign.noCampaignsYet, campaigns, products),
+    safeSignal(product.noProducts, products),
     safeSignal(tips.noSavedInfluencers, savedInfluencersCount),
+    safeSignal(offer.offersRecentlyCompleted, offersWithNames),
   ];
 
-  // ---- Filter + cap ----
-  // NO minimum — show real signals only (1-6 recommendations)
-  const recs = compactSignals(signals, 6);
+  // Sort by confidence desc + priority asc
+  const recs = sortByPriority(compactSignals(signals, 8));
 
   return shapeResponse(recs);
 }

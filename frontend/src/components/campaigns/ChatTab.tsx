@@ -18,13 +18,14 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [wsConnected, setWsConnected] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior }), 50);
   };
 
-  // ---- Initial load ----
   async function load(initial = false) {
     try {
       const r = await campaignsApi.listMessages(campaignId, { limit: 200 });
@@ -43,10 +44,10 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
 
-  // ---- WebSocket real-time ----
+  // ---- WebSocket real-time (retries until socket ready) ----
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+    let off: (() => void) | null = null;
+    let intervalId: any = null;
 
     const onNew = (payload: any) => {
       if (payload?.kind !== "campaign" || payload?.campaignId !== campaignId) return;
@@ -56,21 +57,48 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
         scrollToBottom();
         return [...prev, m];
       });
-      // Mark read immediately since tab is open
       campaignsApi.markChatRead(campaignId).catch(() => {});
     };
 
-    socket.on("chat:new", onNew);
-    return () => { socket.off("chat:new", onNew); };
+    const trySubscribe = (): boolean => {
+      const socket = getSocket();
+      if (!socket) return false;
+
+      socket.on("chat:new", onNew);
+      setWsConnected(socket.connected);
+
+      const onConnect = () => setWsConnected(true);
+      const onDisconnect = () => setWsConnected(false);
+      socket.on("connect", onConnect);
+      socket.on("disconnect", onDisconnect);
+
+      off = () => {
+        socket.off("chat:new", onNew);
+        socket.off("connect", onConnect);
+        socket.off("disconnect", onDisconnect);
+      };
+      return true;
+    };
+
+    if (!trySubscribe()) {
+      intervalId = setInterval(() => {
+        if (trySubscribe()) clearInterval(intervalId);
+      }, 500);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      off?.();
+    };
   }, [campaignId]);
 
-  // ---- Polling fallback (only when WS not connected) ----
+  // ---- Polling fallback — ONLY when WS is disconnected ----
   useEffect(() => {
-    const socket = getSocket();
-    if (socket?.connected) return;
+    if (wsConnected) return;   // ✅ STOP polling the moment WS connects
 
     const t = setInterval(() => {
-      campaignsApi.listMessages(campaignId, { limit: 200 })
+      campaignsApi
+        .listMessages(campaignId, { limit: 200 })
         .then((r) => {
           setMessages((prev) => {
             if (r.messages.length !== prev.length) scrollToBottom();
@@ -78,17 +106,16 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
           });
         })
         .catch(() => {});
-    }, 5000);
+    }, 10000);
     return () => clearInterval(t);
-  }, [campaignId]);
+  }, [campaignId, wsConnected]);
 
-  // ---- Mark read on interval (fallback) ----
+  // ---- Mark read — one-time, not polling ----
   useEffect(() => {
-    const t = setInterval(() => {
-      campaignsApi.markChatRead(campaignId).catch(() => {});
-    }, 15000);
-    return () => clearInterval(t);
-  }, [campaignId]);
+    if (!wsConnected) return;
+    // When WS connects, mark read once (no interval needed)
+    campaignsApi.markChatRead(campaignId).catch(() => {});
+  }, [campaignId, wsConnected]);
 
   async function send() {
     const body = input.trim();
@@ -128,6 +155,18 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
 
   return (
     <div className="flex h-[600px] flex-col overflow-hidden rounded-lg border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border bg-muted/20 px-3 py-1.5">
+        <div className="flex items-center gap-1.5">
+          <span className={`inline-block size-1.5 rounded-full ${wsConnected ? "bg-emerald-500" : "bg-amber-500"}`} />
+          <span className="text-[10px] font-medium uppercase text-muted-foreground">
+            {wsConnected ? "Live" : "Reconnecting…"}
+          </span>
+        </div>
+        <span className="text-[10px] text-muted-foreground">
+          {messages.length} message{messages.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
@@ -161,13 +200,7 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
           disabled={sending}
         />
         <Button onClick={send} disabled={sending || !input.trim()}>
-          {sending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <>
-              <Send className="size-4" /> Send
-            </>
-          )}
+          {sending ? <Loader2 className="size-4 animate-spin" /> : <><Send className="size-4" /> Send</>}
         </Button>
       </div>
     </div>
@@ -196,11 +229,7 @@ function MessageBubble({ m }: { m: ChatMessage }) {
             {roleLabel[m.senderRole] || m.senderRole}
           </p>
         )}
-        <div
-          className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
-            m.isMine ? "bg-accent text-accent-foreground" : "bg-muted text-foreground"
-          }`}
-        >
+        <div className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${m.isMine ? "bg-accent text-accent-foreground" : "bg-muted text-foreground"}`}>
           <p className="whitespace-pre-wrap break-words">{m.body}</p>
         </div>
         <p className="text-[10px] text-muted-foreground">

@@ -1,3 +1,4 @@
+import { swalError , swalConfirm } from "@/lib/swal";
 // routes/billing.tsx
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -76,7 +77,7 @@ function BillingPage() {
       setError('Please choose a payment method first.');
       return;
     }
-    if (!confirm(`Switch to ${planName} (${cycle.toLowerCase()}) via ${selectedProvider}?`)) return;
+    if (!(await swalConfirm(`Switch to ${planName} (${cycle.toLowerCase()}) via ${selectedProvider}?`))) return;
 
     setBusy(planName);
     setError('');
@@ -99,7 +100,7 @@ function BillingPage() {
   }
 
   async function cancel() {
-    if (!confirm('Cancel at end of current period?')) return;
+    if (!(await swalConfirm('Cancel at end of current period?'))) return;
     setBusy('cancel');
     try {
       await billingApi.cancel();
@@ -124,13 +125,13 @@ function BillingPage() {
   }
 
   async function handleDeleteInvoice(id: string) {
-    if (!confirm('Delete this failed invoice?')) return;
+    if (!(await swalConfirm('Delete this failed invoice?'))) return;
     setDeletingId(id);
     try {
       await billingApi.deleteInvoice(id);
       await load();
     } catch (e: any) {
-      alert(e?.message || 'Delete failed');
+      swalError(e?.message || 'Delete failed');
     } finally {
       setDeletingId(null);
     }
@@ -139,13 +140,13 @@ function BillingPage() {
   async function handleDeleteAllFailed() {
     const failedCount = data?.invoices.filter((i) => i.status === 'FAILED').length ?? 0;
     if (!failedCount) return;
-    if (!confirm(`Delete all ${failedCount} failed invoice${failedCount === 1 ? '' : 's'}?`)) return;
+    if (!(await swalConfirm(`Delete all ${failedCount} failed invoice${failedCount === 1 ? '' : 's'}?`))) return;
     setDeletingAll(true);
     try {
       await billingApi.deleteAllFailed();
       await load();
     } catch (e: any) {
-      alert(e?.message || 'Bulk delete failed');
+      swalError(e?.message || 'Bulk delete failed');
     } finally {
       setDeletingAll(false);
     }

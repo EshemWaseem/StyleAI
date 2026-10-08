@@ -22,4 +22,13 @@ async function unread(req, res, next) {
   catch (e) { next(e); }
 }
 
-module.exports = { list, send, markRead, unread };
+async function unreadTotal(req, res, next) {
+  try {
+    const svc = require('../services/campaigns');
+    res.json(await svc.getTotalUnreadForUser(req.user));
+  } catch (e) { next(e); }
+}
+
+module.exports = { list, send, markRead, unread, unreadTotal };
+
+// module.exports = { list, send, markRead, unread };

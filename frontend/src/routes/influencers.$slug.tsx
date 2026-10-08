@@ -1,3 +1,4 @@
+import { swalError } from "@/lib/swal";
 // influencers.$slug.tsx
 import {
   createFileRoute,
@@ -101,7 +102,7 @@ function InfluencerDetailPage() {
         setInfluencer({ ...influencer, isSaved: true });
       }
     } catch (err: any) {
-      alert(err?.message || "Action failed");
+      swalError(err?.message || "Action failed");
     }
   }
 
@@ -112,7 +113,7 @@ function InfluencerDetailPage() {
       const r = await chatApi.openWith("INFLUENCER", influencer.id);
       navigate({ to: "/messages", search: { c: r.conversation.id } as any });
     } catch (e: any) {
-      alert(e?.message || "Failed to open chat");
+      swalError(e?.message || "Failed to open chat");
     } finally {
       setOpeningChat(false);
     }

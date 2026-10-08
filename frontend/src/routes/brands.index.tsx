@@ -7,7 +7,11 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui-kit";
 import { useRole } from "@/lib/role";
 import { brandsApi, type Brand, type BrandInput } from "@/lib/brands";
-
+import { swalError, swalConfirm  } from "@/lib/swal";
+import {
+  CountryPhoneFields,
+  type CountryPhoneFieldsValue,
+} from "@/components/ui/CountryPhoneFields";
 export const Route = createFileRoute("/brands/")({
   head: () => ({
     meta: [
@@ -77,18 +81,18 @@ function BrandPage() {
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (
-      !confirm(
-        `Delete "${name}"? This will also remove all its products. Cannot be undone.`
-      )
-    )
-      return;
+    async function handleDelete(id: string, name: string) {
+    const ok = await swalConfirm(
+      "Delete this brand?",
+      `"${name}" and all its products will be removed. Cannot be undone.`
+    );
+    if (!ok) return;
+
     try {
       await brandsApi.remove(id);
       setBrands([]);
     } catch (err: any) {
-      alert(err?.message || "Delete failed");
+      swalError("Delete failed", err?.message);
     }
   }
 
@@ -312,6 +316,8 @@ function BrandPage() {
 // CREATE MODAL
 // ======================================================
 
+
+
 function BrandFormModal({
   onClose,
   onSubmit,
@@ -320,6 +326,12 @@ function BrandFormModal({
   onSubmit: (data: BrandInput) => Promise<void>;
 }) {
   const [form, setForm] = useState<BrandInput>({ name: "" });
+  const [geo, setGeo] = useState<CountryPhoneFieldsValue>({
+    country: null,
+    state: null,
+    city: null,
+    phone: undefined,
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -332,7 +344,10 @@ function BrandFormModal({
     }
     setSaving(true);
     try {
-      await onSubmit(form);
+      await onSubmit({
+        ...form,
+        country: geo.country?.name ?? form.country,
+      });
     } catch (err: any) {
       setError(err?.message || "Save failed");
       setSaving(false);
@@ -348,8 +363,7 @@ function BrandFormModal({
         <div>
           <h2 className="font-display text-xl font-medium">Create your brand</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            This is the only brand your organization will have. Choose the name
-            carefully.
+            This is the only brand your organization will have. Choose carefully.
           </p>
         </div>
 
@@ -383,25 +397,22 @@ function BrandFormModal({
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="country">Country</Label>
-            <Input
-              id="country"
-              value={form.country ?? ""}
-              onChange={(e) => setForm({ ...form, country: e.target.value })}
-              placeholder="PK"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="currency">Currency</Label>
-            <Input
-              id="currency"
-              value={form.currency ?? ""}
-              onChange={(e) => setForm({ ...form, currency: e.target.value })}
-              placeholder="PKR"
-            />
-          </div>
+        <CountryPhoneFields
+            value={geo}
+            onChange={setGeo}
+            disabled={saving}
+            showStateCity={false}
+            showPhone={false}
+          />
+
+        <div className="space-y-2">
+          <Label htmlFor="currency">Currency</Label>
+          <Input
+            id="currency"
+            value={form.currency ?? ""}
+            onChange={(e) => setForm({ ...form, currency: e.target.value })}
+            placeholder="PKR"
+          />
         </div>
 
         <div className="space-y-2">
@@ -416,12 +427,7 @@ function BrandFormModal({
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={saving}
-          >
+          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
           <Button type="submit" disabled={saving}>

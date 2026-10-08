@@ -32,6 +32,7 @@ router.get(
     try {
       const agencies = await agency.listAgenciesForService({
         serviceType: req.query.serviceType,
+        serviceGroup: req.query.serviceGroup,   // ✅ NEW: "BRAND" | "INFLUENCER"
         limit: req.query.limit,
       });
       res.json({ agencies });

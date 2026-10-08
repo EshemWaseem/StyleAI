@@ -1,3 +1,4 @@
+import { swalError } from "@/lib/swal";
 // components/assistant/AssistantChat.tsx
 import { useEffect, useRef, useState } from "react";
 import {
@@ -131,7 +132,7 @@ export function AssistantChat({
       setConversations((prev) => prev.filter((c) => c.id !== id));
       if (conversationId === id) newChat();
     } catch (e: any) {
-      alert(e?.message || "Failed to delete");
+      swalError(e?.message || "Failed to delete");
     }
   }
 

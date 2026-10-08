@@ -22,9 +22,14 @@ export const agencyProfileApi = {
     ),
 
   // ---- Directory ----
-  browse: (filters: { serviceType?: AgencyServiceType; limit?: number } = {}) => {
+      browse: (filters: {
+    serviceType?: AgencyServiceType;
+    serviceGroup?: "BRAND" | "INFLUENCER";
+    limit?: number;
+  } = {}) => {
     const qs = new URLSearchParams();
     if (filters.serviceType) qs.set("serviceType", filters.serviceType);
+    if (filters.serviceGroup) qs.set("serviceGroup", filters.serviceGroup);
     if (filters.limit) qs.set("limit", String(filters.limit));
     const q = qs.toString();
     return http.get<{ agencies: AgencyProfileWithOrg[] }>(

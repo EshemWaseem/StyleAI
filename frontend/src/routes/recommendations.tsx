@@ -1,9 +1,11 @@
 // routes/recommendations.tsx
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AlertCircle, Loader2, Sparkles, RefreshCw } from "lucide-react";
+import {
+  AlertCircle, Loader2, Sparkles, RefreshCw, ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InsightCard, PageHeader, Panel } from "@/components/ui-kit";
+import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { recommendationsApi, type Recommendation } from "@/lib/recommendations";
 
@@ -35,7 +37,9 @@ function Recommendations() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   return (
     <ProtectedRoute>
@@ -45,8 +49,14 @@ function Recommendations() {
           title="Recommendations"
           description="Learned from your own campaign results. Every suggestion shows its reasoning and confidence."
           actions={
-            <Button variant="outline" onClick={() => load(true)} disabled={refreshing}>
-              <RefreshCw className={`mr-1.5 size-4 ${refreshing ? "animate-spin" : ""}`} />
+            <Button
+              variant="outline"
+              onClick={() => load(true)}
+              disabled={refreshing}
+            >
+              <RefreshCw
+                className={`mr-1.5 size-4 ${refreshing ? "animate-spin" : ""}`}
+              />
               Refresh
             </Button>
           }
@@ -77,14 +87,7 @@ function Recommendations() {
           <>
             <div className="mt-8 grid gap-5 lg:grid-cols-2">
               {recs.map((r) => (
-                <InsightCard
-                  key={r.id}
-                  title={r.title}
-                  reason={r.reason}
-                  confidence={r.confidence}
-                  action={r.action}
-                  link={r.link}
-                />
+                <RecommendationCard key={r.id} rec={r} />
               ))}
             </div>
 
@@ -98,5 +101,80 @@ function Recommendations() {
         )}
       </>
     </ProtectedRoute>
+  );
+}
+
+// ======================================================
+// RECOMMENDATION CARD — accent-green themed
+// ======================================================
+function RecommendationCard({ rec }: { rec: Recommendation }) {
+  // Urgency tier — maps to theme colors
+  const tier =
+    rec.confidence >= 85
+      ? {
+          ring: "border-accent/40",
+          pill: "bg-accent/15 text-accent",
+          glow: "hover:shadow-[0_0_0_1px_var(--color-accent)]",
+        }
+      : rec.confidence >= 70
+      ? {
+          ring: "border-accent/25",
+          pill: "bg-accent/10 text-accent",
+          glow: "hover:shadow-md",
+        }
+      : {
+          ring: "border-border",
+          pill: "bg-muted text-muted-foreground",
+          glow: "hover:shadow-sm",
+        };
+
+  return (
+    <div
+      className={`flex flex-col rounded-xl border bg-card p-5 transition-all ${tier.ring} ${tier.glow}`}
+    >
+      {/* Header row — Sparkles label + confidence pill */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+          <Sparkles className="size-3" />
+          StyleAI insight
+        </div>
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums ${tier.pill}`}
+        >
+          {rec.confidence}%
+        </span>
+      </div>
+
+      {/* Title */}
+      <h3 className="mt-3 font-display text-lg font-medium leading-snug text-foreground">
+        {rec.title}
+      </h3>
+
+      {/* Reason */}
+      <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+        {rec.reason}
+      </p>
+
+      {/* Action button */}
+      <div className="mt-5">
+        {rec.link ? (
+          <Link
+            to={rec.link as any}
+            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3.5 py-2 text-xs font-medium text-accent-foreground transition-opacity hover:opacity-90"
+          >
+            {rec.action || "Open"}
+            <ArrowRight className="size-3.5" />
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            {rec.action || "No action available"}
+          </span>
+        )}
+      </div>
+
+      <p className="mt-3 text-[10px] text-muted-foreground">
+        AI estimate, not guaranteed
+      </p>
+    </div>
   );
 }

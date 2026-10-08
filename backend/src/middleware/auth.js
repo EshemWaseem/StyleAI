@@ -1,15 +1,42 @@
+// middleware/auth.js
 const { verifyToken } = require('../utils/jwt');
 const prisma = require('../config/prisma');
+
+
+const PENDING_SAFE_PATHS = [
+  '/api/auth/me',
+  '/api/auth/logout',
+];
+
+function isPendingSafePath(req) {
+  const url = req.originalUrl || req.url || '';
+  return PENDING_SAFE_PATHS.some((p) => url.startsWith(p));
+}
 
 async function authenticate(req, res, next) {
   try {
     const header = req.headers.authorization;
     if (!header || !header.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'No token provided' });
+      return res.status(401).json({ message: 'Please sign in to continue.' });
     }
 
     const token = header.split(' ')[1];
-    const decoded = verifyToken(token);
+
+    let decoded;
+    try {
+      decoded = verifyToken(token);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({
+          message: 'Your session has expired. Please sign in again.',
+          code: 'TOKEN_EXPIRED',
+        });
+      }
+      return res.status(401).json({
+        message: 'Your session is invalid. Please sign in again.',
+        code: 'INVALID_TOKEN',
+      });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
@@ -41,18 +68,17 @@ async function authenticate(req, res, next) {
     });
 
     if (!user || !user.isActive) {
-      return res.status(401).json({ message: 'Invalid or inactive user' });
+      return res.status(401).json({
+        message: 'Your session is invalid. Please sign in again.',
+        code: 'INVALID_USER',
+      });
     }
 
     const roles = user.userRoles.map((ur) => ur.role.name);
 
     // ======================================================
-    // PERMISSION RESOLUTION — STRICT MODE
+    // PERMISSION RESOLUTION
     // ======================================================
-    // Owner-type roles → use GLOBAL role permissions
-    // Team members    → use ONLY brand team role permissions
-    // ======================================================
-
     const ownerRoles = ['SUPER_ADMIN', 'BRAND_OWNER', 'AGENCY'];
     const isOwner = roles.some((r) => ownerRoles.includes(r));
     const isTeamMember = roles.includes('BRAND_TEAM_MEMBER') && !isOwner;
@@ -60,12 +86,9 @@ async function authenticate(req, res, next) {
     let resolvedPermissions = [];
 
     if (isTeamMember) {
-      //  STRICT: team member gets ONLY their brand team role's permissions.
-      // Global role permissions are completely ignored.
       const brandTeamRole = user.brandTeamMemberships[0]?.teamRole;
       resolvedPermissions = brandTeamRole?.permissions ?? [];
     } else {
-      // Owner / Admin / Influencer / Shopper → global role permissions
       const globalPermissions = new Set();
       for (const ur of user.userRoles) {
         for (const rp of ur.role.rolePermissions) {
@@ -75,7 +98,6 @@ async function authenticate(req, res, next) {
       resolvedPermissions = Array.from(globalPermissions);
     }
 
-    // Brand team role context
     const brandTeamRole = user.brandTeamMemberships[0]?.teamRole;
     const primaryBrand = user.brandTeamMemberships[0]?.brand ?? null;
 
@@ -91,6 +113,17 @@ async function authenticate(req, res, next) {
     const pendingApproval =
       !!pendingRequest ||
       (roles.includes('BRAND_TEAM_MEMBER') && !isOwner && !hasActiveBrandRole);
+
+    // ======================================================
+    // ✅ BLOCK PENDING USERS — every request, every route
+    // ======================================================
+    if (pendingApproval && !isPendingSafePath(req)) {
+      return res.status(403).json({
+        message:
+          "Your account is still waiting for the brand owner's approval. You'll be able to sign in once it's approved.",
+        code: 'PENDING_APPROVAL',
+      });
+    }
 
     req.user = {
       id: user.id,
@@ -124,12 +157,6 @@ async function authenticate(req, res, next) {
 
     next();
   } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired' });
-    }
-    if (err.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
     next(err);
   }
 }
@@ -137,11 +164,13 @@ async function authenticate(req, res, next) {
 function authorize(...allowedRoles) {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ message: 'Not authenticated' });
+      return res.status(401).json({ message: 'Please sign in to continue.' });
     }
     const hasRole = req.user.roles.some((r) => allowedRoles.includes(r));
     if (!hasRole) {
-      return res.status(403).json({ message: 'Forbidden: insufficient role' });
+      return res
+        .status(403)
+        .json({ message: "You don't have permission to do that." });
     }
     next();
   };
@@ -150,16 +179,15 @@ function authorize(...allowedRoles) {
 function requirePermission(...requiredPermissions) {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ message: 'Not authenticated' });
+      return res.status(401).json({ message: 'Please sign in to continue.' });
     }
     const hasAll = requiredPermissions.every((p) =>
       req.user.permissions.includes(p)
     );
     if (!hasAll) {
-      return res.status(403).json({
-        message: 'Forbidden: missing permissions',
-        required: requiredPermissions,
-      });
+      return res
+        .status(403)
+        .json({ message: "You don't have permission to do that." });
     }
     next();
   };
@@ -167,11 +195,11 @@ function requirePermission(...requiredPermissions) {
 
 function requireBrandContext(req, res, next) {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ message: 'Please sign in to continue.' });
   }
   if (!req.user.organizationId && !req.user.brandId) {
     return res.status(403).json({
-      message: 'You must belong to a brand to do this',
+      message: 'You must belong to a brand to do this.',
     });
   }
   next();
@@ -179,25 +207,22 @@ function requireBrandContext(req, res, next) {
 
 function requireApproved(req, res, next) {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ message: 'Please sign in to continue.' });
   }
   if (req.user.pendingApproval) {
     return res.status(403).json({
-      message: 'Your account is pending approval.',
+      message:
+        "Your account is still waiting for the brand owner's approval. You'll be able to sign in once it's approved.",
       code: 'PENDING_APPROVAL',
     });
   }
   next();
 }
 
-/**
- * Pass if user has ANY of the permissions OR ANY of the roles.
- * Useful for routes shared across roles with different permission sets.
- */
 function requirePermissionOrRole({ permissions = [], roles: allowedRoles = [] } = {}) {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ message: 'Not authenticated' });
+      return res.status(401).json({ message: 'Please sign in to continue.' });
     }
     const hasPerm =
       permissions.length > 0 &&
@@ -208,15 +233,11 @@ function requirePermissionOrRole({ permissions = [], roles: allowedRoles = [] } 
 
     if (hasPerm || hasRole) return next();
 
-    return res.status(403).json({
-      message: 'Forbidden: insufficient permissions or role',
-      code: 'FORBIDDEN',
-      requiredPermissions: permissions,
-      requiredRoles: allowedRoles,
-    });
+    return res
+      .status(403)
+      .json({ message: "You don't have permission to do that." });
   };
 }
-
 
 module.exports = {
   authenticate,

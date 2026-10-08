@@ -1,3 +1,4 @@
+import { swalError } from "@/lib/swal";
 // routes/messages.tsx
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -464,7 +465,7 @@ function NewChatModal({
       const r = await chatApi.openWith(party.type, party.id);
       onOpen(r.conversation.id);
     } catch (e: any) {
-      alert(e?.message || "Failed to start chat");
+      swalError(e?.message || "Failed to start chat");
       setOpening(null);
     }
   }

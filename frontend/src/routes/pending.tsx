@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { useEffect, useState } from "react";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import {
   Clock,
   X,
@@ -11,12 +13,19 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { Input } from "@/components/ui/input";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { useRole } from "@/lib/role";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { cn } from "@/lib/utils";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { joinRequestsApi } from "@/lib/join-requests";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { invitationsApi, type Invitation } from "@/lib/invitations";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { getRoleColorClasses } from "@/lib/brand-team";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 
 export const Route = createFileRoute("/pending")({
   head: () => ({ meta: [{ title: "Pending approval — StyleAI" }] }),
@@ -110,7 +119,7 @@ function PendingPage() {
 
   async function handleCancel() {
     if (!user?.pendingRequest) return;
-    if (!confirm("Cancel your join request?")) return;
+    if (!(await swalConfirm("Cancel your join request?"))) return;
 
     setCancelling(true);
     setError("");

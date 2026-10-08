@@ -203,12 +203,23 @@ async function submitRawContent(user, deliverableId, payload = {}) {
   return shapeDeliverable({ ...d, status: 'RAW_UPLOADED', submissions: [submission] });
 }
 
+
 // ======================================================
-// 2. AGENCY — start editing
+// 2. START EDITING — agency OR influencer (solo flow)
+// ======================================================
+// ======================================================
+// 2. START EDITING — agency OR influencer (solo flow)
 // ======================================================
 async function startEditing(user, deliverableId) {
   const d = await loadDeliverableAuth(deliverableId);
-  assertIsAgencySide(user, d.campaign);
+
+  const isAdmin = user.roles?.includes('SUPER_ADMIN');
+  const isAgency = user.roles?.includes('AGENCY') && d.campaign.agencyId === user.organizationId;
+  const isInfluencer = d.campaign.influencer?.userId === user.id;
+
+  if (!isAdmin && !isAgency && !isInfluencer) {
+    throw httpError('Forbidden: cannot start editing', 403, 'FORBIDDEN');
+  }
 
   if (d.status !== 'RAW_UPLOADED') {
     throw httpError(
@@ -224,9 +235,10 @@ async function startEditing(user, deliverableId) {
 
   await writeAudit({
     actorId: user.id,
-    action: 'content.agency.start_editing',
+    action: 'content.start_editing',
     targetType: 'CampaignDeliverable',
     targetId: deliverableId,
+    meta: { byRole: isAgency ? 'AGENCY' : isInfluencer ? 'INFLUENCER' : 'ADMIN' },
   });
 
   return shapeDeliverable({ ...d, status: 'AGENCY_EDITING' });
@@ -235,9 +247,19 @@ async function startEditing(user, deliverableId) {
 // ======================================================
 // 3. AGENCY — submit FINAL
 // ======================================================
+// ======================================================
+// 3. SUBMIT FINAL — agency OR influencer OR admin
+// ======================================================
 async function submitFinalContent(user, deliverableId, payload = {}) {
   const d = await loadDeliverableAuth(deliverableId);
-  assertIsAgencySide(user, d.campaign);
+
+  const isAdmin = user.roles?.includes('SUPER_ADMIN');
+  const isAgency = user.roles?.includes('AGENCY');
+  const isInfluencer = d.campaign.influencer?.userId === user.id;
+
+  if (!isAdmin && !isAgency && !isInfluencer) {
+    throw httpError('Forbidden: cannot submit final content', 403, 'FORBIDDEN');
+  }
 
   const { files, caption, notes } = payload;
   if (!Array.isArray(files) || files.length === 0) {
@@ -252,6 +274,23 @@ async function submitFinalContent(user, deliverableId, payload = {}) {
     );
   }
 
+  // Decide submitter role + agency link
+  let submitterRole;
+  let submitterAgencyId = null;
+
+  if (isAgency && d.campaign.agencyId === user.organizationId) {
+    submitterRole = 'AGENCY';
+    submitterAgencyId = user.organizationId;
+  } else if (isInfluencer) {
+    submitterRole = 'INFLUENCER';
+  } else if (isAdmin) {
+    submitterRole = 'ADMIN';
+  } else {
+    // AGENCY role but campaign not linked / different org — allow submission
+    submitterRole = 'AGENCY';
+    submitterAgencyId = user.organizationId || null;
+  }
+
   const submission = await createVersionedSubmission({
     deliverableId,
     files,
@@ -260,8 +299,8 @@ async function submitFinalContent(user, deliverableId, payload = {}) {
     stage: 'FINAL',
     status: 'PENDING',
     submittedBy: user.id,
-    submittedByRole: 'AGENCY',
-    submittedByAgencyId: user.organizationId,
+    submittedByRole: submitterRole,
+    submittedByAgencyId: submitterAgencyId,
   });
 
   await prisma.campaignDeliverable.update({
@@ -274,7 +313,12 @@ async function submitFinalContent(user, deliverableId, payload = {}) {
     action: 'content.final.submit',
     targetType: 'ContentSubmission',
     targetId: submission.id,
-    meta: { deliverableId, filesCount: files.length, iteration: submission.iteration },
+    meta: {
+      deliverableId,
+      filesCount: files.length,
+      iteration: submission.iteration,
+      byRole: submitterRole,
+    },
   });
 
   const brandOwnerId = await findBrandOwnerUserId(d.campaign);

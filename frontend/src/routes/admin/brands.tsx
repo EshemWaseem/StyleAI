@@ -1,3 +1,4 @@
+import { swalError , swalConfirm } from "@/lib/swal";
 // admin/brands.tsx
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -33,11 +34,11 @@ function AdminBrandsPage() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
   async function handleDelete(b: any) {
-    if (!confirm(`Delete brand "${b.name}"? Products under it will be removed.`)) return;
+    if (!(await swalConfirm(`Delete brand "${b.name}"? Products under it will be removed.`))) return;
     try {
       await adminApi.deleteBrand(b.id);
       setBrands((prev) => prev.filter((x) => x.id !== b.id));
-    } catch (err: any) { alert(err?.message); }
+    } catch (err: any) { swalError(err?.message); }
   }
 
   return (

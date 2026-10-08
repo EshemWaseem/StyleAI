@@ -14,6 +14,7 @@ import { useRole } from "@/lib/role";
 import { productsApi, type Product } from "@/lib/products";
 import { ProductFormModal } from "@/components/ProductForm";
 import { ProductImageSlider } from "@/components/ProductImageSlider";
+import { swalError , swalConfirm } from "@/lib/swal";
 
 export const Route = createFileRoute("/products/$slug")({
   head: () => ({ meta: [{ title: "Product — StyleAI" }] }),
@@ -71,12 +72,12 @@ function ProductDetail() {
 
   async function handleDelete() {
     if (!product) return;
-    if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
+    if (!(await swalConfirm(`Delete "${product.name}"? This cannot be undone.`))) return;
     try {
       await productsApi.remove(product.id);
       navigate({ to: "/products" });
     } catch (err: any) {
-      alert(err?.message || "Delete failed");
+      swalError(err?.message || "Delete failed");
     }
   }
 
@@ -290,12 +291,12 @@ function Attr({
 
 //   async function handleDelete() {
 //     if (!product) return;
-//     if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
+//     if (!(await swalConfirm(`Delete "${product.name}"? This cannot be undone.`))) return;
 //     try {
 //       await productsApi.remove(product.id);
 //       navigate({ to: "/products" });
 //     } catch (err: any) {
-//       alert(err?.message || "Delete failed");
+//       swalError(err?.message || "Delete failed");
 //     }
 //   }
 

@@ -1,3 +1,4 @@
+// routes/offers.browse.tsx
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, Clock, Eye, Package, Check } from "lucide-react";
@@ -7,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { listingsApi } from "@/lib/listings";
 import type { Listing } from "@/lib/listings";
 import { http } from "@/lib/api";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 
 export const Route = createFileRoute("/offers/browse")({
   head: () => ({ meta: [{ title: "Browse Offers — StyleAI" }] }),
@@ -35,15 +37,31 @@ function BrowseOffersPage() {
   }, []);
 
   async function claim(l: Listing) {
-    if (!brandId) return alert("You need a brand first.");
-    if (!confirm(`Claim "${l.title}" for your brand?`)) return;
+    if (!brandId) {
+      swalError("No brand found", "You need a brand to claim offers.");
+      return;
+    }
+
+    const ok = await swalConfirm(
+      "Claim this offer?",
+      `"${l.title}" from ${l.influencer?.displayName || "creator"} — ${l.currency} ${l.subtotal.toFixed(2)}`
+    );
+    if (!ok) return;
+
     setBusy(l.id);
     try {
       const r = await listingsApi.claim(l.id, { brandId });
+      // ✅ Success popup
+      await swalSuccess(
+        "Offer claimed!",
+        "A draft offer has been created. Review and send it to the creator."
+      );
       navigate({ to: "/offers/$id", params: { id: r.offerId } });
     } catch (e: any) {
-      alert(e?.message || "Failed to claim");
-    } finally { setBusy(null); }
+      swalError("Claim failed", e?.message || "Something went wrong");
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
@@ -74,20 +92,37 @@ function BrowseOffersPage() {
         ) : (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {listings.map((l) => {
-              const daysLeft = Math.max(0, Math.ceil((new Date(l.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+              const daysLeft = Math.max(
+                0,
+                Math.ceil(
+                  (new Date(l.expiresAt).getTime() - Date.now()) /
+                    (1000 * 60 * 60 * 24)
+                )
+              );
               return (
-                <div key={l.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                <div
+                  key={l.id}
+                  className="rounded-xl border border-border bg-card overflow-hidden"
+                >
                   <div className="flex items-start gap-3 p-4 border-b border-border">
                     {l.influencer?.avatarUrl ? (
-                      <img src={l.influencer.avatarUrl} alt="" className="size-10 rounded-full object-cover" />
+                      <img
+                        src={l.influencer.avatarUrl}
+                        alt=""
+                        className="size-10 rounded-full object-cover"
+                      />
                     ) : (
                       <div className="grid size-10 place-items-center rounded-full bg-accent/15 text-accent text-sm font-medium">
                         {l.influencer?.displayName?.charAt(0).toUpperCase() || "?"}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{l.influencer?.displayName}</p>
-                      <p className="text-xs text-muted-foreground truncate">@{l.influencer?.username}</p>
+                      <p className="text-sm font-medium truncate">
+                        {l.influencer?.displayName}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        @{l.influencer?.username}
+                      </p>
                     </div>
                   </div>
 
@@ -95,7 +130,9 @@ function BrowseOffersPage() {
                     <div>
                       <h3 className="font-display text-lg leading-tight">{l.title}</h3>
                       {l.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{l.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {l.description}
+                        </p>
                       )}
                     </div>
 
@@ -121,7 +158,8 @@ function BrowseOffersPage() {
 
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
-                        <Clock className="size-3" /> {daysLeft} day{daysLeft === 1 ? "" : "s"} left
+                        <Clock className="size-3" /> {daysLeft} day
+                        {daysLeft === 1 ? "" : "s"} left
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Eye className="size-3" /> {l.viewCount}

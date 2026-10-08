@@ -1,6 +1,6 @@
 // services/recommendations/index.js
 // ======================================================
-// Barrel export — recommendations module
+// Barrel export — recommendations module (top-level)
 // ======================================================
 
 module.exports = {

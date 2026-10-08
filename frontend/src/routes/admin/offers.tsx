@@ -8,6 +8,7 @@ import { OfferStatusBadge } from "@/components/offers/OfferStatusBadge";
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
 import { offersApi } from "@/lib/offers";
 import type { Offer } from "@/lib/offers";
+import { swalError } from "@/lib/swal";
 
 export const Route = createFileRoute("/admin/offers")({
   head: () => ({ meta: [{ title: "Admin · Offers — StyleAI" }] }),
@@ -46,7 +47,7 @@ function AdminOffersPage() {
         prev.map((x) => (x.id === o.id ? { ...x, status: "ADMIN_APPROVED" } : x))
       );
     } catch (e: any) {
-      alert(e?.message || "Failed");
+      swalError(e?.message || "Failed");
     } finally {
       setBusy(null);
     }
@@ -61,7 +62,7 @@ function AdminOffersPage() {
         prev.map((x) => (x.id === o.id ? { ...x, status: "ADMIN_REJECTED" } : x))
       );
     } catch (e: any) {
-      alert(e?.message || "Failed");
+      swalError(e?.message || "Failed");
     } finally {
       setBusy(null);
     }

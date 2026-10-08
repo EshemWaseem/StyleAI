@@ -1,3 +1,4 @@
+// routes/brands.$brandId.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Trash2, Save } from "lucide-react";
@@ -5,8 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader, Panel } from "@/components/ui-kit";
+import {
+  CountryPhoneFields,
+  type CountryPhoneFieldsValue,
+} from "@/components/ui/CountryPhoneFields";
 import { useRole } from "@/lib/role";
 import { brandsApi, type Brand, type BrandInput } from "@/lib/brands";
+import { swalError, swalConfirm, swalSuccess } from "@/lib/swal";
 
 export const Route = createFileRoute("/brands/$brandId")({
   head: () => ({ meta: [{ title: "Edit brand — StyleAI" }] }),
@@ -20,6 +26,12 @@ function BrandDetailPage() {
 
   const [brand, setBrand] = useState<Brand | null>(null);
   const [form, setForm] = useState<BrandInput | null>(null);
+  const [geo, setGeo] = useState<CountryPhoneFieldsValue>({
+    country: null,
+    state: null,
+    city: null,
+    phone: undefined,
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -67,12 +79,18 @@ function BrandDetailPage() {
     setError("");
     setSuccess("");
     try {
-      const res = await brandsApi.update(brandId, form);
+      const payload: BrandInput = {
+        ...form,
+        country: geo.country?.name ?? form.country,
+      };
+      const res = await brandsApi.update(brandId, payload);
       setBrand(res.brand);
       setSuccess("Brand updated successfully.");
+      swalSuccess("Brand updated!", "Your changes have been saved.");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
       setError(err?.message || "Update failed");
+      swalError("Update failed", err?.message);
     } finally {
       setSaving(false);
     }
@@ -80,26 +98,21 @@ function BrandDetailPage() {
 
   async function handleDelete() {
     if (!brand) return;
-    if (
-      !confirm(
-        `Delete "${brand.name}"? All products and campaigns will be removed. Cannot be undone.`
-      )
-    )
-      return;
+    const ok = await swalConfirm(
+      `Delete "${brand.name}"?`,
+      "All products and campaigns will be removed. Cannot be undone."
+    );
+    if (!ok) return;
     try {
       await brandsApi.remove(brandId);
       navigate({ to: "/brands" });
     } catch (err: any) {
-      alert(err?.message || "Delete failed");
+      swalError("Delete failed", err?.message);
     }
   }
 
   if (authLoading || loading) {
-    return (
-      <>
-        <p className="text-sm text-muted-foreground">Loading…</p>
-      </>
-    );
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
 
   if (error && !brand) {
@@ -171,23 +184,29 @@ function BrandDetailPage() {
               />
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
-                  value={form.country ?? ""}
-                  onChange={(e) => setForm({ ...form, country: e.target.value })}
-                />
+            {/* ✅ Country (dropdown) + Currency */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Country</Label>
+                <CountryPhoneFields
+                    value={geo}
+                    onChange={setGeo}
+                    disabled={saving}
+                    showStateCity={false}
+                    showPhone={false}
+                    required={false}
+                  />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
-                <Input
-                  id="currency"
-                  value={form.currency ?? ""}
-                  onChange={(e) => setForm({ ...form, currency: e.target.value })}
-                />
-              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="currency">Currency</Label>
+              <Input
+                id="currency"
+                value={form.currency ?? ""}
+                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                placeholder="PKR"
+              />
             </div>
 
             <div className="space-y-2">
@@ -253,24 +272,16 @@ function BrandDetailPage() {
               <Input
                 id="targetGender"
                 value={form.targetGender ?? ""}
-                onChange={(e) =>
-                  setForm({ ...form, targetGender: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, targetGender: e.target.value })}
                 placeholder="Unisex"
               />
             </div>
           </div>
 
           <div className="mt-6 rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
-            <p>
-              <strong>Slug:</strong> {brand.slug}
-            </p>
-            <p className="mt-1">
-              <strong>Org:</strong> {brand.organization.name}
-            </p>
-            <p className="mt-1">
-              <strong>Products:</strong> {brand.productCount ?? 0}
-            </p>
+            <p><strong>Slug:</strong> {brand.slug}</p>
+            <p className="mt-1"><strong>Org:</strong> {brand.organization.name}</p>
+            <p className="mt-1"><strong>Products:</strong> {brand.productCount ?? 0}</p>
           </div>
         </Panel>
       </form>

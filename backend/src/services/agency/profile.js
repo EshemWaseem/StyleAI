@@ -103,11 +103,29 @@ async function getProfileByOrgId(organizationId) {
 
 /**
  * Public listing — brands/influencers browse agencies by service.
+ *
+ * @param {Object} opts
+ * @param {string} [opts.serviceType]   Exact service type filter (e.g. "BRAND_WEBSITE")
+ * @param {string} [opts.serviceGroup]  Coarse filter: "BRAND" | "INFLUENCER"
+ * @param {number} [opts.limit]
  */
-async function listAgenciesForService({ serviceType, limit = 50 } = {}) {
+/**
+ * Public listing — brands/influencers browse agencies by service.
+ *
+ * @param {Object} opts
+ * @param {string} [opts.serviceType]   Exact service type (e.g. "BRAND_WEBSITE")
+ * @param {string} [opts.serviceGroup]  Coarse filter: "BRAND" | "INFLUENCER"
+ * @param {number} [opts.limit]
+ */
+async function listAgenciesForService({ serviceType, serviceGroup, limit = 50 } = {}) {
   const where = { isAcceptingNew: true };
+
   if (serviceType && VALID_SERVICE_TYPES.includes(serviceType)) {
     where.serviceTypes = { has: serviceType };
+  } else if (serviceGroup === 'BRAND') {
+    where.serviceTypes = { hasSome: BRAND_SERVICES };
+  } else if (serviceGroup === 'INFLUENCER') {
+    where.serviceTypes = { hasSome: INFLUENCER_SERVICES };
   }
 
   const profiles = await prisma.agencyProfile.findMany({

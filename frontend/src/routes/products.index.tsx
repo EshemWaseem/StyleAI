@@ -1,3 +1,4 @@
+import { swalError , swalConfirm } from "@/lib/swal";
 // routes/products.index.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -67,12 +68,12 @@ function Products() {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    if (!(await swalConfirm(`Delete "${name}"? This cannot be undone.`))) return;
     try {
       await productsApi.remove(id);
       setProducts((p) => p.filter((x) => x.id !== id));
     } catch (err: any) {
-      alert(err?.message || "Delete failed");
+      swalError(err?.message || "Delete failed");
     }
   }
 

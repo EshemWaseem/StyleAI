@@ -1,9 +1,8 @@
 // middleware/authSSE.js
-// ======================================================
-// SSE auth wrapper — EventSource cannot send Authorization headers,
-// so we accept ?token= from the query string and rewrite it into the
-// Authorization header, then delegate to the normal authenticate().
-// ======================================================
+
+// SSE auth wrapper — EventSource can't send Authorization headers,
+// so we accept ?token= from query string and delegate to authenticate().
+
 
 const { authenticate } = require('./auth');
 

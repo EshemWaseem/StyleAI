@@ -1,3 +1,4 @@
+import { swalError } from "@/lib/swal";
 // routes/influencers.index.tsx
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -142,7 +143,7 @@ function DiscoverPage() {
         );
       }
     } catch (err: any) {
-      alert(err?.message || "Action failed");
+      swalError(err?.message || "Action failed");
     }
   }
 

@@ -4,6 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Clock } from "lucide-react";
+import {
+  CountryPhoneFields,
+  validateCountryPhone,
+  type CountryPhoneFieldsValue,
+} from "@/components/ui/CountryPhoneFields";
 import { cn } from "@/lib/utils";
 import {
   useRole,
@@ -97,6 +102,13 @@ function RegisterPage() {
 
   const [requestMessage, setRequestMessage] = useState("");
 
+  const [geo, setGeo] = useState<CountryPhoneFieldsValue>({
+        country: null,
+        state: null,
+        city: null,
+        phone: undefined,
+        });
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -151,23 +163,36 @@ function RegisterPage() {
       setError("Organization name is required for this role.");
       return;
     }
-    if (isTeamMember && !selectedBrandId) {
-      setError("Please select the brand you want to join.");
-      return;
-    }
     if (isTeamMember && !selectedRoleId) {
-      setError("Please select the role you'd like to apply for.");
-      return;
-    }
+  setError("Please select the role you'd like to apply for.");
+  return;
+}
 
-    setLoading(true);
-    try {
+//  Validate geo for org owners
+        if (needsOrg) {
+          const geoErr = validateCountryPhone(geo, {
+            requirePhone: true,
+            requireCountry: true,
+            requireStateCity: false,
+          });
+          if (geoErr) {
+            setError(geoErr);
+            return;
+          }
+        }
+
+        setLoading(true);
+        try {
       const created = await register({
         name: name.trim(),
         email: email.trim(),
         password,
         role,
-        ...(needsOrg && { organizationName: organizationName.trim() }),
+        ...(needsOrg && {
+          organizationName: organizationName.trim(),
+          country: geo.country?.name,
+          phone: geo.phone,
+        }),
       });
 
       // ======================================================
@@ -322,26 +347,37 @@ function RegisterPage() {
             />
           </div>
 
-          {/* ORG for brand owner / agency */}
           {needsOrg && (
-            <div className="space-y-2">
-              <Label htmlFor="organizationName">Organization name</Label>
-              <Input
-                id="organizationName"
-                type="text"
-                autoComplete="organization"
-                required
-                placeholder="Noor Atelier"
-                value={organizationName}
-                onChange={(e) => setOrganizationName(e.target.value)}
-                disabled={loading}
-              />
-              <p className="text-xs text-muted-foreground">
-                Your workspace will be created under this name.
-              </p>
-            </div>
-          )}
-
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="organizationName">Organization name</Label>
+                    <Input
+                      id="organizationName"
+                      type="text"
+                      autoComplete="organization"
+                      required
+                      placeholder="Noor Atelier"
+                      value={organizationName}
+                      onChange={(e) => setOrganizationName(e.target.value)}
+                      disabled={loading}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Your workspace will be created under this name.
+                    </p>
+                  </div>
+                        
+                  {/* ✅ Country + Phone for brand owner / agency */}
+                  <CountryPhoneFields
+                    value={geo}
+                    onChange={setGeo}
+                    disabled={loading}
+                    showStateCity={false}
+                    showPhone={true}
+                    required
+                  />
+                </>
+              )}
+              
           {/* TEAMMATE — brand + role */}
           {isTeamMember && (
             <>

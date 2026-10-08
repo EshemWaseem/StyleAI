@@ -6,13 +6,21 @@ const chat = require('../controllers/campaignChatController');
 
 router.use(authenticate);
 
+// ======================================================
+// CHAT — global (MUST come before /:id routes)
+// ======================================================
+router.get('/unread-total', chat.unreadTotal);
+
+// ======================================================
+// CAMPAIGN CRUD
+// ======================================================
 router.get('/', ctrl.list);
 router.get('/:id', ctrl.getOne);
 router.patch('/:id', ctrl.update);
 router.post('/:id/complete', ctrl.complete);
 
 // ======================================================
-// SHIPPING FLOW (Sprint B)
+// SHIPPING FLOW
 // ======================================================
 router.post('/:id/address', ctrl.submitAddress);   // influencer
 router.post('/:id/ship', ctrl.ship);               // brand
@@ -29,6 +37,7 @@ router.post('/deliverables/:deliverableId/approve', content.approve);
 router.post('/deliverables/:deliverableId/reject', content.reject);
 router.post('/deliverables/:deliverableId/publish', content.publish);
 router.post('/deliverables/:deliverableId/metrics', content.metrics);
+router.post('/deliverables/:deliverableId/final-influencer', content.submitFinalAsInfluencer);
 
 // ======================================================
 // CHAT — campaign-scoped
@@ -36,7 +45,6 @@ router.post('/deliverables/:deliverableId/metrics', content.metrics);
 router.get('/:id/messages', chat.list);
 router.post('/:id/messages', chat.send);
 router.post('/:id/messages/read', chat.markRead);
-router.post('/deliverables/:deliverableId/final-influencer', content.submitFinalAsInfluencer);
 router.get('/:id/messages/unread', chat.unread);
 
 module.exports = router;

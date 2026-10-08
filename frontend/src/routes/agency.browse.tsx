@@ -1,9 +1,9 @@
 // routes/agency.browse.tsx
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  AlertCircle, Loader2, Search, SlidersHorizontal, Star,
-  Briefcase, Camera, Globe, Video, Sparkles, ArrowRight,
+  AlertCircle, Loader2, Search, Star,
+  Briefcase, Camera, Globe, Video, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui-kit";
@@ -12,12 +12,12 @@ import { agencyApi } from "@/lib/agency";
 import type { AgencyProfileWithOrg, AgencyServiceType } from "@/lib/agency/types";
 import {
   AGENCY_SERVICE_LABELS,
-  AGENCY_SERVICE_DESCRIPTIONS,
   BRAND_SERVICE_TYPES,
   INFLUENCER_SERVICE_TYPES,
 } from "@/lib/agency/types";
 import { useRole } from "@/lib/role";
 import { HireAgencyModal } from "@/components/agency/HireAgencyModal";
+import { swalSuccess } from "@/lib/swal";
 
 export const Route = createFileRoute("/agency/browse")({
   head: () => ({ meta: [{ title: "Browse agencies — StyleAI" }] }),
@@ -40,10 +40,14 @@ function BrowseAgenciesPage() {
   const isInfluencer = roles.includes("INFLUENCER");
   const isBrandSide =
     roles.includes("BRAND_OWNER") || roles.includes("BRAND_TEAM_MEMBER");
-  const isAgency = roles.includes("AGENCY");
   const isAdmin = roles.includes("SUPER_ADMIN");
 
-  // Which services should this user see?
+  const serviceGroup: "BRAND" | "INFLUENCER" | undefined = isInfluencer
+    ? "INFLUENCER"
+    : isBrandSide
+    ? "BRAND"
+    : undefined;
+
   const availableServices: AgencyServiceType[] = isInfluencer
     ? INFLUENCER_SERVICE_TYPES
     : isBrandSide
@@ -56,6 +60,7 @@ function BrowseAgenciesPage() {
     try {
       const res = await agencyApi.browse({
         serviceType: serviceType || undefined,
+        serviceGroup,
         limit: 100,
       });
       setAgencies(res.agencies || []);
@@ -66,9 +71,17 @@ function BrowseAgenciesPage() {
     }
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [serviceType]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceType]);
 
   const filtered = agencies.filter((a) => {
+    const hasMatch = (a.serviceTypes || []).some((s) =>
+      availableServices.includes(s)
+    );
+    if (!hasMatch) return false;
+
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     const name = (a.displayName || a.organization?.name || "").toLowerCase();
@@ -92,11 +105,11 @@ function BrowseAgenciesPage() {
 
       {error && (
         <div className="mt-6 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          <AlertCircle className="mt-0.5 size-4 shrink-0" /> <span>{error}</span>
+          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Filters */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <div className="flex w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm sm:w-80">
           <Search className="size-4 text-muted-foreground" />
@@ -109,7 +122,6 @@ function BrowseAgenciesPage() {
         </div>
       </div>
 
-      {/* Service filter chips */}
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
@@ -138,7 +150,6 @@ function BrowseAgenciesPage() {
         ))}
       </div>
 
-      {/* Results */}
       {loading ? (
         <div className="mt-12 flex items-center justify-center">
           <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
@@ -149,7 +160,11 @@ function BrowseAgenciesPage() {
           <Briefcase className="mx-auto size-6 text-muted-foreground" />
           <p className="mt-3 text-sm font-medium">No agencies found</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Try a different service category or check back later.
+            {isBrandSide
+              ? "No agencies currently offering brand-side services. Check back later."
+              : isInfluencer
+              ? "No agencies currently offering photoshoot or videography services."
+              : "Try a different service category or check back later."}
           </p>
         </div>
       ) : (
@@ -163,7 +178,7 @@ function BrowseAgenciesPage() {
                 key={a.id}
                 agency={a}
                 availableServices={availableServices}
-                canHire={!!user && (isInfluencer || isBrandSide || isAdmin) && !isAgency}
+                canHire={!!user && (isInfluencer || isBrandSide)}
                 onHire={(service) => setHireState({ agency: a, serviceType: service })}
               />
             ))}
@@ -178,8 +193,7 @@ function BrowseAgenciesPage() {
           onClose={() => setHireState(null)}
           onCreated={() => {
             setHireState(null);
-            // redirect or show success
-            alert("Request sent! Check your engagements page.");
+            swalSuccess("Request sent!", "Check your engagements page.");
           }}
         />
       )}
@@ -196,13 +210,20 @@ function AgencyCard({
   onHire: (service: AgencyServiceType) => void;
 }) {
   const name = agency.displayName || agency.organization?.name || "Agency";
-  const matchingServices = agency.serviceTypes.filter((s) =>
+  const matchingServices = (agency.serviceTypes || []).filter((s) =>
     availableServices.includes(s)
   );
 
+  const serviceIcons: Record<string, any> = {
+    BRAND_SYSTEM_MANAGEMENT: Briefcase,
+    BRAND_WEBSITE: Globe,
+    BRAND_CAMPAIGN_OPS: Sparkles,
+    INFLUENCER_PHOTOSHOOT: Camera,
+    INFLUENCER_VIDEOGRAPHY: Video,
+  };
+
   return (
     <Panel className="flex flex-col overflow-hidden p-5">
-      {/* Header */}
       <div className="flex items-start gap-3">
         {agency.logoUrl ? (
           <img
@@ -230,24 +251,26 @@ function AgencyCard({
         </div>
       </div>
 
-      {/* Tagline */}
       {agency.tagline && (
         <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">
           {agency.tagline}
         </p>
       )}
 
-      {/* Matching services */}
       {matchingServices.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-1">
-          {matchingServices.slice(0, 3).map((s) => (
-            <span
-              key={s}
-              className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase text-accent"
-            >
-              {AGENCY_SERVICE_LABELS[s]}
-            </span>
-          ))}
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {matchingServices.slice(0, 3).map((s) => {
+            const Icon = serviceIcons[s];
+            return (
+              <span
+                key={s}
+                className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase text-accent"
+              >
+                {Icon && <Icon className="size-3" />}
+                {AGENCY_SERVICE_LABELS[s]}
+              </span>
+            );
+          })}
           {matchingServices.length > 3 && (
             <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
               +{matchingServices.length - 3}
@@ -256,23 +279,33 @@ function AgencyCard({
         </div>
       )}
 
-      {/* Rate card */}
       <div className="mt-4 space-y-1 text-xs">
         {agency.monthlyRetainer != null && (
-          <Row label="Monthly retainer" value={`${agency.currency} ${agency.monthlyRetainer.toLocaleString()}`} />
+          <Row
+            label="Monthly retainer"
+            value={`${agency.currency} ${agency.monthlyRetainer.toLocaleString()}`}
+          />
         )}
         {agency.hourlyRate != null && (
-          <Row label="Hourly" value={`${agency.currency} ${agency.hourlyRate.toLocaleString()}`} />
+          <Row
+            label="Hourly"
+            value={`${agency.currency} ${agency.hourlyRate.toLocaleString()}`}
+          />
         )}
         {agency.photoshootRate != null && (
-          <Row label="Photoshoot" value={`${agency.currency} ${agency.photoshootRate.toLocaleString()}`} />
+          <Row
+            label="Photoshoot"
+            value={`${agency.currency} ${agency.photoshootRate.toLocaleString()}`}
+          />
         )}
         {agency.videographyRate != null && (
-          <Row label="Videography" value={`${agency.currency} ${agency.videographyRate.toLocaleString()}`} />
+          <Row
+            label="Videography"
+            value={`${agency.currency} ${agency.videographyRate.toLocaleString()}`}
+          />
         )}
       </div>
 
-      {/* CTA */}
       <div className="mt-5 flex flex-col gap-2">
         {canHire && matchingServices.length > 0 ? (
           <Button
@@ -280,13 +313,13 @@ function AgencyCard({
             onClick={() => onHire(matchingServices[0])}
             className="w-full"
           >
-            <Sparkles className="mr-1.5 size-3.5" /> Hire
+            <Sparkles className="mr-1.5 size-3.5" /> Hire agency
           </Button>
-        ) : (
+        ) : !agency.isAcceptingNew ? (
           <p className="text-center text-xs text-muted-foreground">
-            {agency.isAcceptingNew ? "Not available for your role" : "Not accepting new work"}
+            Not accepting new work
           </p>
-        )}
+        ) : null}
       </div>
     </Panel>
   );
@@ -300,4 +333,3 @@ function Row({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

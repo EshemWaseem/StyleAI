@@ -1,3 +1,4 @@
+import { swalError, swalSuccess } from "@/lib/swal";
 // components/campaigns/ShippingAddressModal.tsx
 import { useState } from "react";
 import { X, Loader2, AlertCircle, MapPin } from "lucide-react";
@@ -8,6 +9,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { campaignsApi } from "@/lib/campaigns";
 import type { ShippingAddress, Campaign } from "@/lib/campaigns";
 
+import {
+  CountrySelect,
+  StateSelect,
+  CitySelect,
+} from "react-country-state-city";
+import "react-country-state-city/dist/react-country-state-city.css";
+
+import PhoneInput, { isPossiblePhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+
 interface Props {
   campaignId: string;
   initial?: ShippingAddress | null;
@@ -15,43 +26,81 @@ interface Props {
   onSaved: (c: Campaign) => void;
 }
 
+type CSC = { id: number; name: string; iso2?: string } | null;
+
 export function ShippingAddressModal({ campaignId, initial, onClose, onSaved }: Props) {
-  const [form, setForm] = useState<ShippingAddress>({
-    fullName: initial?.fullName ?? "",
-    phone: initial?.phone ?? "",
-    street: initial?.street ?? "",
-    city: initial?.city ?? "",
-    state: initial?.state ?? "",
-    postalCode: initial?.postalCode ?? "",
-    country: initial?.country ?? "Pakistan",
-    notes: initial?.notes ?? "",
-  });
+  const [fullName, setFullName] = useState(initial?.fullName ?? "");
+  const [phone, setPhone] = useState<string | undefined>(initial?.phone ?? "");
+  const [street, setStreet] = useState(initial?.street ?? "");
+  const [postalCode, setPostalCode] = useState(initial?.postalCode ?? "");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+
+  // Country/State/City objects
+  const [country, setCountry] = useState<CSC>(
+    initial?.countryId && initial?.country
+      ? { id: initial.countryId, name: initial.country, iso2: initial.countryCode ?? undefined }
+      : null
+  );
+  const [state, setState] = useState<CSC>(
+    initial?.stateId && initial?.state
+      ? { id: initial.stateId, name: initial.state }
+      : null
+  );
+  const [city, setCity] = useState<CSC>(
+    initial?.cityId && initial?.city
+      ? { id: initial.cityId, name: initial.city }
+      : null
+  );
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  function set<K extends keyof ShippingAddress>(key: K, val: ShippingAddress[K]) {
-    setForm((prev) => ({ ...prev, [key]: val }));
+  function validate(): string | null {
+    if (!fullName.trim()) return "Full name is required";
+    if (!phone) return "Phone number is required";
+    if (!isPossiblePhoneNumber(phone)) return "Enter a valid phone number";
+    if (!country) return "Please select a country";
+    if (!state) return "Please select a state / province";
+    if (!city) return "Please select a city";
+    if (!street.trim()) return "Street address is required";
+    return null;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
-    // Client-side validation
-    const required: (keyof ShippingAddress)[] = ["fullName", "phone", "street", "city", "country"];
-    for (const k of required) {
-      if (!form[k] || !String(form[k]).trim()) {
-        setError(`Please fill in: ${k}`);
-        return;
-      }
+    const err = validate();
+    if (err) {
+      setError(err);
+      swalError("Check your address", err);
+      return;
     }
 
     setSaving(true);
     try {
-      const res = await campaignsApi.submitAddress(campaignId, { address: form });
+      const payload: ShippingAddress = {
+        fullName: fullName.trim(),
+        phone: phone!,
+        street: street.trim(),
+        city: city!.name,
+        cityId: city!.id,
+        state: state!.name,
+        stateId: state!.id,
+        postalCode: postalCode?.trim() || null,
+        country: country!.name,
+        countryId: country!.id,
+        countryCode: country!.iso2 ?? null,
+        notes: notes?.trim() || null,
+      };
+
+      const res = await campaignsApi.submitAddress(campaignId, { address: payload });
+      swalSuccess("Address submitted", "Your shipping address has been saved.");
       onSaved(res.campaign);
     } catch (err: any) {
-      setError(err?.message || "Failed to submit address");
+      const msg = err?.message || "Failed to submit address";
+      setError(msg);
+      swalError("Submission failed", msg);
       setSaving(false);
     }
   }
@@ -64,44 +113,123 @@ export function ShippingAddressModal({ campaignId, initial, onClose, onSaved }: 
             <MapPin className="size-4 text-accent" />
             <h3 className="text-sm font-medium">Shipping address</h3>
           </div>
-          <button onClick={onClose} disabled={saving} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+          >
             <X className="size-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full name *</Label>
+            <Input
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              disabled={saving}
+              autoFocus
+              placeholder="e.g. Ayesha Khan"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Phone number *</Label>
+            <PhoneInput
+              international
+              defaultCountry={(initial?.countryCode as any) || "PK"}
+              value={phone}
+              onChange={setPhone}
+              disabled={saving}
+              placeholder="Enter phone number"
+              className="phone-input-wrapper"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Include country code — e.g. +92 for Pakistan
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Country *</Label>
+            <CountrySelect
+              value={country ? { id: country.id, name: country.name } : undefined}
+              onChange={(c: any) => {
+                setCountry({ id: c.id, name: c.name, iso2: c.iso2 });
+                setState(null);
+                setCity(null);
+              }}
+              placeHolder="Select country"
+              containerClassName="country-select"
+              inputClassName="country-select-input"
+              disabled={saving}
+            />
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="fullName">Full name *</Label>
-              <Input id="fullName" value={form.fullName} onChange={(e) => set("fullName", e.target.value)} disabled={saving} autoFocus />
-            </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone *</Label>
-              <Input id="phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+92 300 1234567" disabled={saving} />
+              <Label>State / Province *</Label>
+              <StateSelect
+                countryid={country?.id}
+                value={state ? { id: state.id, name: state.name } : undefined}
+                onChange={(s: any) => {
+                  setState({ id: s.id, name: s.name });
+                  setCity(null);
+                }}
+                placeHolder="Select state"
+                containerClassName="state-select"
+                inputClassName="state-select-input"
+                disabled={saving || !country}
+              />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="country">Country *</Label>
-              <Input id="country" value={form.country} onChange={(e) => set("country", e.target.value)} disabled={saving} />
+              <Label>City *</Label>
+              <CitySelect
+                countryid={country?.id}
+                stateid={state?.id}
+                value={city ? { id: city.id, name: city.name } : undefined}
+                onChange={(c: any) => setCity({ id: c.id, name: c.name })}
+                placeHolder="Select city"
+                containerClassName="city-select"
+                inputClassName="city-select-input"
+                disabled={saving || !country || !state}
+              />
             </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="street">Street address *</Label>
-              <Textarea id="street" value={form.street} onChange={(e) => set("street", e.target.value)} rows={2} disabled={saving} placeholder="House #, street, area" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="city">City *</Label>
-              <Input id="city" value={form.city} onChange={(e) => set("city", e.target.value)} disabled={saving} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="state">State / province</Label>
-              <Input id="state" value={form.state ?? ""} onChange={(e) => set("state", e.target.value)} disabled={saving} />
-            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="street">Street address *</Label>
+            <Textarea
+              id="street"
+              value={street}
+              onChange={(e) => setStreet(e.target.value)}
+              rows={2}
+              disabled={saving}
+              placeholder="House #, street, area"
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="postalCode">Postal code</Label>
-              <Input id="postalCode" value={form.postalCode ?? ""} onChange={(e) => set("postalCode", e.target.value)} disabled={saving} />
+              <Input
+                id="postalCode"
+                value={postalCode ?? ""}
+                onChange={(e) => setPostalCode(e.target.value)}
+                disabled={saving}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Delivery notes</Label>
-              <Input id="notes" value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} placeholder="Ring bell twice" disabled={saving} />
+              <Input
+                id="notes"
+                value={notes ?? ""}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Ring bell twice"
+                disabled={saving}
+              />
             </div>
           </div>
 
@@ -117,7 +245,13 @@ export function ShippingAddressModal({ campaignId, initial, onClose, onSaved }: 
               Cancel
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? <><Loader2 className="mr-1.5 size-3.5 animate-spin" /> Submitting…</> : "Submit address"}
+              {saving ? (
+                <>
+                  <Loader2 className="mr-1.5 size-3.5 animate-spin" /> Submitting…
+                </>
+              ) : (
+                "Submit address"
+              )}
             </Button>
           </div>
         </form>

@@ -1,5 +1,6 @@
 // components/app-shell.tsx
 import { Link } from "@tanstack/react-router";
+import { useChatUnread } from "@/hooks/useChatUnread";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
 import {
   BadgeDollarSign, Banknote, BarChart3, Bell, Briefcase, Camera,
@@ -233,6 +234,7 @@ function SidebarNav({
 }) {
   const { user } = useRole();
   const userRoles = (user?.roles ?? []) as RoleName[];
+  const chatUnread = useChatUnread();
 
   const isSuperAdmin = userRoles.includes("SUPER_ADMIN");
   const isAgency = userRoles.includes("AGENCY");
@@ -258,32 +260,44 @@ function SidebarNav({
             </p>
           )}
           <ul className="space-y-0.5">
-            {group.items.map((item) => (
-              <li key={`${group.group}-${item.to}`}>
-                <Link
-                  to={item.to as "/dashboard"}
-                  onClick={onNavigate}
-                  title={item.label}
-                  className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
-                    collapsed && "justify-center px-0"
-                  )}
-                  activeProps={{
-                    className: "bg-sidebar-accent font-medium text-foreground",
-                  }}
-                >
-                  <item.icon className="size-4 shrink-0" aria-hidden="true" />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                </Link>
-              </li>
-            ))}
+            {group.items.map((item) => {
+              const showChatBadge = item.to === "/messages" && chatUnread > 0;
+              return (
+                <li key={`${group.group}-${item.to}`}>
+                  <Link
+                    to={item.to as "/dashboard"}
+                    onClick={onNavigate}
+                    title={item.label}
+                    className={cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
+                      collapsed && "justify-center px-0"
+                    )}
+                    activeProps={{
+                      className: "bg-sidebar-accent font-medium text-foreground",
+                    }}
+                  >
+                    <item.icon className="size-4 shrink-0" aria-hidden="true" />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                    {showChatBadge && (
+                      <span
+                        className={cn(
+                          "ml-auto grid min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-semibold leading-4 text-accent-foreground",
+                          collapsed && "absolute right-1 top-1 ml-0"
+                        )}
+                      >
+                        {chatUnread > 99 ? "99+" : chatUnread}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ))}
     </nav>
   );
 }
-
 // ======================================================
 // AGENCY BRAND SWITCHER
 // ======================================================

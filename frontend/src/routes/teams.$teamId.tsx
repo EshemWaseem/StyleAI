@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { PageHeader, Panel } from "@/components/ui-kit";
 import { useRole } from "@/lib/role";
 import { teamsApi, type Team } from "@/lib/teams";
+import { swalError , swalConfirm } from "@/lib/swal";
 
 export const Route = createFileRoute("/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — StyleAI" }] }),
@@ -70,7 +71,7 @@ function TeamDetailPage() {
   }
 
   async function handleRemoveMember(userId: string, memberName: string) {
-    if (!confirm(`Remove ${memberName} from this team?`)) return;
+    if (!(await swalConfirm(`Remove ${memberName} from this team?`))) return;
     try {
       await teamsApi.removeMember(teamId, userId);
       setTeam((prev) =>
@@ -79,7 +80,7 @@ function TeamDetailPage() {
           : prev
       );
     } catch (err: any) {
-      alert(err?.message || "Remove failed");
+      swalError(err?.message || "Remove failed");
     }
   }
 
@@ -89,7 +90,7 @@ function TeamDetailPage() {
       setShowAddMember(false);
       load();
     } catch (err: any) {
-      alert(err?.message || "Add failed");
+      swalError(err?.message || "Add failed");
     }
   }
 

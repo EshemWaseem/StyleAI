@@ -6,6 +6,7 @@ import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
 import { withdrawalsApi, type WithdrawalRow } from "@/lib/wallet";
+import { swalError } from "@/lib/swal";
 
 export const Route = createFileRoute("/admin/withdrawals")({
   head: () => ({ meta: [{ title: "Admin · Withdrawals — StyleAI" }] }),
@@ -42,7 +43,7 @@ function AdminWithdrawalsPage() {
       await withdrawalsApi.review(id, { decision });
       setRows((prev) => prev.filter((r) => r.id !== id));
     } catch (e: any) {
-      alert(e?.message || "Failed");
+      swalError(e?.message || "Failed");
     } finally {
       setBusy(null);
     }

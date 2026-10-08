@@ -1,15 +1,26 @@
 // routes/offers.$id.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { useEffect, useState } from "react";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { AlertCircle, ArrowLeft, Loader2, Send, Check, X, Ban } from "lucide-react";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { OfferStatusBadge } from "@/components/offers/OfferStatusBadge";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { offersApi } from "@/lib/offers";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import type { Offer } from "@/lib/offers";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { useRole } from "@/lib/role";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { useRealtimeEvent } from "@/lib/websocket/hooks";
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 
 export const Route = createFileRoute("/offers/$id")({
   head: () => ({ meta: [{ title: "Offer — StyleAI" }] }),
@@ -236,7 +247,7 @@ function OfferDetailPage() {
             variant="outline"
             disabled={busy}
             onClick={() => {
-              if (!confirm("Cancel this offer? Escrow will be released back to your wallet.")) return;
+              if (!(await swalConfirm("Cancel this offer? Escrow will be released back to your wallet."))) return;
               act(() => offersApi.cancel(offer.id, "Cancelled by brand"));
             }}
           >

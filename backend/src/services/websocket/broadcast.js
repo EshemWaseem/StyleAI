@@ -33,6 +33,14 @@ function emitToUsers(userIds, event, data) {
   }
 }
 
+// ✅ NEW — emit to campaign-specific room
+function emitToCampaignRoom(campaignId, event, data) {
+  if (!campaignId) return;
+  const io = _io();
+  if (!io) return;
+  io.to(`campaign:${campaignId}`).emit(event, data);
+}
+
 // ======================================================
 // Resolvers
 // ======================================================
@@ -88,16 +96,9 @@ async function resolveCampaignUserIds(campaign) {
   return Array.from(userIds);
 }
 
-/**
- * Resolve all user IDs related to an offer:
- * - Brand organization users
- * - Influencer user
- * - Creating agency organization users (if any)
- */
 async function resolveOfferUserIds(offer) {
   const userIds = new Set();
 
-  // Brand org users
   if (offer.brand?.organizationId) {
     const brandUsers = await prisma.user.findMany({
       where: { organizationId: offer.brand.organizationId, isActive: true },
@@ -106,12 +107,10 @@ async function resolveOfferUserIds(offer) {
     brandUsers.forEach((u) => userIds.add(u.id));
   }
 
-  // Influencer user
   if (offer.influencer?.userId) {
     userIds.add(offer.influencer.userId);
   }
 
-  // Creating agency (if any)
   if (offer.createdByAgencyId) {
     const agencyUsers = await prisma.user.findMany({
       where: { organizationId: offer.createdByAgencyId, isActive: true },
@@ -123,11 +122,6 @@ async function resolveOfferUserIds(offer) {
   return Array.from(userIds);
 }
 
-/**
- * Resolve all user IDs related to an engagement:
- * - Agency organization users
- * - Client user (hiredByUserId)
- */
 async function resolveEngagementUserIds(engagement) {
   const userIds = new Set();
 
@@ -147,7 +141,7 @@ async function resolveEngagementUserIds(engagement) {
 }
 
 // ======================================================
-// Chat broadcasts (existing)
+// Chat broadcasts
 // ======================================================
 
 async function broadcastDirectMessage(conv, message, senderUserId) {
@@ -160,23 +154,31 @@ async function broadcastDirectMessage(conv, message, senderUserId) {
   });
 }
 
+/**
+ * ✅ Campaign message broadcast — dual path:
+ *   1. To the campaign ROOM (for anyone with the chat tab open)
+ *   2. To individual USER rooms (for badge updates on other pages)
+ */
 async function broadcastCampaignMessage(campaign, message, senderUserId) {
-  const allUserIds = await resolveCampaignUserIds(campaign);
-  const recipients = allUserIds.filter((id) => id !== senderUserId);
-  emitToUsers(recipients, 'chat:new', {
+  const payload = {
     kind: 'campaign',
     campaignId: campaign.id,
     message,
-  });
+  };
+
+  // 1) Live chat viewers (room-scoped)
+  emitToCampaignRoom(campaign.id, 'chat:new', payload);
+
+  // 2) Badge holders (user-scoped, excludes sender)
+  const allUserIds = await resolveCampaignUserIds(campaign);
+  const recipients = allUserIds.filter((id) => id !== senderUserId);
+  emitToUsers(recipients, 'chat:new', payload);
 }
 
 // ======================================================
-// Offer broadcasts (NEW)
+// Offer broadcasts
 // ======================================================
 
-/**
- * Fires when a brand creates a new offer — notifies influencer only.
- */
 async function emitOfferCreated(offer) {
   if (!offer?.influencer?.userId) return;
   emitToUser(offer.influencer.userId, 'offer:created', {
@@ -186,10 +188,6 @@ async function emitOfferCreated(offer) {
   });
 }
 
-/**
- * Fires on any offer status change — notifies brand + influencer + agency.
- * @param {string} eventType - 'accepted' | 'declined' | 'cancelled' | 'completed' | 'updated'
- */
 async function emitOfferUpdated(offer, eventType = 'updated') {
   if (!offer) return;
 
@@ -209,12 +207,9 @@ async function emitOfferUpdated(offer, eventType = 'updated') {
 }
 
 // ======================================================
-// Engagement broadcasts (NEW)
+// Engagement broadcasts
 // ======================================================
 
-/**
- * Fires when a client creates an engagement — notifies agency.
- */
 async function emitEngagementCreated(engagement) {
   if (!engagement?.agencyOrganizationId) return;
   const agencyUsers = await prisma.user.findMany({
@@ -230,10 +225,6 @@ async function emitEngagementCreated(engagement) {
   });
 }
 
-/**
- * Fires on any engagement status change — notifies agency + client.
- * @param {string} eventType - 'accepted' | 'rejected' | 'started' | 'delivered' | 'completed' | 'cancelled' | 'updated'
- */
 async function emitEngagementUpdated(engagement, eventType = 'updated') {
   if (!engagement) return;
   const userIds = await resolveEngagementUserIds(engagement);
@@ -249,25 +240,21 @@ async function emitEngagementUpdated(engagement, eventType = 'updated') {
 }
 
 module.exports = {
-  // Generic
   emitToUser,
   emitToUsers,
+  emitToCampaignRoom,
 
-  // Resolvers
   resolveConversationUserIds,
   resolveCampaignUserIds,
   resolveOfferUserIds,
   resolveEngagementUserIds,
 
-  // Chat
   broadcastDirectMessage,
   broadcastCampaignMessage,
 
-  // Offer (NEW)
   emitOfferCreated,
   emitOfferUpdated,
 
-  // Engagement (NEW)
   emitEngagementCreated,
   emitEngagementUpdated,
 };

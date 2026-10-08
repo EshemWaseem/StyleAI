@@ -29,7 +29,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle, StatusPill } from "@/components/ui-kit";
 import { useRole, roleLabels, type RoleName } from "@/lib/role";
-import { analyticsApi, type BrandAnalytics } from "@/lib/analytics";
+import {
+  analyticsApi,
+  type BrandAnalytics,
+  type InfluencerAnalytics,
+} from "@/lib/analytics";
 import { recommendationsApi, type Recommendation } from "@/lib/recommendations";
 import {
   productsApi,
@@ -121,36 +125,37 @@ const roleCopy: Record<
   },
 };
 
+// Fallback stats — only used when real data isn't loaded yet
 const roleStats: Record<WorkspaceKey, Stat[]> = {
   admin: [
-    { label: "Organizations", value: "164", note: "+8 this month", tone: "success" },
-    { label: "Active users", value: "8,420", note: "72% weekly active" },
-    { label: "AI requests", value: "1.82M", note: "+11.2% this week" },
-    { label: "Median latency", value: "1.8s", note: "Within SLO", tone: "success" },
+    { label: "Organizations", value: "—", note: "See /admin", tone: "success" },
+    { label: "Active users", value: "—", note: "See /admin" },
+    { label: "AI requests", value: "—", note: "See /admin" },
+    { label: "Median latency", value: "—", note: "See /admin" },
   ],
   influencer: [
-    { label: "Available balance", value: "$8,420", note: "$3,200 processing" },
-    { label: "Active collaborations", value: "4", note: "2 deliverables this week" },
-    { label: "Avg. engagement", value: "6.1%", note: "+0.8% this quarter", tone: "success" },
-    { label: "Profile views", value: "12.8K", note: "+24% from brands", tone: "success" },
+    { label: "Total earnings", value: "—", note: "Loading…" },
+    { label: "Active campaigns", value: "—", note: "Loading…" },
+    { label: "Completed", value: "—", note: "Loading…" },
+    { label: "Total reach", value: "—", note: "Loading…" },
   ],
   owner: [
-    { label: "Attributed revenue", value: "$48,240", note: "+18.4% vs last month", tone: "success" },
-    { label: "Campaign ROI", value: "9.6×", note: "Target 4.0×", tone: "success" },
-    { label: "Conversions", value: "3,210", note: "+12.1% in 30 days" },
-    { label: "Creator reach", value: "1.2M", note: "Across 3 platforms" },
+    { label: "Attributed revenue", value: "—", note: "Loading…", tone: "success" },
+    { label: "Campaign ROI", value: "—", note: "Loading…", tone: "success" },
+    { label: "Conversions", value: "—", note: "Loading…" },
+    { label: "Creator reach", value: "—", note: "Loading…" },
   ],
   agency: [
-    { label: "Managed brands", value: "0", note: "Invite your first brand" },
-    { label: "Portfolio revenue", value: "$0", note: "No campaigns yet" },
-    { label: "Active campaigns", value: "0", note: "Across all clients" },
-    { label: "Approval SLA", value: "—", note: "Awaiting activity" },
+    { label: "Managed brands", value: "0", note: "See /agency" },
+    { label: "Portfolio revenue", value: "—", note: "See /agency" },
+    { label: "Active campaigns", value: "0", note: "See /agency" },
+    { label: "Approval SLA", value: "—", note: "See /agency" },
   ],
   member: [
-    { label: "Assigned to me", value: "7", note: "3 due today", tone: "warning" },
-    { label: "Awaiting review", value: "4", note: "Content and imagery" },
-    { label: "Completed", value: "18", note: "This month", tone: "success" },
-    { label: "Team momentum", value: "92%", note: "On-time delivery", tone: "success" },
+    { label: "Assigned to me", value: "—", note: "Coming soon" },
+    { label: "Awaiting review", value: "—", note: "Coming soon" },
+    { label: "Completed", value: "—", note: "Coming soon" },
+    { label: "Team momentum", value: "—", note: "Coming soon" },
   ],
 };
 
@@ -161,11 +166,14 @@ const roleStats: Record<WorkspaceKey, Stat[]> = {
 function StatStrip({
   role,
   analytics,
+  influencerAnalytics,
 }: {
   role: WorkspaceKey;
   analytics?: BrandAnalytics | null;
+  influencerAnalytics?: InfluencerAnalytics | null;
 }) {
-  const stats: Stat[] =
+  // Owner — real brand analytics
+  const ownerStats: Stat[] | null =
     role === "owner" && analytics
       ? [
           {
@@ -207,7 +215,48 @@ function StatStrip({
               ((analytics as any).pendingApprovals ?? 0) > 0 ? "warning" : undefined,
           },
         ]
-      : roleStats[role];
+      : null;
+
+  // Influencer — real influencer analytics
+  const influencerStats: Stat[] | null =
+    role === "influencer" && influencerAnalytics
+      ? [
+          {
+            label: "Total earnings",
+            value: `${influencerAnalytics.currency || "PKR"} ${Number(
+              influencerAnalytics.summary?.revenue ?? 0
+            ).toLocaleString()}`,
+            note: "From completed campaigns",
+            tone:
+              (influencerAnalytics.summary?.revenue ?? 0) > 0
+                ? "success"
+                : undefined,
+          },
+          {
+            label: "Active campaigns",
+            value: String(influencerAnalytics.activeCampaigns ?? 0),
+            note: `${influencerAnalytics.campaignCount ?? 0} total`,
+          },
+          {
+            label: "Completed",
+            value: String(influencerAnalytics.completedCampaigns ?? 0),
+            note: "Delivered campaigns",
+            tone:
+              (influencerAnalytics.completedCampaigns ?? 0) > 0
+                ? "success"
+                : undefined,
+          },
+          {
+            label: "Total reach",
+            value: Number(
+              influencerAnalytics.summary?.reach ?? 0
+            ).toLocaleString(),
+            note: "Across all campaigns",
+          },
+        ]
+      : null;
+
+  const stats: Stat[] = ownerStats || influencerStats || roleStats[role];
 
   return (
     <section className="mt-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
@@ -400,60 +449,8 @@ function Update({ name, action, time }: { name: string; action: string; time: st
 // ======================================================
 
 function AdminWorkspace() {
-  const systems = [
-    ["Identity & access", "Operational", "8,420 active users"],
-    ["Fashion intelligence", "Operational", "v1.2 · 91% eval"],
-    ["Generation pipeline", "Monitoring", "2.8s p95 latency"],
-    ["Creator graph", "Operational", "14.8M profiles"],
-  ];
-  return (
-    <div className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-      <Panel>
-        <SectionTitle
-          title="Platform systems"
-          description="Live operational and model governance status."
-          action={
-            <Button variant="outline" size="sm">
-              Export audit
-            </Button>
-          }
-        />
-        <div className="divide-y divide-border">
-          {systems.map(([name, status, detail]) => (
-            <div
-              key={name}
-              className="grid grid-cols-[1fr_auto] items-center gap-4 py-4 sm:grid-cols-[1fr_140px_180px]"
-            >
-              <span className="text-sm font-medium">{name}</span>
-              <span
-                className={
-                  status === "Operational"
-                    ? "text-xs text-success"
-                    : "text-xs text-warning"
-                }
-              >
-                {status}
-              </span>
-              <span className="hidden text-right text-xs text-muted-foreground sm:block">
-                {detail}
-              </span>
-            </div>
-          ))}
-        </div>
-      </Panel>
-      <Panel>
-        <SectionTitle
-          title="Trust & risk"
-          description="Signals requiring operator attention."
-        />
-        <div className="space-y-3">
-          <Risk label="Unusual token volume" meta="Atelier North · 12 min ago" level="Review" />
-          <Risk label="Dataset consent expires" meta="Creator EU set · 3 days" level="Planned" />
-          <Risk label="Evaluation drift" meta="No active alerts" level="Clear" />
-        </div>
-      </Panel>
-    </div>
-  );
+  // Never renders — admins redirect to /admin
+  return null;
 }
 
 // ======================================================
@@ -769,95 +766,8 @@ function InfluencerWorkspace() {
 // ======================================================
 
 function AgencyWorkspace() {
-  const brands = [
-    ["Lumen Atelier", "9 live campaigns", "$82.4K", "Healthy"],
-    ["Maison Nura", "4 awaiting approval", "$61.2K", "Attention"],
-    ["Serein", "6 live campaigns", "$48.9K", "Healthy"],
-    ["North Form", "2 briefs overdue", "$34.1K", "At risk"],
-  ];
-
-  return (
-    <div className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-      <Panel>
-        <SectionTitle
-          title="Client portfolio"
-          description="Delivery and commercial health across managed brands."
-          action={
-            <Button variant="outline" size="sm">
-              <Building2 /> Switch client
-            </Button>
-          }
-        />
-        <div className="divide-y divide-border">
-          {brands.map(([name, activity, revenue, health]) => (
-            <div
-              key={name}
-              className="grid grid-cols-[1fr_auto] items-center gap-3 py-4 sm:grid-cols-[1fr_180px_100px_90px]"
-            >
-              <div>
-                <p className="text-sm font-medium">{name}</p>
-                <p className="text-xs text-muted-foreground sm:hidden">{activity}</p>
-              </div>
-              <span className="hidden text-xs text-muted-foreground sm:block">
-                {activity}
-              </span>
-              <span className="text-sm tabular-nums">{revenue}</span>
-              <span
-                className={
-                  health === "Healthy"
-                    ? "text-right text-xs text-success"
-                    : "text-right text-xs text-warning"
-                }
-              >
-                {health}
-              </span>
-            </div>
-          ))}
-        </div>
-      </Panel>
-
-      <Panel>
-        <SectionTitle
-          title="Approval queue"
-          description="Items waiting on clients or your team."
-        />
-        <Task icon={FileCheck2} title="8 content drafts" meta="Across 3 brands" status="Client" />
-        <Task icon={WandSparkles} title="12 AI images" meta="Maison Nura · AW26" status="Internal" />
-        <Task icon={Megaphone} title="Campaign brief" meta="North Form · 6h overdue" status="Late" />
-      </Panel>
-
-      <TrendPanel
-        title="Portfolio performance"
-        description="Attributed revenue across all managed clients."
-      />
-
-      <Panel>
-        <SectionTitle
-          title="Team capacity"
-          description="Delivery load for the next seven days."
-        />
-        {[
-          ["Creator strategy", 84],
-          ["Content production", 68],
-          ["Client approvals", 92],
-          ["Analytics", 46],
-        ].map(([label, value]) => (
-          <div key={String(label)} className="mb-4">
-            <div className="mb-2 flex justify-between text-xs">
-              <span>{label}</span>
-              <span className="text-muted-foreground">{value}%</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-accent"
-                style={{ width: `${value}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </Panel>
-    </div>
-  );
+  // Never renders — agencies redirect to /agency
+  return null;
 }
 
 // ======================================================
@@ -870,45 +780,24 @@ function MemberWorkspace() {
       <Panel>
         <SectionTitle
           title="Assigned to me"
-          description="Prioritized by deadline and campaign impact."
-          action={
-            <Button size="sm">
-              <CheckCircle2 />
-              Mark progress
-            </Button>
-          }
+          description="Task assignment is coming soon."
         />
-        <div className="divide-y divide-border">
-          <Task icon={WandSparkles} title="Review six generated captions" meta="Noir Evening Edit · Due 11:30" status="High" />
-          <Task icon={FileCheck2} title="Prepare creator brief" meta="Luna Accessories · Due 14:00" status="Today" />
-          <Task icon={Layers3} title="Tag Maison Coat attributes" meta="Product intelligence · Due tomorrow" status="Normal" />
-          <Task icon={UsersRound} title="Shortlist three creators" meta="Autumn Atelier · Due Friday" status="Normal" />
+        <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
+          <FileCheck2 className="mx-auto size-6 text-muted-foreground" />
+          <p className="mt-3 text-sm font-medium">No assigned tasks yet</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Your brand owner will assign tasks here once task management goes live.
+          </p>
         </div>
       </Panel>
       <Panel>
-        <SectionTitle title="Team pulse" description="What changed since your last visit." />
-        <div className="space-y-4 text-sm">
-          <Update name="Sara" action="approved the Luna creative direction" time="18 min" />
-          <Update name="AI Studio" action="generated 6 caption variations" time="1h" />
-          <Update name="Ema" action="requested changes on two images" time="3h" />
-        </div>
-      </Panel>
-      <Panel className="xl:col-span-2">
-        <SectionTitle
-          title="Campaign calendar"
-          description="Your deliverables and review windows."
-        />
-        <div className="grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-5">
-          {["Mon 14", "Tue 15", "Wed 16", "Thu 17", "Fri 18"].map((day, i) => (
-            <div key={day} className="min-h-28 bg-background p-3">
-              <p className="text-xs text-muted-foreground">{day}</p>
-              {i < 4 ? (
-                <div className="mt-4 rounded-md border border-border bg-card p-2 text-xs">
-                  {["Caption review", "Creator brief", "Image approval", "Campaign QA"][i]}
-                </div>
-              ) : null}
-            </div>
-          ))}
+        <SectionTitle title="Team pulse" description="Recent activity." />
+        <div className="rounded-lg border border-dashed border-border bg-muted/10 p-10 text-center">
+          <UsersRound className="mx-auto size-6 text-muted-foreground" />
+          <p className="mt-3 text-sm font-medium">Nothing to show yet</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Team activity will appear here.
+          </p>
         </div>
       </Panel>
     </div>
@@ -1229,8 +1118,10 @@ function Dashboard() {
   const [realProducts, setRealProducts] = useState<RealProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [brandAnalytics, setBrandAnalytics] = useState<BrandAnalytics | null>(null);
+  const [influencerAnalytics, setInfluencerAnalytics] =
+    useState<InfluencerAnalytics | null>(null);
 
-  // ✅ Guards against flash-of-wrong-dashboard during redirect
+  // Guards against flash-of-wrong-dashboard during redirect
   const [redirectChecked, setRedirectChecked] = useState(false);
 
   // ------------------------------------------------------
@@ -1259,21 +1150,19 @@ function Dashboard() {
         ) &&
         !user.organizationId
       ) {
-        // Brand user without organization — send to brand setup
         target = "/brands";
       }
     }
 
     if (target) {
       navigate({ to: target as any, replace: true });
-      // Keep redirectChecked = false → loader stays until navigation
     } else {
       setRedirectChecked(true);
     }
   }, [user, loading, navigate, redirectChecked]);
 
   // ------------------------------------------------------
-  // Fetch products — only after redirect check passed
+  // Fetch brand data — owners and members
   // ------------------------------------------------------
   useEffect(() => {
     if (!redirectChecked || !user) return;
@@ -1291,9 +1180,6 @@ function Dashboard() {
       .finally(() => setProductsLoading(false));
   }, [redirectChecked, user]);
 
-  // ------------------------------------------------------
-  // Fetch analytics — only after redirect check passed
-  // ------------------------------------------------------
   useEffect(() => {
     if (!redirectChecked || !user) return;
 
@@ -1309,7 +1195,20 @@ function Dashboard() {
   }, [redirectChecked, user]);
 
   // ------------------------------------------------------
-  // Render — loader until we know this user belongs here
+  // Fetch influencer analytics
+  // ------------------------------------------------------
+  useEffect(() => {
+    if (!redirectChecked || !user) return;
+    if (!user.roles.includes("INFLUENCER")) return;
+
+    analyticsApi
+      .influencer()
+      .then(setInfluencerAnalytics)
+      .catch(() => setInfluencerAnalytics(null));
+  }, [redirectChecked, user]);
+
+  // ------------------------------------------------------
+  // Render
   // ------------------------------------------------------
   if (loading || !user || !redirectChecked) {
     return (
@@ -1335,9 +1234,11 @@ function Dashboard() {
               Run health check
             </Button>
           ) : workspace === "influencer" ? (
-            <Button>
-              <BadgeDollarSign />
-              View earnings
+            <Button asChild>
+              <Link to="/wallet">
+                <BadgeDollarSign />
+                View earnings
+              </Link>
             </Button>
           ) : workspace === "member" ? (
             <Button>
@@ -1358,6 +1259,15 @@ function Dashboard() {
       {workspace !== "influencer" && (
         <StatStrip role={workspace} analytics={brandAnalytics} />
       )}
+
+      {/* Influencer gets its own stat strip with real data */}
+      {workspace === "influencer" && (
+        <StatStrip
+          role="influencer"
+          influencerAnalytics={influencerAnalytics}
+        />
+      )}
+
       {workspace === "admin" && <AdminWorkspace />}
       {workspace === "influencer" && <InfluencerWorkspace />}
       {workspace === "owner" && (

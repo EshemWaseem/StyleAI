@@ -26,6 +26,7 @@ async function getInfluencerAnalytics(user) {
 
   return {
     summary: totals,
+    currency: campaigns[0]?.currency || 'PKR',
     campaignCount: campaigns.length,
     activeCampaigns: campaigns.filter((c) => c.status === 'ACTIVE').length,
     completedCampaigns: campaigns.filter((c) => c.status === 'COMPLETED').length,

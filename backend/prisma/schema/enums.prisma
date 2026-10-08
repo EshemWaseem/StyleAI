@@ -149,6 +149,17 @@ enum OfferStatus {
   DECLINED         // influencer rejected
   EXPIRED
   CANCELLED
+
+
+  // Admin review lifecycle
+  PENDING_ADMIN
+  ADMIN_APPROVED
+  ADMIN_REJECTED
+
+  // Influencer response (post admin-approval)
+  INFLUENCER_ACCEPTED
+  INFLUENCER_DECLINED
+
 }
 
 enum BillingRole {

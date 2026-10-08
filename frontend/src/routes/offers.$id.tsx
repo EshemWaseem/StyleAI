@@ -1,26 +1,16 @@
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 // routes/offers.$id.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { useEffect, useState } from "react";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { AlertCircle, ArrowLeft, Loader2, Send, Check, X, Ban } from "lucide-react";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { Button } from "@/components/ui/button";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { OfferStatusBadge } from "@/components/offers/OfferStatusBadge";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { offersApi } from "@/lib/offers";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import type { Offer } from "@/lib/offers";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { useRole } from "@/lib/role";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { useRealtimeEvent } from "@/lib/websocket/hooks";
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 
 export const Route = createFileRoute("/offers/$id")({
   head: () => ({ meta: [{ title: "Offer — StyleAI" }] }),
@@ -53,9 +43,9 @@ function OfferDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // ✅ Real-time: refetch when THIS offer changes
+  // Real-time: refetch when THIS offer changes
   useRealtimeEvent<any>("offer:updated", (data) => {
-    if (data?.offerId === id) load(true); // silent — no spinner flash
+    if (data?.offerId === id) load(true);
   });
 
   async function act(fn: () => Promise<any>) {
@@ -71,6 +61,17 @@ function OfferDetailPage() {
     }
   }
 
+  // ✅ Async handler for cancel (uses Swal confirm)
+  async function handleCancel() {
+    if (!offer) return;
+    const ok = await swalConfirm(
+      "Cancel this offer?",
+      "Escrow will be released back to your wallet."
+    );
+    if (!ok) return;
+    act(() => offersApi.cancel(offer.id, "Cancelled by brand"));
+  }
+
   const isAdmin = !!user?.roles?.includes("SUPER_ADMIN" as any);
   const isBrandOwner =
     !!user?.organizationId &&
@@ -81,13 +82,9 @@ function OfferDetailPage() {
     !!offer?.influencer?.userId &&
     offer.influencer.userId === user.id;
 
-  // ---- Permission flags ----
   const canSubmitForReview = isBrandOwner && offer?.status === "DRAFT";
-
-  // ✅ Cancel ONLY allowed before influencer accepts
   const canCancel =
     isBrandOwner && ["DRAFT", "PENDING"].includes(offer?.status || "");
-
   const canAdminReview = isAdmin && offer?.status === "PENDING_ADMIN";
   const canInfluencerReview =
     isTargetInfluencer && offer?.status === "PENDING";
@@ -243,14 +240,7 @@ function OfferDetailPage() {
         )}
 
         {canCancel && (
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => {
-              if (!(await swalConfirm("Cancel this offer? Escrow will be released back to your wallet."))) return;
-              act(() => offersApi.cancel(offer.id, "Cancelled by brand"));
-            }}
-          >
+          <Button variant="outline" disabled={busy} onClick={handleCancel}>
             <Ban className="mr-1 size-4" /> Cancel offer
           </Button>
         )}
@@ -305,7 +295,6 @@ function OfferDetailPage() {
           </>
         )}
 
-        {/* ---- Status messages ---- */}
         {status === "DRAFT" && isBrandOwner && (
           <p className="text-xs text-muted-foreground">
             Draft — click "Submit for review" to send this offer.
@@ -343,8 +332,6 @@ function OfferDetailPage() {
         {status === "CANCELLED" && (
           <p className="text-xs font-medium text-muted-foreground">Offer cancelled</p>
         )}
-
-        {/* Legacy statuses (just in case old data) */}
         {status === "PENDING_ADMIN" && (
           <p className="text-xs text-muted-foreground">Waiting for admin approval…</p>
         )}

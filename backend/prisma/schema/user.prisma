@@ -1,4 +1,4 @@
-// user.prisma   24-9
+// user.prisma
 // ======================================================
 // USER + ROLES + PERMISSIONS
 // ======================================================
@@ -9,6 +9,11 @@ model User {
   email    String  @unique
   password String
   isActive Boolean @default(true)
+
+  // ✅ NEW — contact + location
+  phone       String?
+  country     String?
+  countryCode String?   // ISO2 — "PK", "US" etc
 
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
@@ -27,22 +32,18 @@ model User {
   brandTeamMemberships BrandTeamMember[] @relation("BrandTeamMemberUser")
   brandTeamInvitesSent BrandTeamMember[] @relation("BrandTeamMemberInviter")
 
-  // NEW: influencer profile link (set when user has INFLUENCER role)
   influencerProfile Influencer?
-  // Custom offer audit relations
   offersCreated     CustomOffer[]     @relation("OfferCreator")
   offersReviewed    CustomOffer[]     @relation("OfferReviewer")
   notifications     Notification[]
-  // campaignMessages  CampaignMessage[]
   campaignMessages  CampaignMessage[] @relation("CampaignMessageSender")
   directMessages    DirectMessage[]   @relation("DirectMessageSender")
   wallet            Wallet?
   notificationPreference NotificationPreference?
 
-  assistantConversations AssistantConversation[] @relation("AssistantConversations")   // ← ADD THIS LINE
+  assistantConversations AssistantConversation[] @relation("AssistantConversations")
 
-   // ---- Billing (Sprint 27) ----
-  subscription Subscription? 
+  subscription Subscription?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

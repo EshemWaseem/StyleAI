@@ -64,6 +64,7 @@ export interface AgencyAnalytics {
 
 export interface InfluencerAnalytics {
   summary: AnalyticsSummary;
+  currency?: string;
   campaignCount: number;
   activeCampaigns: number;
   completedCampaigns: number;

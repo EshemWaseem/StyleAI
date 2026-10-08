@@ -1,15 +1,14 @@
 // services/offers/adminReview.js
-// ======================================================
 // PENDING_ADMIN → ADMIN_APPROVED | ADMIN_REJECTED
 // SUPER_ADMIN only.
 // Reject → refund brand's escrow.
-// ======================================================
 
 const prisma = require('../../config/prisma');
 const { httpError, shapeOffer } = require('./helpers');
 const { writeAudit } = require('../admin/helpers');
 const { refundEscrowForOffer } = require('../wallet');
 const { notifyUser, notifyAdmins } = require('../notifications');
+
 async function adminReviewOffer(user, offerId, payload = {}) {
   const { decision, adminNote } = payload;
 
@@ -33,8 +32,8 @@ async function adminReviewOffer(user, offerId, payload = {}) {
 
   const newStatus = decision === 'approve' ? 'ADMIN_APPROVED' : 'ADMIN_REJECTED';
 
-  // ⚡ On reject → refund escrow back to brand wallet immediately.
-  // On approve → escrow stays held until influencer accepts/declines.
+  // On reject → refund escrow back to brand wallet immediately
+  // On approve → escrow stays held until influencer accepts/declines
   if (decision === 'reject') {
     await refundEscrowForOffer(user.id, offerId);
   }
@@ -64,7 +63,7 @@ async function adminReviewOffer(user, offerId, payload = {}) {
     },
   });
 
-    if (decision === 'approve') {
+  if (decision === 'approve') {
     // Notify brand creator
     await notifyUser(offer.createdBy, {
       type: 'OFFER_APPROVED',
@@ -73,6 +72,7 @@ async function adminReviewOffer(user, offerId, payload = {}) {
       link: `/offers/${offerId}`,
       meta: { offerId },
     });
+
     // Notify influencer if they have a linked user
     if (offer.influencer.userId) {
       await notifyUser(offer.influencer.userId, {

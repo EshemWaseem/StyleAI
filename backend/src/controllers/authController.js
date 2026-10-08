@@ -4,9 +4,6 @@ const prisma = require('../config/prisma');
 const { signToken } = require('../utils/jwt');
 const { sendToUser } = require('../services/email');
 
-// ======================================================
-// Roles allowed for PUBLIC self-registration.
-// ======================================================
 const PUBLIC_SIGNUP_ROLES = [
   'BRAND_OWNER',
   'BRAND_TEAM_MEMBER',
@@ -15,10 +12,7 @@ const PUBLIC_SIGNUP_ROLES = [
   'SHOPPER',
 ];
 
-// Roles that require an organization name at signup
 const ROLES_REQUIRING_ORG = ['BRAND_OWNER', 'AGENCY'];
-
-// Roles that require brand-owner approval before login is allowed
 const ROLES_PENDING_APPROVAL = ['BRAND_TEAM_MEMBER'];
 
 // ======================================================
@@ -26,7 +20,10 @@ const ROLES_PENDING_APPROVAL = ['BRAND_TEAM_MEMBER'];
 // ======================================================
 async function register(req, res, next) {
   try {
-    const { name, email, password, organizationName, role } = req.body;
+    const {
+      name, email, password, organizationName, role,
+      phone, country, countryCode,
+    } = req.body;
 
     if (!name || !email || !password) {
       return res
@@ -53,9 +50,7 @@ async function register(req, res, next) {
       });
     }
 
-    const roleRecord = await prisma.role.findUnique({
-      where: { name: roleName },
-    });
+    const roleRecord = await prisma.role.findUnique({ where: { name: roleName } });
     if (!roleRecord) {
       return res.status(400).json({ message: 'Invalid role selected.' });
     }
@@ -92,6 +87,9 @@ async function register(req, res, next) {
           email: email.trim().toLowerCase(),
           password: hashedPassword,
           organizationId,
+          phone: phone ? String(phone).trim() : null,
+          country: country ? String(country).trim() : null,
+          countryCode: countryCode ? String(countryCode).trim().toUpperCase() : null,
         },
       });
 
@@ -102,12 +100,9 @@ async function register(req, res, next) {
       return user;
     });
 
-    // Welcome email — non-blocking
     sendToUser(result.id, 'welcome', { role: roleName })
       .catch((e) => console.error('[auth.welcome email] failed:', e.message));
 
-    // ---- Pending approval roles (e.g. BRAND_TEAM_MEMBER) ----
-    // Don't issue a token — the user can't sign in yet.
     if (ROLES_PENDING_APPROVAL.includes(roleName)) {
       return res.status(201).json({
         message:
@@ -126,7 +121,6 @@ async function register(req, res, next) {
       });
     }
 
-    // ---- Normal flow — issue JWT ----
     const token = signToken({ userId: result.id });
 
     res.status(201).json({
@@ -191,11 +185,6 @@ async function login(req, res, next) {
 
     const roles = user.userRoles.map((ur) => ur.role.name);
 
-    // ======================================================
-    // BLOCK pending BRAND_TEAM_MEMBER accounts
-    // These users have the role but no organizationId yet —
-    // they're waiting for the brand owner's approval.
-    // ======================================================
     const isPendingTeamMember =
       roles.includes('BRAND_TEAM_MEMBER') && !user.organizationId;
 
@@ -245,6 +234,9 @@ async function me(req, res) {
       name: req.user.name,
       email: req.user.email,
       organizationId: req.user.organizationId,
+      phone: req.user.phone ?? null,
+      country: req.user.country ?? null,
+      countryCode: req.user.countryCode ?? null,
       roles: req.user.roles,
       permissions: req.user.permissions,
     },

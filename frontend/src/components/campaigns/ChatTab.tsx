@@ -44,10 +44,11 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
 
-  // ---- WebSocket real-time (retries until socket ready) ----
+  // ---- WebSocket: JOIN room + listen for events (with retry) ----
   useEffect(() => {
     let off: (() => void) | null = null;
     let intervalId: any = null;
+    let joined = false;
 
     const onNew = (payload: any) => {
       if (payload?.kind !== "campaign" || payload?.campaignId !== campaignId) return;
@@ -64,10 +65,26 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
       const socket = getSocket();
       if (!socket) return false;
 
+      // 1) Attach listener
       socket.on("chat:new", onNew);
       setWsConnected(socket.connected);
 
-      const onConnect = () => setWsConnected(true);
+      // 2) Join campaign room
+      if (!joined) {
+        joined = true;
+        socket.emit("campaign:join", { campaignId }, (ack: any) => {
+          if (!ack?.ok) {
+            console.warn("[chat] join failed:", ack?.error);
+          }
+        });
+      }
+
+      // 3) Track connect/disconnect for UI
+      const onConnect = () => {
+        setWsConnected(true);
+        // Re-join on reconnect
+        socket.emit("campaign:join", { campaignId }, () => {});
+      };
       const onDisconnect = () => setWsConnected(false);
       socket.on("connect", onConnect);
       socket.on("disconnect", onDisconnect);
@@ -76,6 +93,8 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
         socket.off("chat:new", onNew);
         socket.off("connect", onConnect);
         socket.off("disconnect", onDisconnect);
+        // Leave campaign room on unmount
+        socket.emit("campaign:leave", { campaignId });
       };
       return true;
     };
@@ -92,9 +111,9 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
     };
   }, [campaignId]);
 
-  // ---- Polling fallback — ONLY when WS is disconnected ----
+  // ---- Polling fallback — only when WS is disconnected ----
   useEffect(() => {
-    if (wsConnected) return;   // ✅ STOP polling the moment WS connects
+    if (wsConnected) return;
 
     const t = setInterval(() => {
       campaignsApi
@@ -108,13 +127,6 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
         .catch(() => {});
     }, 10000);
     return () => clearInterval(t);
-  }, [campaignId, wsConnected]);
-
-  // ---- Mark read — one-time, not polling ----
-  useEffect(() => {
-    if (!wsConnected) return;
-    // When WS connects, mark read once (no interval needed)
-    campaignsApi.markChatRead(campaignId).catch(() => {});
   }, [campaignId, wsConnected]);
 
   async function send() {

@@ -1,5 +1,5 @@
-import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 // routes/campaigns.$id.tsx
+import { swalError, swalSuccess, swalConfirm } from "@/lib/swal";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { getSocket } from "@/lib/websocket/client";
 import { useEffect, useState } from "react";
@@ -160,53 +160,60 @@ function CampaignDetailPage() {
     }
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
+  // ✅ Guard — only load when user is signed in
+  useEffect(() => {
+    if (!user) return;
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user?.id]);
 
-  // ── Chat unread: WS-driven, no polling ──
-useEffect(() => {
-  if (!campaign) return;
+  // ======================================================
+  // ✅ Chat unread — WS-driven, guarded by user
+  // ======================================================
+  useEffect(() => {
+    // ❌ No user → skip entirely (prevents 401 spam after logout)
+    if (!user) return;
+    if (!campaign) return;
 
-  let off: (() => void) | null = null;
-  let intervalId: any = null;
+    let off: (() => void) | null = null;
+    let intervalId: any = null;
 
-  // Initial snapshot (once)
-  campaignsApi.chatUnread(campaign.id)
-    .then((r) => setChatUnread(r.unread))
-    .catch(() => {});
+    // Initial snapshot (once)
+    campaignsApi.chatUnread(campaign.id)
+      .then((r) => setChatUnread(r.unread))
+      .catch(() => {});
 
-  const onNew = (payload: any) => {
-    if (payload?.kind !== "campaign" || payload?.campaignId !== campaign.id) return;
-    // Only bump if this user is not the sender
-    if (payload?.message?.senderUserId === (user as any)?.id) return;
-    // If currently on messages tab, mark read immediately
-    setChatUnread((n) => n + 1);
-  };
-
-  const onRead = () => setChatUnread(0);
-
-  const trySubscribe = (): boolean => {
-    const socket = getSocket();
-    if (!socket) return false;
-    socket.on("chat:new", onNew);
-    socket.on("read:campaign", onRead);
-    off = () => {
-      socket.off("chat:new", onNew);
-      socket.off("read:campaign", onRead);
+    const onNew = (payload: any) => {
+      if (payload?.kind !== "campaign" || payload?.campaignId !== campaign.id) return;
+      if (payload?.message?.senderUserId === user.id) return;
+      setChatUnread((n) => n + 1);
     };
-    return true;
-  };
 
-  if (!trySubscribe()) {
-    intervalId = setInterval(() => {
-      if (trySubscribe()) clearInterval(intervalId);
-    }, 500);
-  }
+    const onRead = () => setChatUnread(0);
 
-  return () => {
-    if (intervalId) clearInterval(intervalId);
-    off?.();
-  };
-}, [campaign?.id]);
+    const trySubscribe = (): boolean => {
+      const socket = getSocket();
+      if (!socket) return false;
+      socket.on("chat:new", onNew);
+      socket.on("read:campaign", onRead);
+      off = () => {
+        socket.off("chat:new", onNew);
+        socket.off("read:campaign", onRead);
+      };
+      return true;
+    };
+
+    if (!trySubscribe()) {
+      intervalId = setInterval(() => {
+        if (trySubscribe()) clearInterval(intervalId);
+      }, 500);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      off?.();
+    };
+  }, [campaign?.id, user?.id]);
 
   async function markComplete() {
     if (!campaign) return;

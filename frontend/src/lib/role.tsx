@@ -1,5 +1,4 @@
 // lib/role.tsx
-
 import {
   createContext,
   useContext,
@@ -30,6 +29,9 @@ export interface AuthUser {
   name: string;
   email: string;
   organizationId: string | null;
+  phone: string | null;         // ✅ NEW
+  country: string | null;       // ✅ NEW
+  countryCode: string | null;   // ✅ NEW
   roles: RoleName[];
   permissions: string[];
 
@@ -118,6 +120,8 @@ interface RegisterPayload {
   password: string;
   role: RoleName;
   organizationName?: string;
+  country?: string;
+  phone?: string;
 }
 
 interface AuthContextValue {
@@ -209,7 +213,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     return me.user;
   }, []);
 
-  // ✅ register — handles pending approval (no token)
+  // ✅ register — handles pending approval
   const register = useCallback(async (payload: RegisterPayload) => {
     const res = await http.post<{
       token: string | null;
@@ -217,7 +221,6 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       pendingApproval?: boolean;
     }>("/api/auth/register", payload, { skipAuth: true });
 
-    // ✅ Pending approval — no token issued, don't set global auth state
     if (!res.token) {
       return res.user;
     }

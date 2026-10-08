@@ -20,6 +20,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
+import {
+  CountryPhoneFields,
+  validateCountryPhone,
+  type CountryPhoneFieldsValue,
+} from "@/components/ui/CountryPhoneFields";
 import { useRole } from "@/lib/role";
 import { http } from "@/lib/api";
 import { influencersApi, type Influencer } from "@/lib/influencers";
@@ -70,6 +75,12 @@ function SettingsPage() {
   // ---------- Account form ----------
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [geo, setGeo] = useState<CountryPhoneFieldsValue>({
+    country: null,
+    state: null,
+    city: null,
+    phone: undefined,
+  });
   const [savingAccount, setSavingAccount] = useState(false);
   const [accountMsg, setAccountMsg] = useState<{
     type: "ok" | "err";
@@ -106,6 +117,16 @@ function SettingsPage() {
     if (!user) return;
     setName(user.name ?? "");
     setEmail(user.email ?? "");
+    // ✅ seed geo
+    setGeo({
+      country:
+        user.country && user.countryCode
+          ? { id: 0, name: user.country, iso2: user.countryCode }
+          : null,
+      state: null,
+      city: null,
+      phone: user.phone || undefined,
+    });
   }, [user]);
 
   // ---------- Load influencer profile ----------
@@ -148,14 +169,29 @@ function SettingsPage() {
       setAccountMsg({ type: "err", text: "Please enter a valid email" });
       return;
     }
-    if (trimmedName === user?.name && trimmedEmail === user?.email) {
-      setAccountMsg({ type: "err", text: "No changes to save" });
-      return;
+
+    // ✅ Validate phone (if provided)
+    if (geo.phone) {
+      const geoErr = validateCountryPhone(geo, {
+        requirePhone: false,
+        requireCountry: false,
+        requireStateCity: false,
+      });
+      if (geoErr) {
+        setAccountMsg({ type: "err", text: geoErr });
+        return;
+      }
     }
 
     setSavingAccount(true);
     try {
-      await http.patch("/api/users/me", { name: trimmedName, email: trimmedEmail });
+      await http.patch("/api/users/me", {
+        name: trimmedName,
+        email: trimmedEmail,
+        phone: geo.phone ?? null,
+        country: geo.country?.name ?? null,
+        countryCode: geo.country?.iso2 ?? null,
+      });
       setAccountMsg({ type: "ok", text: "Account updated successfully" });
 
       const stored = localStorage.getItem("user");
@@ -164,6 +200,9 @@ function SettingsPage() {
           const parsed = JSON.parse(stored);
           parsed.name = trimmedName;
           parsed.email = trimmedEmail;
+          parsed.phone = geo.phone ?? null;
+          parsed.country = geo.country?.name ?? null;
+          parsed.countryCode = geo.country?.iso2 ?? null;
           localStorage.setItem("user", JSON.stringify(parsed));
         } catch {}
       }
@@ -261,7 +300,7 @@ function SettingsPage() {
       <Panel className="mt-8">
         <SectionTitle
           title="Account"
-          description="Your name and email. Used everywhere in the workspace."
+          description="Your name, email, and contact details."
           action={<User className="size-4 text-muted-foreground" />}
         />
         <form onSubmit={handleSaveAccount} className="space-y-5">
@@ -275,6 +314,17 @@ function SettingsPage() {
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={savingAccount} autoComplete="email" />
             </div>
           </div>
+
+          {/* ✅ NEW — Phone + Country */}
+          <CountryPhoneFields
+            value={geo}
+            onChange={setGeo}
+            disabled={savingAccount}
+            showStateCity={false}
+            showPhone={true}
+            phoneLabel="Phone (optional)"
+            countryLabel="Country (optional)"
+          />
 
           <div className="space-y-2">
             <Label>Roles</Label>
@@ -353,7 +403,7 @@ function SettingsPage() {
       </Panel>
 
       {/* ======================================================
-          3. NOTIFICATIONS — REAL PREFERENCES
+          3. NOTIFICATIONS
       ====================================================== */}
       <Panel className="mt-6">
         <SectionTitle
@@ -370,59 +420,12 @@ function SettingsPage() {
           <p className="py-4 text-sm text-muted-foreground">Could not load preferences. Refresh the page.</p>
         ) : (
           <div className="space-y-5">
-            {/* Trial & subscription lifecycle */}
-            <ToggleRow
-              label="Trial & subscription reminders"
-              description="Trial ending soon, trial expired, plan changes."
-              checked={prefs.emailTrial}
-              onToggle={() => togglePref("emailTrial")}
-              disabled={prefsSaving}
-            />
-
-            {/* Offers */}
-            <ToggleRow
-              label="Offers"
-              description="New offers received, offers accepted or declined."
-              checked={prefs.emailOffers}
-              onToggle={() => togglePref("emailOffers")}
-              disabled={prefsSaving}
-            />
-
-            {/* Campaigns */}
-            <ToggleRow
-              label="Campaign updates"
-              description="Content submitted, approved, or rejected."
-              checked={prefs.emailCampaigns}
-              onToggle={() => togglePref("emailCampaigns")}
-              disabled={prefsSaving}
-            />
-
-            {/* Wallet */}
-            <ToggleRow
-              label="Wallet & withdrawals"
-              description="Withdrawal requests, approvals, and rejections."
-              checked={prefs.emailWallet}
-              onToggle={() => togglePref("emailWallet")}
-              disabled={prefsSaving}
-            />
-
-            {/* Payments */}
-            <ToggleRow
-              label="Payment receipts"
-              description="Subscription receipts and invoices."
-              checked={prefs.emailPayments}
-              onToggle={() => togglePref("emailPayments")}
-              disabled={prefsSaving}
-            />
-
-            {/* System */}
-            <ToggleRow
-              label="System announcements"
-              description="Important platform updates and maintenance notices."
-              checked={prefs.emailSystem}
-              onToggle={() => togglePref("emailSystem")}
-              disabled={prefsSaving}
-            />
+            <ToggleRow label="Trial & subscription reminders" description="Trial ending soon, trial expired, plan changes." checked={prefs.emailTrial} onToggle={() => togglePref("emailTrial")} disabled={prefsSaving} />
+            <ToggleRow label="Offers" description="New offers received, offers accepted or declined." checked={prefs.emailOffers} onToggle={() => togglePref("emailOffers")} disabled={prefsSaving} />
+            <ToggleRow label="Campaign updates" description="Content submitted, approved, or rejected." checked={prefs.emailCampaigns} onToggle={() => togglePref("emailCampaigns")} disabled={prefsSaving} />
+            <ToggleRow label="Wallet & withdrawals" description="Withdrawal requests, approvals, and rejections." checked={prefs.emailWallet} onToggle={() => togglePref("emailWallet")} disabled={prefsSaving} />
+            <ToggleRow label="Payment receipts" description="Subscription receipts and invoices." checked={prefs.emailPayments} onToggle={() => togglePref("emailPayments")} disabled={prefsSaving} />
+            <ToggleRow label="System announcements" description="Important platform updates and maintenance notices." checked={prefs.emailSystem} onToggle={() => togglePref("emailSystem")} disabled={prefsSaving} />
 
             {prefsMsg && (
               <div className={prefsMsg.type === "ok"
@@ -439,11 +442,6 @@ function SettingsPage() {
                 {prefsSaving ? "Saving…" : "Save preferences"}
               </Button>
             </div>
-
-            <p className="text-[11px] text-muted-foreground">
-              In-app notifications are always on so you don't miss anything important.
-              Turning off an email category only affects emails — not in-app alerts.
-            </p>
           </div>
         )}
       </Panel>

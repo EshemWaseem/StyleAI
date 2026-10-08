@@ -2,7 +2,9 @@
 const { verifyToken } = require('../utils/jwt');
 const prisma = require('../config/prisma');
 
-
+// ======================================================
+// Routes that pending users CAN still access
+// ======================================================
 const PENDING_SAFE_PATHS = [
   '/api/auth/me',
   '/api/auth/logout',
@@ -76,9 +78,6 @@ async function authenticate(req, res, next) {
 
     const roles = user.userRoles.map((ur) => ur.role.name);
 
-    // ======================================================
-    // PERMISSION RESOLUTION
-    // ======================================================
     const ownerRoles = ['SUPER_ADMIN', 'BRAND_OWNER', 'AGENCY'];
     const isOwner = roles.some((r) => ownerRoles.includes(r));
     const isTeamMember = roles.includes('BRAND_TEAM_MEMBER') && !isOwner;
@@ -101,9 +100,6 @@ async function authenticate(req, res, next) {
     const brandTeamRole = user.brandTeamMemberships[0]?.teamRole;
     const primaryBrand = user.brandTeamMemberships[0]?.brand ?? null;
 
-    // ======================================================
-    // PENDING APPROVAL DETECTION
-    // ======================================================
     const pendingRequest = await prisma.brandJoinRequest.findFirst({
       where: { userId: user.id, status: 'PENDING' },
       include: { brand: { select: { id: true, name: true } } },
@@ -114,9 +110,7 @@ async function authenticate(req, res, next) {
       !!pendingRequest ||
       (roles.includes('BRAND_TEAM_MEMBER') && !isOwner && !hasActiveBrandRole);
 
-    // ======================================================
-    // ✅ BLOCK PENDING USERS — every request, every route
-    // ======================================================
+    // ✅ BLOCK pending users — every request, every route
     if (pendingApproval && !isPendingSafePath(req)) {
       return res.status(403).json({
         message:
@@ -130,6 +124,10 @@ async function authenticate(req, res, next) {
       email: user.email,
       name: user.name,
       organizationId: user.organizationId,
+      // ✅ NEW
+      phone: user.phone ?? null,
+      country: user.country ?? null,
+      countryCode: user.countryCode ?? null,
       roles,
       permissions: resolvedPermissions,
 

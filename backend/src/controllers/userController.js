@@ -1,7 +1,7 @@
-//usercontroller.js
+// controllers/userController.js
 const prisma = require('../config/prisma');
 
-// GET /api/users  → requires: user.read
+// GET /api/users
 async function listUsers(req, res, next) {
   try {
     const users = await prisma.user.findMany({
@@ -11,6 +11,9 @@ async function listUsers(req, res, next) {
         email: true,
         isActive: true,
         organizationId: true,
+        phone: true,
+        country: true,
+        countryCode: true,
         createdAt: true,
         userRoles: { include: { role: { select: { name: true } } } },
       },
@@ -25,6 +28,9 @@ async function listUsers(req, res, next) {
         email: u.email,
         isActive: u.isActive,
         organizationId: u.organizationId,
+        phone: u.phone,
+        country: u.country,
+        countryCode: u.countryCode,
         createdAt: u.createdAt,
         roles: u.userRoles.map((ur) => ur.role.name),
       })),
@@ -34,7 +40,7 @@ async function listUsers(req, res, next) {
   }
 }
 
-// GET /api/users/:id  → requires: user.read
+// GET /api/users/:id
 async function getUser(req, res, next) {
   try {
     const user = await prisma.user.findUnique({
@@ -45,6 +51,9 @@ async function getUser(req, res, next) {
         email: true,
         isActive: true,
         organizationId: true,
+        phone: true,
+        country: true,
+        countryCode: true,
         createdAt: true,
         userRoles: { include: { role: true } },
       },
@@ -64,8 +73,7 @@ async function getUser(req, res, next) {
   }
 }
 
-// PATCH /api/users/:id/roles  → requires: user.update
-// Body: { roleName: "BRAND_OWNER" }
+// PATCH /api/users/:id/roles
 async function updateUserRole(req, res, next) {
   try {
     const { roleName } = req.body;
@@ -78,7 +86,6 @@ async function updateUserRole(req, res, next) {
       return res.status(400).json({ message: `Role ${roleName} not found` });
     }
 
-    // Prevent SUPER_ADMIN from demoting themselves
     if (
       req.user.id === req.params.id &&
       req.user.roles.includes('SUPER_ADMIN') &&
@@ -89,7 +96,6 @@ async function updateUserRole(req, res, next) {
         .json({ message: 'Cannot demote yourself from SUPER_ADMIN' });
     }
 
-    // Replace all roles with the new one
     await prisma.$transaction([
       prisma.userRole.deleteMany({ where: { userId: req.params.id } }),
       prisma.userRole.create({
@@ -103,7 +109,7 @@ async function updateUserRole(req, res, next) {
   }
 }
 
-// DELETE /api/users/:id  → requires: user.delete
+// DELETE /api/users/:id
 async function deleteUser(req, res, next) {
   try {
     if (req.user.id === req.params.id) {
@@ -116,7 +122,6 @@ async function deleteUser(req, res, next) {
     });
     if (!target) return res.status(404).json({ message: 'User not found' });
 
-    // Only SUPER_ADMIN can delete a SUPER_ADMIN
     const targetRoles = target.userRoles.map((ur) => ur.role.name);
     if (
       targetRoles.includes('SUPER_ADMIN') &&
@@ -134,9 +139,7 @@ async function deleteUser(req, res, next) {
   }
 }
 
-// ======================================================
-// PATCH /api/users/me — update own profile
-// ======================================================
+// PATCH /api/users/me
 async function updateMe(req, res, next) {
   try {
     const userService = require('../services/userService');
@@ -147,9 +150,7 @@ async function updateMe(req, res, next) {
   }
 }
 
-// ======================================================
-// PATCH /api/users/me/password — change own password
-// ======================================================
+// PATCH /api/users/me/password
 async function changeMyPassword(req, res, next) {
   try {
     const userService = require('../services/userService');
@@ -165,5 +166,11 @@ async function changeMyPassword(req, res, next) {
   }
 }
 
-module.exports = { listUsers, getUser, updateUserRole, deleteUser,updateMe,
-  changeMyPassword, };
+module.exports = {
+  listUsers,
+  getUser,
+  updateUserRole,
+  deleteUser,
+  updateMe,
+  changeMyPassword,
+};

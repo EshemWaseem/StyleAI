@@ -25,7 +25,7 @@ model Document {
   chunks DocumentChunk[]
 
   @@index([organizationId, createdAt])
-  @@index([organizationId, type])   // NEW — filter by docType
+  @@index([organizationId, type])
   @@index([status])
 }
 
@@ -45,10 +45,14 @@ model DocumentChunk {
   content    String   @db.Text
   tokens     Int      @default(0)
 
-  // pgvector column (768 dims)
+  // pgvector column (768 dims) — as configured
   embedding  Unsupported("vector(768)")?
+
+  // tsvector generated column — for fast keyword search via GIN index
+  contentTs  Unsupported("tsvector")? @map("content_ts")
 
   createdAt  DateTime @default(now())
 
   @@index([documentId, chunkIndex])
+  @@index([contentTs], map: "documentchunk_content_ts_gin_idx")
 }

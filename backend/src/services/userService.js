@@ -1,9 +1,9 @@
-//user service
+// services/userService.js
 const bcrypt = require('bcryptjs');
 const prisma = require('../config/prisma');
 
 // ======================================================
-// UPDATE OWN PROFILE (name + email)
+// UPDATE OWN PROFILE
 // ======================================================
 async function updateOwnProfile(userId, data = {}) {
   const updateData = {};
@@ -37,6 +37,26 @@ async function updateOwnProfile(userId, data = {}) {
     updateData.email = email;
   }
 
+  // ✅ NEW — phone
+  if (data.phone !== undefined) {
+    const phone = data.phone ? String(data.phone).trim() : null;
+    updateData.phone = phone || null;
+  }
+
+  // ✅ NEW — country
+  if (data.country !== undefined) {
+    const country = data.country ? String(data.country).trim() : null;
+    updateData.country = country || null;
+  }
+
+  // ✅ NEW — countryCode
+  if (data.countryCode !== undefined) {
+    const code = data.countryCode
+      ? String(data.countryCode).trim().toUpperCase()
+      : null;
+    updateData.countryCode = code || null;
+  }
+
   if (Object.keys(updateData).length === 0) {
     const err = new Error('No changes provided');
     err.status = 400;
@@ -46,7 +66,15 @@ async function updateOwnProfile(userId, data = {}) {
   return prisma.user.update({
     where: { id: userId },
     data: updateData,
-    select: { id: true, name: true, email: true, organizationId: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      organizationId: true,
+      phone: true,
+      country: true,
+      countryCode: true,
+    },
   });
 }
 

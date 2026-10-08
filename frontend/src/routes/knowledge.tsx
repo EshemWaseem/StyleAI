@@ -1,10 +1,10 @@
-import { swalError , swalConfirm } from "@/lib/swal";
+import { swalError, swalConfirm } from "@/lib/swal";
 // routes/knowledge.tsx
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle, Loader2, Upload, Sparkles, Search, FileText,
-  Trash2, RotateCw, CheckCircle2, XCircle, Clock,
+  Trash2, RotateCw, CheckCircle2, XCircle, Clock, Paperclip, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,13 @@ export const Route = createFileRoute("/knowledge")({
 });
 
 const DOC_TYPES = ["guidelines", "brand", "catalog", "campaign", "other"];
+const MAX_FILE_BYTES = 5 * 1024 * 1024;   // 5 MB
+const ACCEPTED_EXT = [".pdf", ".txt", ".md", ".markdown"];
+const ACCEPTED_MIME = [
+  "application/pdf",
+  "text/plain",
+  "text/markdown",
+];
 
 function KnowledgePage() {
   const [docs, setDocs] = useState<KnowledgeDocument[]>([]);
@@ -35,12 +42,16 @@ function KnowledgePage() {
   const [newType, setNewType] = useState("guidelines");
   const [newContent, setNewContent] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [parsingFile, setParsingFile] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Search state
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searchedOnce, setSearchedOnce] = useState(false);
+  const [expandedChunk, setExpandedChunk] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -60,6 +71,82 @@ function KnowledgePage() {
 
   useEffect(() => { load(); }, []);
 
+  // ---------- File handling ----------
+  async function handleFile(file: File) {
+    setError("");
+
+    // Validate size
+    if (file.size > MAX_FILE_BYTES) {
+      setError(`File too large. Max ${MAX_FILE_BYTES / 1024 / 1024} MB.`);
+      return;
+    }
+
+    // Validate type
+    const ext = "." + (file.name.split(".").pop() || "").toLowerCase();
+    const isAcceptedMime = ACCEPTED_MIME.includes(file.type);
+    const isAcceptedExt = ACCEPTED_EXT.includes(ext);
+    if (!isAcceptedMime && !isAcceptedExt) {
+      setError(`Unsupported file type. Accepts: ${ACCEPTED_EXT.join(", ")}`);
+      return;
+    }
+
+    setParsingFile(true);
+    try {
+      let extractedText = "";
+      let detectedType = newType;
+
+      if (file.type === "application/pdf" || ext === ".pdf") {
+        extractedText = await extractPdfText(file);
+      } else {
+        // .txt / .md
+        extractedText = await file.text();
+      }
+
+      if (!extractedText.trim()) {
+        throw new Error("Could not extract text from file — is it empty or scanned?");
+      }
+
+      // Auto-fill form
+      setNewContent(extractedText);
+      if (!newName.trim()) {
+        // Derive name from filename (strip extension)
+        const baseName = file.name.replace(/\.[^.]+$/, "");
+        setNewName(baseName);
+      }
+      // Auto-pick type if user hasn't chosen
+      if (detectedType === "guidelines") {
+        const lower = file.name.toLowerCase();
+        if (lower.includes("brand")) setNewType("brand");
+        else if (lower.includes("catalog") || lower.includes("catalogue")) setNewType("catalog");
+        else if (lower.includes("campaign")) setNewType("campaign");
+      }
+      setUploadedFile({ name: file.name, size: file.size });
+    } catch (e: any) {
+      setError(e?.message || "Failed to read file");
+    } finally {
+      setParsingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function onFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleFile(file);
+  }
+
+  async function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) await handleFile(file);
+  }
+
+  function clearFile() {
+    setUploadedFile(null);
+    setNewContent("");
+  }
+
+  // ---------- Upload to backend ----------
   async function upload() {
     if (!newName.trim() || !newContent.trim()) {
       setError("Name and content are required");
@@ -76,6 +163,7 @@ function KnowledgePage() {
       setNewName("");
       setNewContent("");
       setNewType("guidelines");
+      setUploadedFile(null);
       setShowUpload(false);
       await load();
     } catch (e: any) {
@@ -159,8 +247,68 @@ function KnowledgePage() {
           <Panel className="mt-6">
             <SectionTitle
               title="Add document"
-              description="Paste the text. It will be chunked and embedded."
+              description="Upload a PDF/TXT/MD file, or paste text directly."
             />
+
+            {/* Drop zone */}
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={onDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/10 px-6 py-8 text-center transition-colors hover:border-accent/50 hover:bg-accent/5"
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_EXT.join(",") + "," + ACCEPTED_MIME.join(",")}
+                className="hidden"
+                onChange={onFileInputChange}
+              />
+              {parsingFile ? (
+                <>
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                  <p className="mt-2 text-sm text-muted-foreground">Reading file…</p>
+                </>
+              ) : uploadedFile ? (
+                <>
+                  <Paperclip className="size-6 text-accent" />
+                  <p className="mt-2 text-sm font-medium">{uploadedFile.name}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {(uploadedFile.size / 1024).toFixed(1)} KB · text extracted · ready to index
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearFile();
+                    }}
+                    className="mt-2 text-destructive"
+                  >
+                    <X className="mr-1 size-3" /> Remove file
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Paperclip className="size-6 text-muted-foreground" />
+                  <p className="mt-2 text-sm font-medium">
+                    Drop a file here, or click to browse
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Accepts: PDF, TXT, MD · Max 5 MB
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* OR divider */}
+            <div className="my-4 flex items-center gap-3 text-[10px] uppercase text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              or paste manually
+              <span className="h-px flex-1 bg-border" />
+            </div>
+
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -195,7 +343,7 @@ function KnowledgePage() {
                   rows={10}
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
-                  placeholder="Paste the document text here. Use blank lines between paragraphs for better chunking."
+                  placeholder="Paste the document text here, or upload a file above. Use blank lines between paragraphs for better chunking."
                   className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
                 <p className="mt-1 text-[11px] text-muted-foreground">
@@ -205,7 +353,7 @@ function KnowledgePage() {
               </div>
 
               <div className="flex justify-end">
-                <Button onClick={upload} disabled={uploading}>
+                <Button onClick={upload} disabled={uploading || parsingFile}>
                   {uploading ? (
                     <><Loader2 className="mr-2 size-4 animate-spin" />Indexing… (may take 30s)</>
                   ) : (
@@ -257,34 +405,53 @@ function KnowledgePage() {
 
           {results.length > 0 && (
             <div className="mt-4 space-y-3">
-              {results.map((r, i) => (
-                <article
-                  key={r.chunkId}
-                  className="rounded-lg border border-border bg-card p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        #{i + 1} · {r.documentName} · chunk {r.chunkIndex}
-                      </p>
-                      <p className="mt-2 whitespace-pre-wrap text-sm">
-                        {r.content.slice(0, 400)}
-                        {r.content.length > 400 ? "…" : ""}
-                      </p>
+              {results.map((r, i) => {
+                const expanded = expandedChunk === r.chunkId;
+                const isLong = r.content.length > 400;
+                return (
+                  <article
+                    key={r.chunkId}
+                    className="rounded-lg border border-border bg-card p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          #{i + 1} · {r.documentName} · chunk {r.chunkIndex}
+                        </p>
+                        {/* ✅ Full content — expandable */}
+                        <p className="mt-2 whitespace-pre-wrap break-words text-sm">
+                          {expanded || !isLong
+                            ? r.content
+                            : r.content.slice(0, 400) + "…"}
+                        </p>
+                        {isLong && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedChunk(expanded ? null : r.chunkId)
+                            }
+                            className="mt-2 text-[11px] font-medium text-accent hover:underline"
+                          >
+                            {expanded
+                              ? "Show less"
+                              : `Show full chunk (${r.content.length} chars)`}
+                          </button>
+                        )}
+                      </div>
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                          r.similarity >= 0.8 ? "bg-emerald-500/15 text-emerald-500"
+                          : r.similarity >= 0.6 ? "bg-blue-500/15 text-blue-500"
+                          : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {Math.round(r.similarity * 100)}% match
+                      </span>
                     </div>
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
-                        r.similarity >= 0.8 ? "bg-emerald-500/15 text-emerald-500"
-                        : r.similarity >= 0.6 ? "bg-blue-500/15 text-blue-500"
-                        : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {Math.round(r.similarity * 100)}% match
-                    </span>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
         </Panel>
@@ -369,4 +536,29 @@ function StatusIcon({ status }: { status: string }) {
   if (status === "FAILED") return <XCircle className="size-4 shrink-0 text-destructive" />;
   if (status === "INDEXING") return <Loader2 className="size-4 shrink-0 animate-spin text-amber-500" />;
   return <Clock className="size-4 shrink-0 text-muted-foreground" />;
+}
+
+// ======================================================
+// PDF text extractor (browser-side, no server round-trip)
+// ======================================================
+async function extractPdfText(file: File): Promise<string> {
+  // Lazy-load pdf.js only when a PDF is uploaded
+  const pdfjs: any = await import(
+    /* @vite-ignore */
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs"
+  );
+  pdfjs.GlobalWorkerOptions.workerSrc =
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs";
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+
+  const pages: string[] = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const text = content.items.map((it: any) => it.str).join(" ");
+    pages.push(text);
+  }
+  return pages.join("\n\n");
 }

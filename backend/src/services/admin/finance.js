@@ -3,10 +3,15 @@ const prisma = require('../../config/prisma');
 const { getAllSettings, setSetting, writeAudit } = require('./helpers');
 
 const FINANCE_KEYS = [
-  'brandCommissionPct', 'influencerCommissionPct',
-  'bulkDiscountThreshold', 'bulkDiscountPct',
-  'influencerBonusThreshold', 'influencerBonusPct',
-  'minWithdrawalAmount', 'payoutHoldDays', 'currency',
+  'brandCommissionPct',
+  'influencerCommissionPct',
+  'bulkDiscountThreshold',
+  'bulkDiscountPct',
+  'influencerBonusThreshold',
+  'influencerBonusPct',
+  'minWithdrawalAmount',
+  'payoutHoldDays',
+  'currency',
 ];
 
 async function getFinanceRules() {
@@ -24,9 +29,21 @@ async function updateFinanceRules(adminId, updates) {
   }
 
   const results = [];
+
   for (const [key, value] of Object.entries(updates)) {
     if (!FINANCE_KEYS.includes(key)) continue;
-    const row = await setSetting(key, value, 'finance', `Finance rule: ${key}`, adminId);
+
+    // Coerce to a plain string — PlatformSetting.value is stored as String
+    const safeValue =
+      value === null || value === undefined ? '' : String(value).trim();
+
+    const row = await setSetting(
+      key,
+      safeValue,
+      'finance',
+      `Finance rule: ${key}`,
+      adminId
+    );
     results.push({ key: row.key, value: row.value });
   }
 

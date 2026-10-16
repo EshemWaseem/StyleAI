@@ -394,9 +394,9 @@ function DeliverModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm">
-      <form onSubmit={handleSubmit} className="my-8 w-full max-w-lg rounded-xl border border-border bg-card shadow-lift">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+    <div className="ui-overlay">
+      <form onSubmit={handleSubmit} className="ui-panel ui-panel-md">
+        <div className="ui-panel-header">
           <div>
             <h2 className="font-display text-lg font-medium">Deliver edited content</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -408,7 +408,7 @@ function DeliverModal({
           </Button>
         </div>
 
-        <div className="space-y-4 p-5">
+        <div className="ui-panel-body space-y-4">
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-muted-foreground">
             Client will receive these files. They can then forward to their campaign for brand review.
           </div>
@@ -432,13 +432,13 @@ function DeliverModal({
           </div>
 
           {error && (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <div className="ui-error">
               {error}
             </div>
           )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
+        <div className="ui-panel-footer">
           <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
@@ -484,15 +484,15 @@ function RejectEngagementModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-border p-4">
+    <div className="ui-overlay">
+      <div className="ui-panel ui-panel-md">
+        <div className="ui-panel-header">
           <h3 className="text-sm font-medium">Decline engagement</h3>
           <button onClick={onClose} disabled={saving} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
             <X className="size-4" />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4 p-5">
+        <form onSubmit={handleSubmit} className="ui-panel-body space-y-4">
           <div className="space-y-2">
             <Label htmlFor="reason">Reason *</Label>
             <Input

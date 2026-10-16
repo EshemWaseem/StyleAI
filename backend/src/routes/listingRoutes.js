@@ -1,9 +1,11 @@
 // routes/listingRoutes.js
 const router = require('express').Router();
 const { authenticate } = require('../middleware/auth');
+const { resolveActingBrand } = require('../middleware/actingBrand');
 const ctrl = require('../controllers/listingController');
 
 router.use(authenticate);
+router.use(resolveActingBrand); // ✅ agency X-Acting-Brand support
 
 router.get('/', ctrl.list);
 router.post('/', ctrl.create);

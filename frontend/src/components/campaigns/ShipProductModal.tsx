@@ -51,10 +51,10 @@ export function ShipProductModal({ campaignId, onClose, onSaved }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:p-6">
-      <div className="my-4 w-full max-w-md rounded-xl border border-border bg-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-border p-4">
-          <div className="flex items-center gap-2">
+     <div className="ui-overlay">
+          <div className="ui-panel ui-panel-md">
+            <div className="ui-panel-header">
+              <div className="flex items-center gap-2">
             <Truck className="size-4 text-accent" />
             <h3 className="text-sm font-medium">Mark as shipped</h3>
           </div>
@@ -63,7 +63,7 @@ export function ShipProductModal({ campaignId, onClose, onSaved }: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-5">
+        <form onSubmit={handleSubmit} className="ui-panel-body space-y-4">
           <div className="space-y-2">
             <Label htmlFor="carrier">Carrier</Label>
             <div className="flex flex-wrap gap-2">

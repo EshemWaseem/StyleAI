@@ -1,11 +1,12 @@
 // routes/login.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRole, getDashboardPath } from "@/lib/role";
+import type { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -16,6 +17,14 @@ export const Route = createFileRoute("/login")({
   }),
   component: LoginPage,
 });
+
+function formatCountdown(secs: number): string {
+  if (secs <= 0) return "0s";
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
 
 function LoginPage() {
   const { login, user, loading: authLoading } = useRole();
@@ -28,7 +37,22 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
-  // Already logged in? Redirect to their panel.
+  // Lockout / rate-limit state
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState(0);
+  const [lockMessage, setLockMessage] = useState<string>("");
+
+  // Failed-attempts warning
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(
+    null
+  );
+
+  // Captcha flag (future hook)
+  const [captchaRequired, setCaptchaRequired] = useState(false);
+
+  const isLocked = lockedUntil !== null && countdown > 0;
+
+  // Already logged in? Redirect
   useEffect(() => {
     if (redirecting) return;
     if (!authLoading && user) {
@@ -37,42 +61,124 @@ function LoginPage() {
     }
   }, [user, authLoading, navigate, redirecting]);
 
+  // Countdown timer
+  useEffect(() => {
+    if (!lockedUntil) {
+      setCountdown(0);
+      return;
+    }
+    const tick = () => {
+      const secs = Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000));
+      setCountdown(secs);
+      if (secs <= 0) {
+        setLockedUntil(null);
+        setLockMessage("");
+        setError("");
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [lockedUntil]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (loading || redirecting) return;
+    if (loading || redirecting || isLocked) return;
+
     setError("");
     setPendingNotice("");
+    setAttemptsRemaining(null);
     setLoading(true);
 
     try {
       const loggedIn = await login(email, password);
       setRedirecting(true);
       navigate({ to: getDashboardPath(loggedIn.roles), replace: true });
-    } catch (err: any) {
-      // ✅ Pending brand-owner approval — show a distinct notice
-      if (err?.code === "PENDING_APPROVAL") {
+    } catch (errRaw) {
+      const err = errRaw as ApiError;
+      const code = err?.code;
+      const status = err?.status;
+
+      // ---------- Pending approval ----------
+      if (code === "PENDING_APPROVAL") {
         setPendingNotice(
           err.message ||
             "Your account is still waiting for the brand owner's approval."
         );
-      } else if (err?.status === 401 || err?.code === "INVALID_CREDENTIALS") {
+        setLoading(false);
+        return;
+      }
+
+      // ---------- Account locked (423) ----------
+      if (status === 423 || code === "ACCOUNT_LOCKED") {
+        const retryAfter = Number(
+          err?.retryAfter ?? err?.data?.retryAfter ?? 900
+        );
+        setLockedUntil(Date.now() + retryAfter * 1000);
+        setLockMessage(
+          err.message ||
+            "Your account is temporarily locked due to multiple failed attempts."
+        );
+        setLoading(false);
+        return;
+      }
+
+      // ---------- Rate limited (429) ----------
+      if (status === 429) {
+        const retryAfter = Number(err?.retryAfter ?? 900);
+
+        if (code === "LOGIN_EMAIL_RATE_LIMIT") {
+          setLockedUntil(Date.now() + retryAfter * 1000);
+          setLockMessage(
+            "Too many failed attempts for this account. Please wait before trying again."
+          );
+        } else if (code === "LOGIN_IP_RATE_LIMIT") {
+          setLockedUntil(Date.now() + retryAfter * 1000);
+          setLockMessage(
+            "Too many login attempts from your network. Please try again later."
+          );
+        } else if (code === "AUTH_RATE_LIMIT") {
+          setLockedUntil(Date.now() + retryAfter * 1000);
+          setLockMessage(
+            "Too many requests. Please slow down and try again."
+          );
+        } else {
+          setError("Too many requests. Please try again in a moment.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      // ---------- Invalid credentials (401) ----------
+      if (status === 401 || code === "INVALID_CREDENTIALS") {
+        const remaining = err?.data?.attemptsRemaining;
+        if (typeof remaining === "number") setAttemptsRemaining(remaining);
+        if (err?.data?.captchaRequired) setCaptchaRequired(true);
         setError("Invalid email or password.");
-      } else if (
-        err?.status === 503 ||
-        err?.code === "SERVICE_UNAVAILABLE" ||
-        err?.code === "NETWORK_ERROR"
+        setLoading(false);
+        return;
+      }
+
+      // ---------- Service unavailable ----------
+      if (
+        status === 503 ||
+        code === "SERVICE_UNAVAILABLE" ||
+        code === "NETWORK_ERROR"
       ) {
         setError(
           "Service is temporarily unavailable. Please try again in a moment."
         );
-      } else {
-        setError(err?.message || "Could not sign in. Please try again.");
+        setLoading(false);
+        return;
       }
+
+      // ---------- Fallback ----------
+      setError(err?.message || "Could not sign in. Please try again.");
       setLoading(false);
     }
   }
 
-  // Full-screen loader while redirecting
+  // Redirecting loader
   if (redirecting) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
@@ -102,7 +208,7 @@ function LoginPage() {
         </p>
 
         <form className="mt-8 space-y-4" onSubmit={handleSubmit} noValidate>
-          {/* ✅ Pending approval — amber notice */}
+          {/* Pending approval — amber */}
           {pendingNotice && (
             <div
               role="alert"
@@ -113,13 +219,56 @@ function LoginPage() {
             </div>
           )}
 
-          {/* ✅ Standard error — red notice */}
-          {error && (
+          {/* Account locked / rate limited — amber with timer */}
+          {isLocked && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+            >
+              <Lock className="mt-0.5 size-3.5 shrink-0" />
+              <div className="flex-1">
+                <div className="font-medium">
+                  {lockMessage || "Account temporarily locked"}
+                </div>
+                <div className="mt-0.5 text-[11px] opacity-80">
+                  Try again in{" "}
+                  <span className="tabular-nums font-medium">
+                    {formatCountdown(countdown)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Standard error — red */}
+          {error && !isLocked && (
             <div
               role="alert"
               className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
             >
               {error}
+            </div>
+          )}
+
+          {/* Attempts remaining warning */}
+          {!isLocked && attemptsRemaining !== null && attemptsRemaining > 0 && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+            >
+              <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+              <span>
+                Warning: {attemptsRemaining} attempt
+                {attemptsRemaining === 1 ? "" : "s"} remaining before your
+                account is temporarily locked.
+              </span>
+            </div>
+          )}
+
+          {/* CAPTCHA placeholder (future) */}
+          {captchaRequired && !isLocked && (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              Security check will be required on next attempt.
             </div>
           )}
 
@@ -133,7 +282,7 @@ function LoginPage() {
               placeholder="you@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
+              disabled={loading || isLocked}
             />
           </div>
 
@@ -147,7 +296,7 @@ function LoginPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
+              disabled={loading || isLocked}
             />
             <div className="flex justify-end">
               <Link
@@ -159,8 +308,17 @@ function LoginPage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? (
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading || isLocked}
+          >
+            {isLocked ? (
+              <>
+                <Lock className="mr-1.5 size-4" /> Locked (
+                {formatCountdown(countdown)})
+              </>
+            ) : loading ? (
               <>
                 <Loader2 className="mr-1.5 size-4 animate-spin" /> Signing in…
               </>

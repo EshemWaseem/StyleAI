@@ -86,10 +86,9 @@ export function AngleGenerator({ file, onUseAngles, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm">
-      <div className="my-8 w-full max-w-3xl rounded-xl border border-border bg-card shadow-lift">
-        {/* HEADER */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+    <div className="ui-overlay !z-[60]">
+      <div className="ui-panel ui-panel-2xl">
+        <div className="ui-panel-header">
           <div>
             <h2 className="font-display text-lg font-medium">
               Generate AI angles
@@ -113,7 +112,7 @@ export function AngleGenerator({ file, onUseAngles, onClose }: Props) {
         </div>
 
         {/* BODY */}
-        <div className="space-y-5 p-6">
+        <div className="ui-panel-body space-y-5">
           {/* Angle picker */}
           <div>
             <div className="flex items-center justify-between">
@@ -235,7 +234,7 @@ export function AngleGenerator({ file, onUseAngles, onClose }: Props) {
         </div>
 
         {/* FOOTER */}
-        <div className="flex items-center justify-between gap-2 border-t border-border px-6 py-4">
+        <div className="ui-panel-footer !justify-between">
           <p className="text-[10px] text-muted-foreground">
             AI preserves color, material, and design exactly.
           </p>

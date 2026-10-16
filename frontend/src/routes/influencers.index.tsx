@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, Plus, AlertCircle, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader, EmptyState } from "@/components/ui-kit";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useRole } from "@/lib/role";
 import {
   influencersApi,
@@ -27,6 +28,15 @@ export const Route = createFileRoute("/influencers/")({
   }),
   component: DiscoverPage,
 });
+
+// ✅ Roles that can access this page
+const ALLOWED_ROLES = [
+  "SUPER_ADMIN",
+  "BRAND_OWNER",
+  "BRAND_TEAM_MEMBER",
+  "AGENCY",
+  "INFLUENCER",
+] as const;
 
 function DiscoverPage() {
   const { user, loading: authLoading } = useRole();
@@ -55,7 +65,7 @@ function DiscoverPage() {
   const isBrandSide = isBrandOwner || isBrandTeamMember;
   const isAgency = userRoles.includes("AGENCY");
 
-  // ✅ FIX: Can browse = any of these roles OR has permission
+  // ✅ Can browse = any allowed role OR has permission
   const canBrowse =
     isSuperAdmin ||
     isBrandSide ||
@@ -89,7 +99,7 @@ function DiscoverPage() {
 
   const canSave = !!user?.permissions?.includes("influencer.save");
 
-  // ✅ FIX: Only redirect if can't browse at all
+  // Redirect only if user truly can't browse
   useEffect(() => {
     if (authLoading || !user) return;
     if (user.pendingApproval) {
@@ -167,7 +177,10 @@ function DiscoverPage() {
     : "Adjust your filters or check back later.";
 
   return (
-    <>
+    <ProtectedRoute
+      roles={["SUPER_ADMIN", "BRAND_OWNER", "BRAND_TEAM_MEMBER", "AGENCY", "INFLUENCER"]}
+      skipTrialCheck
+    >
       <PageHeader
         eyebrow="Influencer intelligence"
         title="Discover creators"
@@ -220,7 +233,7 @@ function DiscoverPage() {
       )}
 
       {error && (
-        <div className="mt-6 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <div className="ui-error mt-6 flex items-start gap-2">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -270,6 +283,6 @@ function DiscoverPage() {
           }}
         />
       )}
-    </>
+    </ProtectedRoute>
   );
 }

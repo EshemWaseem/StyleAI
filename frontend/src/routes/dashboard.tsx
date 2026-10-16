@@ -28,6 +28,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle, StatusPill } from "@/components/ui-kit";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useRole, roleLabels, type RoleName } from "@/lib/role";
 import {
   analyticsApi,
@@ -51,10 +52,6 @@ export const Route = createFileRoute("/dashboard")({
   }),
   component: Dashboard,
 });
-
-// ======================================================
-// Workspace key
-// ======================================================
 
 type WorkspaceKey = "admin" | "owner" | "member" | "influencer" | "agency";
 
@@ -80,10 +77,6 @@ function pickWorkspace(roles: RoleName[]): WorkspaceKey {
   }
   return "owner";
 }
-
-// ======================================================
-// Copy + stats
-// ======================================================
 
 type Stat = {
   label: string;
@@ -125,7 +118,6 @@ const roleCopy: Record<
   },
 };
 
-// Fallback stats — only used when real data isn't loaded yet
 const roleStats: Record<WorkspaceKey, Stat[]> = {
   admin: [
     { label: "Organizations", value: "—", note: "See /admin", tone: "success" },
@@ -159,10 +151,6 @@ const roleStats: Record<WorkspaceKey, Stat[]> = {
   ],
 };
 
-// ======================================================
-// Shared sub-components
-// ======================================================
-
 function StatStrip({
   role,
   analytics,
@@ -172,7 +160,6 @@ function StatStrip({
   analytics?: BrandAnalytics | null;
   influencerAnalytics?: InfluencerAnalytics | null;
 }) {
-  // Owner — real brand analytics
   const ownerStats: Stat[] | null =
     role === "owner" && analytics
       ? [
@@ -217,7 +204,6 @@ function StatStrip({
         ]
       : null;
 
-  // Influencer — real influencer analytics
   const influencerStats: Stat[] | null =
     role === "influencer" && influencerAnalytics
       ? [
@@ -280,51 +266,6 @@ function StatStrip({
         </article>
       ))}
     </section>
-  );
-}
-
-const loop = [
-  "Product",
-  "Understand",
-  "Match",
-  "Create",
-  "Launch",
-  "Measure",
-  "Learn",
-  "Optimize",
-];
-
-function ProductLoop() {
-  return (
-    <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card px-5 py-4">
-      <div className="flex min-w-[720px] items-center">
-        {loop.map((step, index) => (
-          <div key={step} className="contents">
-            <div className="flex items-center gap-2">
-              <span
-                className={`grid size-6 place-items-center rounded-full text-[10px] font-semibold ${
-                  index < 5
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-border text-muted-foreground"
-                }`}
-              >
-                {index + 1}
-              </span>
-              <span
-                className={`text-[10px] font-semibold uppercase ${
-                  index < 5 ? "text-foreground" : "text-muted-foreground"
-                }`}
-              >
-                {step}
-              </span>
-            </div>
-            {index < loop.length - 1 ? (
-              <span className="mx-3 h-px min-w-4 flex-1 bg-border" />
-            ) : null}
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -444,18 +385,9 @@ function Update({ name, action, time }: { name: string; action: string; time: st
   );
 }
 
-// ======================================================
-// Admin
-// ======================================================
-
 function AdminWorkspace() {
-  // Never renders — admins redirect to /admin
   return null;
 }
-
-// ======================================================
-// Influencer
-// ======================================================
 
 function InfluencerWorkspace() {
   const [profile, setProfile] = useState<Influencer | null>(null);
@@ -761,18 +693,9 @@ function InfluencerWorkspace() {
   );
 }
 
-// ======================================================
-// Agency
-// ======================================================
-
 function AgencyWorkspace() {
-  // Never renders — agencies redirect to /agency
   return null;
 }
-
-// ======================================================
-// Member
-// ======================================================
 
 function MemberWorkspace() {
   return (
@@ -803,10 +726,6 @@ function MemberWorkspace() {
     </div>
   );
 }
-
-// ======================================================
-// Brand Owner
-// ======================================================
 
 function BrandWorkspace({
   products,
@@ -871,9 +790,7 @@ function BrandWorkspace({
 
   return (
     <>
-      <ProductLoop />
-
-      <section className="mt-6">
+      <section className="mt-2">
         <div className="rounded-xl border border-border bg-gradient-to-r from-accent/5 via-transparent to-transparent p-5">
           <div className="flex flex-wrap items-center gap-4">
             <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-accent/15 text-accent">
@@ -1107,10 +1024,6 @@ function BrandWorkspace({
   );
 }
 
-// ======================================================
-// Main Dashboard
-// ======================================================
-
 function Dashboard() {
   const { user, loading } = useRole();
   const navigate = useNavigate();
@@ -1121,12 +1034,8 @@ function Dashboard() {
   const [influencerAnalytics, setInfluencerAnalytics] =
     useState<InfluencerAnalytics | null>(null);
 
-  // Guards against flash-of-wrong-dashboard during redirect
   const [redirectChecked, setRedirectChecked] = useState(false);
 
-  // ------------------------------------------------------
-  // Redirect check — decide BEFORE rendering anything
-  // ------------------------------------------------------
   useEffect(() => {
     if (loading || !user) return;
     if (redirectChecked) return;
@@ -1161,9 +1070,6 @@ function Dashboard() {
     }
   }, [user, loading, navigate, redirectChecked]);
 
-  // ------------------------------------------------------
-  // Fetch brand data — owners and members
-  // ------------------------------------------------------
   useEffect(() => {
     if (!redirectChecked || !user) return;
 
@@ -1194,9 +1100,6 @@ function Dashboard() {
       .catch(() => setBrandAnalytics(null));
   }, [redirectChecked, user]);
 
-  // ------------------------------------------------------
-  // Fetch influencer analytics
-  // ------------------------------------------------------
   useEffect(() => {
     if (!redirectChecked || !user) return;
     if (!user.roles.includes("INFLUENCER")) return;
@@ -1207,9 +1110,6 @@ function Dashboard() {
       .catch(() => setInfluencerAnalytics(null));
   }, [redirectChecked, user]);
 
-  // ------------------------------------------------------
-  // Render
-  // ------------------------------------------------------
   if (loading || !user || !redirectChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -1222,7 +1122,7 @@ function Dashboard() {
   const copy = roleCopy[workspace];
 
   return (
-    <>
+    <ProtectedRoute>
       <PageHeader
         eyebrow={copy.eyebrow}
         title={copy.title}
@@ -1260,7 +1160,6 @@ function Dashboard() {
         <StatStrip role={workspace} analytics={brandAnalytics} />
       )}
 
-      {/* Influencer gets its own stat strip with real data */}
       {workspace === "influencer" && (
         <StatStrip
           role="influencer"
@@ -1279,6 +1178,6 @@ function Dashboard() {
       )}
       {workspace === "agency" && <AgencyWorkspace />}
       {workspace === "member" && <MemberWorkspace />}
-    </>
+    </ProtectedRoute>
   );
 }

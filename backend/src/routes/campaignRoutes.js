@@ -1,10 +1,13 @@
+// routes/campaignRoutes.js
 const router = require('express').Router();
 const { authenticate } = require('../middleware/auth');
+const { resolveActingBrand } = require('../middleware/actingBrand');
 const ctrl = require('../controllers/campaignController');
 const content = require('../controllers/contentPipelineController');
 const chat = require('../controllers/campaignChatController');
 
 router.use(authenticate);
+router.use(resolveActingBrand); // ✅ agency X-Acting-Brand support
 
 // ======================================================
 // CHAT — global (MUST come before /:id routes)

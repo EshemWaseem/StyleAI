@@ -60,12 +60,9 @@ export function RawUploadModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm">
-      <form
-        onSubmit={submit}
-        className="my-8 w-full max-w-2xl rounded-xl border border-border bg-card shadow-lift"
-      >
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+    <div className="ui-overlay">
+      <form onSubmit={submit} className="ui-panel ui-panel-xl">
+        <div className="ui-panel-header">
           <div>
             <h2 className="font-display text-lg font-medium">
               {isRevision ? "Upload revised version" : "Upload raw content"}
@@ -156,7 +153,7 @@ export function RawUploadModal({
           </div>
 
           {error && (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <div className="ui-error">
               {error}
             </div>
           )}

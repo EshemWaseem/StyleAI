@@ -1,9 +1,11 @@
 // routes/offerRoutes.js
 const router = require('express').Router();
 const { authenticate } = require('../middleware/auth');
+const { resolveActingBrand } = require('../middleware/actingBrand');
 const ctrl = require('../controllers/offerController');
 
 router.use(authenticate);
+router.use(resolveActingBrand); // ✅ agency X-Acting-Brand support
 
 // ----- Estimate (dry-run, no save) -----
 router.post('/estimate', ctrl.estimate);

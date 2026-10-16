@@ -122,7 +122,7 @@ function MyEngagementsPage() {
             <span className="text-sm text-muted-foreground">Loading…</span>
           </div>
         ) : engagements.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
+          <div className="ui-empty mt-8">
             <Send className="mx-auto size-6 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium">No engagements yet</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -295,9 +295,9 @@ function ForwardToCampaignModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm">
-      <form onSubmit={handleSubmit} className="my-8 w-full max-w-lg rounded-xl border border-border bg-card shadow-lift">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+    <div className="ui-overlay">
+      <form onSubmit={handleSubmit} className="ui-panel ui-panel-md">
+        <div className="ui-panel-header">
           <div>
             <h2 className="font-display text-lg font-medium">Send content to campaign</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -309,7 +309,7 @@ function ForwardToCampaignModal({
           </Button>
         </div>
 
-        <div className="space-y-4 p-5">
+        <div className="ui-panel-body space-y-4">
           {loading ? (
             <div className="py-8 text-center">
               <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
@@ -386,13 +386,13 @@ function ForwardToCampaignModal({
           )}
 
           {error && (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <div className="ui-error">
               {error}
             </div>
           )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
+        <div className="ui-panel-footer">
           <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>

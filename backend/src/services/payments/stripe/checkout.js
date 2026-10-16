@@ -1,6 +1,8 @@
 // services/payments/stripe/checkout.js
 // ======================================================
 // Stripe checkout — subscription + one-off (wallet top-up, orders)
+// Handles both organization-tied (BRAND/AGENCY) and
+// user-tied (INFLUENCER) customers.
 // ======================================================
 
 const stripe = require('./client');
@@ -40,10 +42,34 @@ function appendSessionId(url) {
 }
 
 // ------------------------------------------------------
+// Resolve Stripe customer for either org or user
+// ------------------------------------------------------
+async function resolveCustomerId({ organization, user }) {
+  if (organization && organization.id) {
+    return customer.ensure(organization);
+  }
+  if (user && user.id) {
+    return customer.ensureForUser(user);
+  }
+  throw new Error(
+    'Cannot resolve Stripe customer: neither organization nor user provided'
+  );
+}
+
+// ------------------------------------------------------
 // Subscription checkout
 // ------------------------------------------------------
-async function subscriptionCheckout({ organization, plan, cycle, successUrl, cancelUrl }) {
-  const customerId = await customer.ensure(organization);
+async function subscriptionCheckout({
+  organization,
+  user,
+  plan,
+  cycle,
+  successUrl,
+  cancelUrl,
+}) {
+  // ✅ Resolve customer — org OR user (never null)
+  const customerId = await resolveCustomerId({ organization, user });
+
   const { amount, currency } = normalizeAmountAndCurrency(plan, cycle);
 
   const priceId =
@@ -67,12 +93,14 @@ async function subscriptionCheckout({ organization, plan, cycle, successUrl, can
         },
       ];
 
+  // ✅ Metadata — only include keys that have values
   const metadata = {
-    organizationId: organization.id,
     planName: plan.name,
     role: plan.role || 'BRAND',
     cycle,
   };
+  if (organization && organization.id) metadata.organizationId = organization.id;
+  if (user && user.id) metadata.userId = user.id;
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
@@ -99,7 +127,7 @@ async function subscriptionCheckout({ organization, plan, cycle, successUrl, can
 // ------------------------------------------------------
 async function oneOffCheckout({
   organization,
-  user,                        // ← optional; used if no organization
+  user,
   amount,
   currency = 'pkr',
   description,
@@ -107,20 +135,21 @@ async function oneOffCheckout({
   successUrl,
   cancelUrl,
 }) {
-  // ---- Resolve Stripe customer (org or user) ----
   let customerId = null;
   try {
-    if (organization) {
+    if (organization && organization.id) {
       customerId = await customer.ensure(organization);
-    } else if (user) {
+    } else if (user && user.id) {
       customerId = await customer.ensureForUser(user);
     }
   } catch (e) {
-    console.warn('[stripe.oneOffCheckout] customer.ensure failed (continuing without customer):', e.message);
+    console.warn(
+      '[stripe.oneOffCheckout] customer.ensure failed (continuing without customer):',
+      e.message
+    );
     customerId = null;
   }
 
-  // ---- Build session payload ----
   const sessionPayload = {
     mode: 'payment',
     line_items: [

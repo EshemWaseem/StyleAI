@@ -140,7 +140,7 @@ function TeamDetailPage() {
           <h3 className="mb-4 font-display text-lg font-medium">Team details</h3>
 
           {error && (
-            <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <div className="ui-error mb-4">
               {error}
             </div>
           )}
@@ -260,8 +260,8 @@ function AddMemberModal({
   }, [teamId]);
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lift">
+    <div className="ui-overlay">
+      <div className="ui-panel ui-panel-md ui-panel-body">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-xl font-medium">Add member</h2>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
@@ -270,7 +270,7 @@ function AddMemberModal({
         </div>
 
         {error && (
-          <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          <div className="ui-error mb-4">
             {error}
           </div>
         )}

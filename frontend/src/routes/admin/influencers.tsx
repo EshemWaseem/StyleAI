@@ -108,9 +108,9 @@ function AdminInfluencersPage() {
         </div>
 
         {error && (
-          <div className="mt-6 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <div className="ui-error mt-6 flex items-start gap-2">
             <AlertCircle className="mt-0.5 size-4 shrink-0" /> <span>{error}</span>
-          </div>
+            </div>
         )}
 
         {loading ? (
@@ -119,7 +119,7 @@ function AdminInfluencersPage() {
             <span className="text-sm text-muted-foreground">Loading influencers…</span>
           </div>
         ) : influencers.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
+          <div className="ui-empty mt-8">
             <Users className="mx-auto size-6 text-muted-foreground" />
             <p className="mt-3 text-sm text-muted-foreground">No influencers found.</p>
           </div>
@@ -275,9 +275,9 @@ function AdminInfluencersPage() {
         )}
 
         {pricingView && (
-          <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm">
-            <div className="my-8 w-full max-w-2xl rounded-xl border border-border bg-card shadow-lift">
-              <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <div className="ui-overlay">
+            <div className="ui-panel ui-panel-xl">
+              <div className="ui-panel-header">
                 <div>
                   <h2 className="font-display text-lg font-medium">
                     {pricingView.displayName}
@@ -290,7 +290,7 @@ function AdminInfluencersPage() {
                   <X />
                 </Button>
               </div>
-              <div className="p-6">
+              <div className="ui-panel-body">
                 <PricingCard
                   pricing={{
                     influencerId: pricingView.id,

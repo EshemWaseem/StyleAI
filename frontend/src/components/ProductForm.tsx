@@ -391,13 +391,9 @@ export function ProductFormModal({
   const newCount = images.filter((i) => i.file).length;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm">
-      <form
-        onSubmit={handleSubmit}
-        className="my-8 w-full max-w-2xl rounded-xl border border-border bg-card shadow-lift"
-      >
-        {/* HEADER */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+    <div className="ui-overlay">
+      <form onSubmit={handleSubmit} className="ui-panel ui-panel-xl">
+        <div className="ui-panel-header">
           <div className="min-w-0">
             <h2 className="font-display text-xl font-medium">{headerTitle}</h2>
             {isRestricted && (
@@ -451,7 +447,7 @@ export function ProductFormModal({
         )}
 
         {/* BODY */}
-        <div className="p-6">
+        <div className="ui-panel-body">
           {!isRestricted && tab === "ai" ? (
             <div className="space-y-5">
               {/* Intro */}
@@ -656,7 +652,7 @@ export function ProductFormModal({
           ) : (
             <div className="space-y-5">
               {error && (
-                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                <div className="ui-error">
                   {error}
                 </div>
               )}
@@ -1031,7 +1027,7 @@ export function ProductFormModal({
 
 
         {/* FOOTER */}
-        <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+        <div className="ui-panel-footer">
           <Button
             type="button"
             variant="outline"

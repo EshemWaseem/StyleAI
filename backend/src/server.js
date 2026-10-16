@@ -10,8 +10,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const { ipKeyGenerator } = require('express-rate-limit');
 
 // ======================================================
 // ROUTE IMPORTS
@@ -54,10 +52,15 @@ const webhookRoutes = require('./routes/webhookRoutes');
 // MIDDLEWARE
 // ======================================================
 const { notFound, errorHandler } = require('./middleware/errorHandler');
-const { resolveActingBrand } = require('./middleware/actingBrand');
 const { requestId } = require('./middleware/requestId');
+const { trialGate } = require('./middleware/trialGate');
 
 const prisma = require('./config/prisma');
+
+const {
+  globalLimiter,
+  authUmbrellaLimiter,
+} = require('./config/rateLimit');
 
 const app = express();
 
@@ -105,52 +108,17 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Acting-Brand', 'X-Request-Id'],
-    exposedHeaders: ['X-Request-Id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Acting-Brand',
+      'X-Request-Id',
+    ],
+    exposedHeaders: ['X-Request-Id', 'Retry-After', 'RateLimit-Reset'],
   })
 );
 
 app.use(requestId);
-
-// ======================================================
-// RATE LIMITING
-// ======================================================
-function shouldSkipRateLimit(req) {
-  const p = req.path || '';
-  if (p.startsWith('/api/health')) return true;
-  if (p.startsWith('/api/notifications/stream')) return true;
-  if (p.startsWith('/socket.io')) return true;
-  if (p.startsWith('/api/webhooks')) return true;
-  return false;
-}
-
-function rateLimitKey(req) {
-  const auth = req.headers.authorization;
-  if (auth && auth.startsWith('Bearer ')) {
-    return `u:${auth.slice(7, 47)}`;
-  }
-  return ipKeyGenerator(req.ip);
-}
-
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 3000 : 10000,
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: rateLimitKey,
-  skip: shouldSkipRateLimit,
-  message: { message: 'Too many requests, please try again later', code: 'RATE_LIMIT' },
-  validate: { xForwardedForHeader: false },
-});
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 30 : 500,
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: rateLimitKey,
-  message: { message: 'Too many auth attempts, please try again later', code: 'AUTH_RATE_LIMIT' },
-});
 
 // ======================================================
 // WEBHOOKS — before express.json()
@@ -163,10 +131,16 @@ app.use('/api/webhooks', webhookRoutes);
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
+// ======================================================
+// RATE LIMITING (Redis-backed)
+// ======================================================
 app.use('/api', globalLimiter);
-app.use('/api/auth', authLimiter);
+app.use('/api/auth', authUmbrellaLimiter);
 
-app.use(resolveActingBrand);
+// ======================================================
+// TRIAL ENFORCEMENT (Authoritative)
+// ======================================================
+app.use(trialGate);
 
 // ======================================================
 // LOGGING
@@ -230,7 +204,6 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 4000;
 
 (async () => {
-  // ---- Prisma warmup ----
   try {
     await prisma.$connect();
     await prisma.$queryRaw`SELECT 1`;
@@ -239,7 +212,6 @@ const PORT = process.env.PORT || 4000;
     console.error('⚠️  Prisma warmup failed:', err.message);
   }
 
-  // ---- Queue init (Redis + BullMQ) ----
   try {
     const { initQueues, startWorkers, QUEUE_ENABLED } = require('./services/queue');
     if (QUEUE_ENABLED) {
@@ -252,13 +224,11 @@ const PORT = process.env.PORT || 4000;
     console.warn('[server] queue init failed (non-fatal):', err.message);
   }
 
-  // ---- Start HTTP server ----
   const server = app.listen(PORT, () => {
     console.log(`🚀 Backend running on http://localhost:${PORT}`);
     console.log(`🌍 Env: ${process.env.NODE_ENV || 'development'}`);
   });
 
-  // ---- WebSocket ----
   try {
     const { initWebSocket } = require('./services/websocket');
     initWebSocket(server, allowedOrigins);
@@ -267,7 +237,6 @@ const PORT = process.env.PORT || 4000;
     console.error('⚠️  WebSocket init failed:', err.message);
   }
 
-  // ---- Trial cron ----
   let stopCronFn = null;
   try {
     const { startCron, stopCron } = require('./services/billing/cron');
@@ -277,9 +246,6 @@ const PORT = process.env.PORT || 4000;
     console.warn('[server] cron init failed:', err.message);
   }
 
-  // ======================================================
-  // GRACEFUL SHUTDOWN
-  // ======================================================
   let shuttingDown = false;
 
   async function shutdown(signal) {
@@ -294,7 +260,6 @@ const PORT = process.env.PORT || 4000;
     }, 10_000);
     forceTimer.unref();
 
-    // 1. Stop cron
     try {
       if (stopCronFn) {
         stopCronFn();
@@ -304,7 +269,6 @@ const PORT = process.env.PORT || 4000;
       console.error('[shutdown] cron stop failed:', e.message);
     }
 
-    // 2. Stop queue workers
     try {
       const { stopWorkers, closeQueues, closeConnection } = require('./services/queue');
       await stopWorkers();
@@ -315,7 +279,6 @@ const PORT = process.env.PORT || 4000;
       console.error('[shutdown] queue close failed:', e.message);
     }
 
-    // 3. Close HTTP server
     await new Promise((resolve) => {
       server.close((err) => {
         if (err) console.error('[shutdown] server.close error:', err.message);
@@ -324,7 +287,6 @@ const PORT = process.env.PORT || 4000;
       });
     });
 
-    // 4. Disconnect Prisma
     try {
       await prisma.$disconnect();
       console.log('[shutdown] Prisma disconnected');

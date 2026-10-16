@@ -18,7 +18,8 @@ export function InfluencerCard({
   onToggleSave,
 }: Props) {
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lift">
+    // <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lift">
+      <article className="ui-card group flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
       <Link
         to="/influencers/$slug"
         params={{ slug: inf.slug }}

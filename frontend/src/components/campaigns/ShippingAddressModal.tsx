@@ -1,7 +1,8 @@
-import { swalError, swalSuccess } from "@/lib/swal";
 // components/campaigns/ShippingAddressModal.tsx
+import { swalError, swalSuccess } from "@/lib/swal";
 import { useState } from "react";
-import { X, Loader2, AlertCircle, MapPin } from "lucide-react";
+import { Loader2, AlertCircle, MapPin } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +36,6 @@ export function ShippingAddressModal({ campaignId, initial, onClose, onSaved }: 
   const [postalCode, setPostalCode] = useState(initial?.postalCode ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
-  // Country/State/City objects
   const [country, setCountry] = useState<CSC>(
     initial?.countryId && initial?.country
       ? { id: initial.countryId, name: initial.country, iso2: initial.countryCode ?? undefined }
@@ -106,156 +106,153 @@ export function ShippingAddressModal({ campaignId, initial, onClose, onSaved }: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:p-6">
-      <div className="my-4 w-full max-w-lg rounded-xl border border-border bg-card shadow-xl">
-        <div className="flex items-center justify-between border-b border-border p-4">
-          <div className="flex items-center gap-2">
-            <MapPin className="size-4 text-accent" />
-            <h3 className="text-sm font-medium">Shipping address</h3>
-          </div>
-          <button
-            onClick={onClose}
+    <Modal
+      open={true}
+      onClose={onClose}
+      title={
+        <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <MapPin className="size-4 text-accent" />
+          Shipping address
+        </h2>
+      }
+      size="md"
+      closeOnOverlay={!saving}
+      hideClose={saving}
+      bodyClassName="p-5"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="fullName">Full name *</Label>
+          <Input
+            id="fullName"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
             disabled={saving}
-            className="rounded-md p-1 text-muted-foreground hover:bg-muted"
-          >
-            <X className="size-4" />
-          </button>
+            autoFocus
+            placeholder="e.g. Ayesha Khan"
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-5">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full name *</Label>
-            <Input
-              id="fullName"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              disabled={saving}
-              autoFocus
-              placeholder="e.g. Ayesha Khan"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label>Phone number *</Label>
+          <PhoneInput
+            international
+            defaultCountry={(initial?.countryCode as any) || "PK"}
+            value={phone}
+            onChange={setPhone}
+            disabled={saving}
+            placeholder="Enter phone number"
+            className="phone-input-wrapper"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Include country code — e.g. +92 for Pakistan
+          </p>
+        </div>
 
-          <div className="space-y-2">
-            <Label>Phone number *</Label>
-            <PhoneInput
-              international
-              defaultCountry={(initial?.countryCode as any) || "PK"}
-              value={phone}
-              onChange={setPhone}
-              disabled={saving}
-              placeholder="Enter phone number"
-              className="phone-input-wrapper"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Include country code — e.g. +92 for Pakistan
-            </p>
-          </div>
+        <div className="space-y-2">
+          <Label>Country *</Label>
+          <CountrySelect
+            value={country ? { id: country.id, name: country.name } : undefined}
+            onChange={(c: any) => {
+              setCountry({ id: c.id, name: c.name, iso2: c.iso2 });
+              setState(null);
+              setCity(null);
+            }}
+            placeHolder="Select country"
+            containerClassName="country-select"
+            inputClassName="country-select-input"
+            disabled={saving}
+          />
+        </div>
 
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Country *</Label>
-            <CountrySelect
-              value={country ? { id: country.id, name: country.name } : undefined}
-              onChange={(c: any) => {
-                setCountry({ id: c.id, name: c.name, iso2: c.iso2 });
-                setState(null);
+            <Label>State / Province *</Label>
+            <StateSelect
+              countryid={country?.id}
+              value={state ? { id: state.id, name: state.name } : undefined}
+              onChange={(s: any) => {
+                setState({ id: s.id, name: s.name });
                 setCity(null);
               }}
-              placeHolder="Select country"
-              containerClassName="country-select"
-              inputClassName="country-select-input"
-              disabled={saving}
+              placeHolder="Select state"
+              containerClassName="state-select"
+              inputClassName="state-select-input"
+              disabled={saving || !country}
             />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>State / Province *</Label>
-              <StateSelect
-                countryid={country?.id}
-                value={state ? { id: state.id, name: state.name } : undefined}
-                onChange={(s: any) => {
-                  setState({ id: s.id, name: s.name });
-                  setCity(null);
-                }}
-                placeHolder="Select state"
-                containerClassName="state-select"
-                inputClassName="state-select-input"
-                disabled={saving || !country}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>City *</Label>
-              <CitySelect
-                countryid={country?.id}
-                stateid={state?.id}
-                value={city ? { id: city.id, name: city.name } : undefined}
-                onChange={(c: any) => setCity({ id: c.id, name: c.name })}
-                placeHolder="Select city"
-                containerClassName="city-select"
-                inputClassName="city-select-input"
-                disabled={saving || !country || !state}
-              />
-            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="street">Street address *</Label>
-            <Textarea
-              id="street"
-              value={street}
-              onChange={(e) => setStreet(e.target.value)}
-              rows={2}
-              disabled={saving}
-              placeholder="House #, street, area"
+            <Label>City *</Label>
+            <CitySelect
+              countryid={country?.id}
+              stateid={state?.id}
+              value={city ? { id: city.id, name: city.name } : undefined}
+              onChange={(c: any) => setCity({ id: c.id, name: c.name })}
+              placeHolder="Select city"
+              containerClassName="city-select"
+              inputClassName="city-select-input"
+              disabled={saving || !country || !state}
             />
           </div>
+        </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="postalCode">Postal code</Label>
-              <Input
-                id="postalCode"
-                value={postalCode ?? ""}
-                onChange={(e) => setPostalCode(e.target.value)}
-                disabled={saving}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Delivery notes</Label>
-              <Input
-                id="notes"
-                value={notes ?? ""}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ring bell twice"
-                disabled={saving}
-              />
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="street">Street address *</Label>
+          <Textarea
+            id="street"
+            value={street}
+            onChange={(e) => setStreet(e.target.value)}
+            rows={2}
+            disabled={saving}
+            placeholder="House #, street, area"
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="postalCode">Postal code</Label>
+            <Input
+              id="postalCode"
+              value={postalCode ?? ""}
+              onChange={(e) => setPostalCode(e.target.value)}
+              disabled={saving}
+            />
           </div>
-
-          {error && (
-            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 border-t border-border pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-1.5 size-3.5 animate-spin" /> Submitting…
-                </>
-              ) : (
-                "Submit address"
-              )}
-            </Button>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Delivery notes</Label>
+            <Input
+              id="notes"
+              value={notes ?? ""}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ring bell twice"
+              disabled={saving}
+            />
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        {error && (
+          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 border-t border-border pt-4">
+          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 className="mr-1.5 size-3.5 animate-spin" /> Submitting…
+              </>
+            ) : (
+              "Submit address"
+            )}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

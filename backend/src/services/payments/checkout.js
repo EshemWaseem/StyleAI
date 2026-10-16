@@ -52,6 +52,7 @@ async function createSubscriptionCheckout(user, {
   const identity = getSubscriptionIdentity(user, role);
 
   // For BRAND/AGENCY → load organization
+  // For INFLUENCER   → organization stays null (user-tied)
   let organization = null;
   if (identity.organizationId) {
     organization = await prisma.organization.findUnique({
@@ -65,7 +66,8 @@ async function createSubscriptionCheckout(user, {
 
   const session = await gateway.createCheckout({
     mode: 'subscription',
-    organization,
+    organization,                             // null for INFLUENCER
+    user,                                     // always passed (gateway picks one)
     plan,
     cycle,
     amount,
@@ -73,11 +75,17 @@ async function createSubscriptionCheckout(user, {
     description: `${plan.label} — ${cycle}`,
     successUrl,
     cancelUrl,
-    meta: { context: 'SUBSCRIPTION', planName: plan.name, role },
+    meta: {
+      context: 'SUBSCRIPTION',
+      planName: plan.name,
+      role,
+      userId: user.id,
+      organizationId: identity.organizationId || null,
+    },
   });
 
   // ---- Persist intent (audit) ----
-  // Note: Payment.organizationId is nullable now; for influencers we skip it
+  // Payment.organizationId is nullable — null for influencer subscriptions
   await prisma.payment.create({
     data: {
       organizationId: identity.organizationId || null,

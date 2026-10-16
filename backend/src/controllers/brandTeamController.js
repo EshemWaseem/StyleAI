@@ -1,6 +1,23 @@
+// controllers/brandTeamController.js
 const roleService = require('../services/brandTeamRoleService');
 const memberService = require('../services/brandTeamMemberService');
 const invitationService = require('../services/invitationService');
+
+// ======================================================
+// Effective user — agency acting on behalf of client brand
+// ======================================================
+function effectiveUser(req) {
+  if (req.actingBrandId && req.actingOrganizationId) {
+    return {
+      ...req.user,
+      organizationId: req.actingOrganizationId,
+      actingBrandId: req.actingBrandId,
+      actingOrganizationId: req.actingOrganizationId,
+      actingBrand: req.actingBrand,
+    };
+  }
+  return req.user;
+}
 
 // ======================================================
 // ROLES
@@ -8,7 +25,8 @@ const invitationService = require('../services/invitationService');
 
 async function listRoles(req, res, next) {
   try {
-    const roles = await roleService.listRoles(req.user, req.query.brandId);
+    const brandId = req.query.brandId || req.actingBrandId;
+    const roles = await roleService.listRoles(effectiveUser(req), brandId);
     res.json({ count: roles.length, roles });
   } catch (err) {
     next(err);
@@ -17,7 +35,10 @@ async function listRoles(req, res, next) {
 
 async function getRole(req, res, next) {
   try {
-    const role = await roleService.getRole(req.user, req.params.roleId);
+    const role = await roleService.getRole(
+      effectiveUser(req),
+      req.params.roleId
+    );
     res.json({ role });
   } catch (err) {
     next(err);
@@ -26,7 +47,11 @@ async function getRole(req, res, next) {
 
 async function createRole(req, res, next) {
   try {
-    const role = await roleService.createRole(req.user, req.body);
+    const payload = { ...req.body };
+    if (req.actingBrandId && !payload.brandId) {
+      payload.brandId = req.actingBrandId;
+    }
+    const role = await roleService.createRole(effectiveUser(req), payload);
     res.status(201).json({ message: 'Role created', role });
   } catch (err) {
     next(err);
@@ -35,7 +60,11 @@ async function createRole(req, res, next) {
 
 async function updateRole(req, res, next) {
   try {
-    const role = await roleService.updateRole(req.user, req.params.roleId, req.body);
+    const role = await roleService.updateRole(
+      effectiveUser(req),
+      req.params.roleId,
+      req.body
+    );
     res.json({ message: 'Role updated', role });
   } catch (err) {
     next(err);
@@ -44,7 +73,10 @@ async function updateRole(req, res, next) {
 
 async function deleteRole(req, res, next) {
   try {
-    const result = await roleService.deleteRole(req.user, req.params.roleId);
+    const result = await roleService.deleteRole(
+      effectiveUser(req),
+      req.params.roleId
+    );
     res.json({ message: 'Role deleted', ...result });
   } catch (err) {
     next(err);
@@ -66,7 +98,11 @@ async function listPermissions(req, res, next) {
 
 async function listMembers(req, res, next) {
   try {
-    const members = await memberService.listMembers(req.user, req.query.brandId);
+    const brandId = req.query.brandId || req.actingBrandId;
+    const members = await memberService.listMembers(
+      effectiveUser(req),
+      brandId
+    );
     res.json({ count: members.length, members });
   } catch (err) {
     next(err);
@@ -75,7 +111,10 @@ async function listMembers(req, res, next) {
 
 async function getMember(req, res, next) {
   try {
-    const member = await memberService.getMember(req.user, req.params.memberId);
+    const member = await memberService.getMember(
+      effectiveUser(req),
+      req.params.memberId
+    );
     res.json({ member });
   } catch (err) {
     next(err);
@@ -89,7 +128,7 @@ async function changeRole(req, res, next) {
       return res.status(400).json({ message: 'teamRoleId required' });
     }
     const member = await memberService.changeMemberRole(
-      req.user,
+      effectiveUser(req),
       req.params.memberId,
       teamRoleId
     );
@@ -103,7 +142,7 @@ async function setStatus(req, res, next) {
   try {
     const { status } = req.body;
     const member = await memberService.setMemberStatus(
-      req.user,
+      effectiveUser(req),
       req.params.memberId,
       status
     );
@@ -115,7 +154,10 @@ async function setStatus(req, res, next) {
 
 async function removeMember(req, res, next) {
   try {
-    const result = await memberService.removeMember(req.user, req.params.memberId);
+    const result = await memberService.removeMember(
+      effectiveUser(req),
+      req.params.memberId
+    );
     res.json({ message: 'Member removed', ...result });
   } catch (err) {
     next(err);
@@ -128,7 +170,8 @@ async function removeMember(req, res, next) {
 
 async function directAdd(req, res, next) {
   try {
-    const { email, teamRoleId, brandId, message } = req.body || {};
+    const { email, teamRoleId, message } = req.body || {};
+    const brandId = req.body.brandId || req.actingBrandId;
 
     if (!email || !teamRoleId) {
       return res
@@ -137,7 +180,7 @@ async function directAdd(req, res, next) {
     }
 
     // 1. Attempt direct add
-    const result = await memberService.directAddMember(req.user, {
+    const result = await memberService.directAddMember(effectiveUser(req), {
       brandId,
       email,
       teamRoleId,
@@ -154,11 +197,14 @@ async function directAdd(req, res, next) {
 
     // 2b. User doesn't exist → auto-create invitation
     if (result.type === 'USER_NOT_FOUND') {
-      const invite = await invitationService.createInvitation(req.user, {
-        email: result.email,
-        teamRoleId: result.roleId,
-        message,
-      });
+      const invite = await invitationService.createInvitation(
+        effectiveUser(req),
+        {
+          email: result.email,
+          teamRoleId: result.roleId,
+          message,
+        }
+      );
 
       return res.status(201).json({
         type: 'INVITED',

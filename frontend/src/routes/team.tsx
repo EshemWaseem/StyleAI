@@ -1,4 +1,4 @@
-import { swalError , swalConfirm } from "@/lib/swal";
+import { swalError, swalConfirm } from "@/lib/swal";
 // frontend/src/routes/team.tsx
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -146,7 +146,12 @@ function TeamPage() {
   }
 
   async function handleRemoveMember(member: BrandTeamMember) {
-    if (!(await swalConfirm(`Remove ${member.user?.name ?? "this member"} from the team?`))) return;
+    if (
+      !(await swalConfirm(
+        `Remove ${member.user?.name ?? "this member"} from the team?`
+      ))
+    )
+      return;
     try {
       await brandTeamApi.removeMember(member.id);
       setMembers((prev) => prev.filter((m) => m.id !== member.id));
@@ -344,7 +349,10 @@ function TeamPage() {
           <Panel>
             <ul className="divide-y divide-border">
               {pending.map((r) => (
-                <li key={r.id} className="flex flex-wrap items-center gap-3 py-3">
+                <li
+                  key={r.id}
+                  className="flex flex-wrap items-center gap-3 py-3"
+                >
                   <div className="grid size-9 shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-medium text-accent">
                     {r.user?.name.slice(0, 2).toUpperCase() ?? "?"}
                   </div>
@@ -407,7 +415,10 @@ function TeamPage() {
           <Panel>
             <ul className="divide-y divide-border">
               {invites.map((i) => (
-                <li key={i.id} className="flex flex-wrap items-center gap-3 py-3">
+                <li
+                  key={i.id}
+                  className="flex flex-wrap items-center gap-3 py-3"
+                >
                   <div className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
                     <Mail className="size-4" />
                   </div>
@@ -686,6 +697,7 @@ function RoleDropdown({
 
 // ======================================================
 // ADD MEMBER MODAL — smart (direct add OR invite)
+// Uses .ui-overlay / .ui-panel system
 // ======================================================
 
 function AddMemberModal({
@@ -761,13 +773,21 @@ function AddMemberModal({
   // ======================================================
   if (result?.type === "ADDED") {
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 backdrop-blur-sm">
-        <div className="flex min-h-full items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-center shadow-lift">
+      <div
+        className="ui-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-member-added-title"
+      >
+        <div className="ui-panel ui-panel-sm">
+          <div className="ui-panel-body text-center">
             <div className="mx-auto grid size-14 place-items-center rounded-full bg-emerald-500/15 text-emerald-500">
               <Check className="size-7" />
             </div>
-            <h2 className="mt-4 font-display text-xl font-medium">
+            <h2
+              id="add-member-added-title"
+              className="mt-4 font-display text-xl font-medium"
+            >
               Member added
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -779,9 +799,9 @@ function AddMemberModal({
               They can now log in and access the workspace with their assigned
               permissions.
             </p>
-            <Button className="mt-6" onClick={onAdded}>
-              Done
-            </Button>
+          </div>
+          <div className="ui-panel-footer justify-center">
+            <Button onClick={onAdded}>Done</Button>
           </div>
         </div>
       </div>
@@ -793,13 +813,21 @@ function AddMemberModal({
   // ======================================================
   if (result?.type === "INVITED") {
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 backdrop-blur-sm">
-        <div className="flex min-h-full items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lift">
+      <div
+        className="ui-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-member-invited-title"
+      >
+        <div className="ui-panel ui-panel-md">
+          <div className="ui-panel-body">
             <div className="mx-auto grid size-14 place-items-center rounded-full bg-amber-500/15 text-amber-500">
               <Mail className="size-7" />
             </div>
-            <h2 className="mt-4 text-center font-display text-xl font-medium">
+            <h2
+              id="add-member-invited-title"
+              className="mt-4 text-center font-display text-xl font-medium"
+            >
               Invitation created
             </h2>
             <p className="mt-2 text-center text-sm text-muted-foreground">
@@ -827,10 +855,9 @@ function AddMemberModal({
               Link expires in 7 days. Role:{" "}
               <strong>{result.roleName}</strong>.
             </p>
-
-            <div className="mt-6 flex justify-end">
-              <Button onClick={onInvited}>Done</Button>
-            </div>
+          </div>
+          <div className="ui-panel-footer">
+            <Button onClick={onInvited}>Done</Button>
           </div>
         </div>
       </div>
@@ -841,25 +868,36 @@ function AddMemberModal({
   // FORM
   // ======================================================
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 backdrop-blur-sm">
-      <div className="flex min-h-full items-center justify-center p-4">
-        <form
-          onSubmit={handleSubmit}
-          className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lift"
-        >
-          <h2 className="font-display text-xl font-medium">Add member</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            If they already have an account, they'll be added instantly.
-            Otherwise we'll generate an invite link.
-          </p>
+    <div
+      className="ui-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-member-title"
+    >
+      <div className="ui-panel ui-panel-md">
+        <div className="ui-panel-header">
+          <div className="min-w-0">
+            <h2
+              id="add-member-title"
+              className="font-display text-xl font-medium"
+            >
+              Add member
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              If they already have an account, they'll be added instantly.
+              Otherwise we'll generate an invite link.
+            </p>
+          </div>
+        </div>
 
-          {error && (
-            <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              {error}
-            </div>
-          )}
+        <form onSubmit={handleSubmit}>
+          <div className="ui-panel-body space-y-5">
+            {error && (
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {error}
+              </div>
+            )}
 
-          <div className="mt-5 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="memberEmail">Email *</Label>
               <Input
@@ -938,7 +976,7 @@ function AddMemberModal({
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-2">
+          <div className="ui-panel-footer">
             <Button
               type="button"
               variant="outline"
@@ -959,6 +997,7 @@ function AddMemberModal({
 
 // ======================================================
 // APPROVE REQUEST MODAL
+// Uses .ui-overlay / .ui-panel system
 // ======================================================
 
 function ApproveRequestModal({
@@ -996,12 +1035,30 @@ function ApproveRequestModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 backdrop-blur-sm">
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lift">
-          <h2 className="font-display text-xl font-medium">Approve request</h2>
+    <div
+      className="ui-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="approve-request-title"
+    >
+      <div className="ui-panel ui-panel-md">
+        <div className="ui-panel-header">
+          <div className="min-w-0">
+            <h2
+              id="approve-request-title"
+              className="font-display text-xl font-medium"
+            >
+              Approve request
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Choose which role this member will get.
+            </p>
+          </div>
+        </div>
 
-          <div className="mt-5 flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+        <div className="ui-panel-body space-y-5">
+          {/* Applicant card */}
+          <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
             <div className="grid size-10 shrink-0 place-items-center rounded-full bg-accent/15 text-sm font-medium text-accent">
               {request.user?.name.slice(0, 2).toUpperCase() ?? "?"}
             </div>
@@ -1015,7 +1072,8 @@ function ApproveRequestModal({
             </div>
           </div>
 
-          <div className="mt-4 space-y-2">
+          {/* Role picker */}
+          <div className="space-y-2">
             <Label>Assign role *</Label>
             <div className="grid gap-2">
               {roles.map((r) => {
@@ -1040,7 +1098,9 @@ function ApproveRequestModal({
                       className="mt-1"
                     />
                     <div className="min-w-0 flex-1">
-                      <span className={cn("text-sm font-medium", classes.text)}>
+                      <span
+                        className={cn("text-sm font-medium", classes.text)}
+                      >
                         {r.name}
                       </span>
                       {r.description && (
@@ -1056,24 +1116,24 @@ function ApproveRequestModal({
           </div>
 
           {error && (
-            <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {error}
             </div>
           )}
+        </div>
 
-          <div className="mt-6 flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={saving}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleApprove} disabled={saving || !roleId}>
-              {saving ? "Approving…" : "Approve with this role"}
-            </Button>
-          </div>
+        <div className="ui-panel-footer">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleApprove} disabled={saving || !roleId}>
+            {saving ? "Approving…" : "Approve"}
+          </Button>
         </div>
       </div>
     </div>

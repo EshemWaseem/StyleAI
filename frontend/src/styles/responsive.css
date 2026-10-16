@@ -1,0 +1,175 @@
+/* ======================================================
+   StyleAI — Responsive Layout Helpers
+   ====================================================== */
+
+/* ── Layout Splits ───────────────────────────────────── */
+
+.resp-split {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+@media (min-width: 768px) {
+  .resp-split { flex-direction: row; }
+}
+
+.resp-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .resp-sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--color-border);
+  }
+}
+
+.resp-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+/* ── Mobile / Desktop Visibility ─────────────────────── */
+
+.resp-only-mobile { display: block; }
+@media (min-width: 768px) {
+  .resp-only-mobile { display: none !important; }
+}
+
+.resp-only-desktop { display: none; }
+@media (min-width: 768px) {
+  .resp-only-desktop { display: flex; }
+}
+
+/* ── Chat Layout ─────────────────────────────────────── */
+
+.resp-chat-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+.resp-chat-panel {
+  display: none;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+@media (min-width: 768px) {
+  .resp-chat-list {
+    width: 320px;
+    flex-shrink: 0;
+  }
+  .resp-chat-panel { display: flex; }
+}
+
+.resp-chat-list.is-hidden-mobile  { display: none; }
+.resp-chat-panel.is-visible-mobile { display: flex; }
+
+@media (min-width: 768px) {
+  .resp-chat-list.is-hidden-mobile { display: flex !important; }
+  .resp-chat-panel                 { display: flex !important; }
+}
+
+/* ── Touch Targets ───────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .resp-touch {
+    min-height: 44px;
+    min-width:  44px;
+  }
+}
+
+/* ── Scroll Areas ────────────────────────────────────── */
+/*
+   KEY FIX: padding-bottom ensures the last list tile
+   never touches the screen edge.
+   scroll-padding-bottom keeps keyboard / anchor jumps
+   from landing behind it.
+   The safe-area addition handles notched devices.
+*/
+
+.resp-scroll {
+  overflow-y:                auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior:        contain;
+
+  /* 3 px breathing room + iOS home-bar clearance */
+  padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+  scroll-padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+}
+
+/*
+  When a resp-scroll is inside a panel that already has
+  bottom padding (footer bar, nav bar) we don't want to
+  double-count the safe area — use this variant instead.
+*/
+.resp-scroll-inset {
+  overflow-y:                auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior:        contain;
+  padding-bottom:       3px;
+  scroll-padding-bottom: 3px;
+}
+
+/* ── Safe Area Helpers ───────────────────────────────── */
+
+.resp-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.resp-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ── App Root Viewport Lock ──────────────────────────── */
+
+html,
+body {
+  height:            100%;
+  overflow:          hidden;
+  margin:            0;
+  padding:           0;
+  overscroll-behavior: none;
+}
+
+body > div#root,
+body > div:first-child {
+  height:    100%;
+  overflow:  hidden;
+  display:   flex;
+  flex-direction: column;
+}
+
+/* ── Mobile safe-area on main content ───────────────── */
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  @media (max-width: 767px) {
+    main {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+}
+
+/* ── Mobile Sidebar Width Constraint ────────────────── */
+
+@media (max-width: 1023px) {
+  [role="dialog"][data-state="open"] {
+    width:     268px !important;
+    max-width: 85vw !important;
+  }
+
+  [role="dialog"][data-state="open"] > button[type="button"][aria-label] {
+    display: none;
+  }
+}
+
+.sidebar-sheet-content {
+  width:     268px !important;
+  max-width: 85vw !important;
+}

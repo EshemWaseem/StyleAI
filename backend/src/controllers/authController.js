@@ -15,14 +15,27 @@ const PUBLIC_SIGNUP_ROLES = [
 const ROLES_REQUIRING_ORG = ['BRAND_OWNER', 'AGENCY'];
 const ROLES_PENDING_APPROVAL = ['BRAND_TEAM_MEMBER'];
 
+// ------------------------------------------------------
+// Account lockout config
+// ------------------------------------------------------
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const CAPTCHA_AFTER_ATTEMPTS = 3;
+
 // ======================================================
 // POST /api/auth/register
 // ======================================================
 async function register(req, res, next) {
   try {
     const {
-      name, email, password, organizationName, role,
-      phone, country, countryCode,
+      name,
+      email,
+      password,
+      organizationName,
+      role,
+      phone,
+      country,
+      countryCode,
     } = req.body;
 
     if (!name || !email || !password) {
@@ -37,20 +50,29 @@ async function register(req, res, next) {
         .json({ message: 'Password must be at least 6 characters.' });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existing = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
     if (existing) {
-      return res.status(409).json({ message: 'This email is already registered.' });
+      return res
+        .status(409)
+        .json({ message: 'This email is already registered.' });
     }
 
     const roleName = role || 'BRAND_OWNER';
 
     if (!PUBLIC_SIGNUP_ROLES.includes(roleName)) {
       return res.status(403).json({
-        message: 'This role cannot be self-registered. Please contact an administrator.',
+        message:
+          'This role cannot be self-registered. Please contact an administrator.',
       });
     }
 
-    const roleRecord = await prisma.role.findUnique({ where: { name: roleName } });
+    const roleRecord = await prisma.role.findUnique({
+      where: { name: roleName },
+    });
     if (!roleRecord) {
       return res.status(400).json({ message: 'Invalid role selected.' });
     }
@@ -84,12 +106,14 @@ async function register(req, res, next) {
       const user = await tx.user.create({
         data: {
           name: name.trim(),
-          email: email.trim().toLowerCase(),
+          email: normalizedEmail,
           password: hashedPassword,
           organizationId,
           phone: phone ? String(phone).trim() : null,
           country: country ? String(country).trim() : null,
-          countryCode: countryCode ? String(countryCode).trim().toUpperCase() : null,
+          countryCode: countryCode
+            ? String(countryCode).trim().toUpperCase()
+            : null,
         },
       });
 
@@ -100,8 +124,9 @@ async function register(req, res, next) {
       return user;
     });
 
-    sendToUser(result.id, 'welcome', { role: roleName })
-      .catch((e) => console.error('[auth.welcome email] failed:', e.message));
+    sendToUser(result.id, 'welcome', { role: roleName }).catch((e) =>
+      console.error('[auth.welcome email] failed:', e.message)
+    );
 
     if (ROLES_PENDING_APPROVAL.includes(roleName)) {
       return res.status(201).json({
@@ -153,8 +178,10 @@ async function login(req, res, next) {
         .json({ message: 'Email and password are required.' });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const user = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() },
+      where: { email: normalizedEmail },
       include: {
         userRoles: {
           include: {
@@ -168,6 +195,7 @@ async function login(req, res, next) {
       },
     });
 
+    // Generic 401 — prevents email enumeration
     if (!user || !user.isActive) {
       return res.status(401).json({
         message: 'Invalid email or password.',
@@ -175,14 +203,56 @@ async function login(req, res, next) {
       });
     }
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return res.status(401).json({
-        message: 'Invalid email or password.',
-        code: 'INVALID_CREDENTIALS',
+    // ---------- Account lockout check ----------
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const retryAfterSec = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / 1000
+      );
+      res.set('Retry-After', String(retryAfterSec));
+      return res.status(423).json({
+        message: `Account temporarily locked due to multiple failed attempts. Try again in ${Math.ceil(
+          retryAfterSec / 60
+        )} minute(s).`,
+        code: 'ACCOUNT_LOCKED',
+        retryAfter: retryAfterSec,
       });
     }
 
+    const valid = await bcrypt.compare(password, user.password);
+
+    if (!valid) {
+      const attempts = (user.failedLoginAttempts || 0) + 1;
+      const shouldLock = attempts >= MAX_FAILED_ATTEMPTS;
+      const lockUntil = shouldLock
+        ? new Date(Date.now() + LOCK_DURATION_MS)
+        : null;
+
+      // Fire-and-forget metadata update
+      prisma.user
+        .update({
+          where: { id: user.id },
+          data: {
+            failedLoginAttempts: attempts,
+            lastFailedLoginAt: new Date(),
+            lockedUntil: lockUntil,
+          },
+        })
+        .catch((e) =>
+          console.error('[auth.login] failed-attempt update error:', e.message)
+        );
+
+      const remaining = Math.max(0, MAX_FAILED_ATTEMPTS - attempts);
+
+      return res.status(401).json({
+        message: 'Invalid email or password.',
+        code: 'INVALID_CREDENTIALS',
+        ...(shouldLock && { lockedFor: LOCK_DURATION_MS / 1000 }),
+        ...(!shouldLock && remaining <= 2 && { attemptsRemaining: remaining }),
+        ...(attempts >= CAPTCHA_AFTER_ATTEMPTS && { captchaRequired: true }),
+      });
+    }
+
+    // ---------- Success ----------
     const roles = user.userRoles.map((ur) => ur.role.name);
 
     const isPendingTeamMember =
@@ -195,6 +265,21 @@ async function login(req, res, next) {
         code: 'PENDING_APPROVAL',
       });
     }
+
+    // Reset counters + record metadata (fire-and-forget)
+    prisma.user
+      .update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          lastLoginAt: new Date(),
+          lastLoginIp: req.ip,
+        },
+      })
+      .catch((e) =>
+        console.error('[auth.login] metadata update error:', e.message)
+      );
 
     const permissions = Array.from(
       new Set(

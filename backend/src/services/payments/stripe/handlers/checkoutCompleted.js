@@ -15,10 +15,11 @@ function toPlatformCurrency(amountMajor, fromCurrency) {
 }
 
 async function handle(session) {
-  const organizationId = session.metadata?.organizationId;
+  const organizationId = session.metadata?.organizationId || null;
+  const userId = session.metadata?.userId || null;
 
   // =====================================================
-  // WALLET TOP-UP (mode: payment, context: WALLET_TOPUP)
+  // WALLET TOP-UP
   // =====================================================
   if (
     session.mode === 'payment' &&
@@ -28,8 +29,9 @@ async function handle(session) {
     return;
   }
 
-  if (!organizationId) {
-    console.warn('[stripe.checkoutCompleted] missing organizationId in metadata');
+  // ✅ Need at least one identity
+  if (!organizationId && !userId) {
+    console.warn('[stripe.checkoutCompleted] missing organizationId and userId in metadata');
     return;
   }
 
@@ -72,28 +74,47 @@ async function handle(session) {
       periodEnd = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
     }
 
+    // ✅ Identity-aware subscription lookup
+    const subWhere = organizationId ? { organizationId } : { userId };
+
     let paymentInvoiceNumber = null;
 
     await prisma.$transaction(async (tx) => {
-      await tx.subscription.update({
-        where: { organizationId },
-        data: {
-          planName,
-          status: 'ACTIVE',
-          provider: 'STRIPE',
-          billingCycle: cycle === 'YEARLY' ? 'YEARLY' : 'MONTHLY',
-          stripeSubscriptionId: session.subscription,
-          stripeStatus: 'active',
-          stripeCustomerId: session.customer,
-          stripeCurrentPeriodEnd: periodEnd,
-          isTrial: false,
-          trialEndsAt: null,
-          cancelAtPeriodEnd: false,
-          cancelledAt: null,
-          currentPeriodStart: periodStart,
-          currentPeriodEnd: periodEnd,
-        },
-      });
+      const existing = await tx.subscription.findUnique({ where: subWhere });
+
+      const subData = {
+        planName,
+        role,
+        status: 'ACTIVE',
+        provider: 'STRIPE',
+        billingCycle: cycle === 'YEARLY' ? 'YEARLY' : 'MONTHLY',
+        stripeSubscriptionId: session.subscription || null,
+        stripeStatus: 'active',
+        stripeCustomerId: session.customer || null,
+        stripeCurrentPeriodEnd: periodEnd,
+        // ✅ KEY: switch off trial
+        isTrial: false,
+        trialEndsAt: null,
+        cancelAtPeriodEnd: false,
+        cancelledAt: null,
+        currentPeriodStart: periodStart,
+        currentPeriodEnd: periodEnd,
+      };
+
+      if (existing) {
+        await tx.subscription.update({
+          where: { id: existing.id },
+          data: subData,
+        });
+      } else {
+        await tx.subscription.create({
+          data: {
+            organizationId,
+            userId,
+            ...subData,
+          },
+        });
+      }
 
       let paymentId = null;
       const pending = await tx.payment.findFirst({
@@ -139,6 +160,7 @@ async function handle(session) {
         paymentInvoiceNumber = created.invoiceNumber;
       }
 
+      // ✅ Payment admin/platform wallet mein jayegi (existing logic)
       await creditPlatformWallet(tx, {
         amount: platform.amount,
         currency: platform.currency,
@@ -146,21 +168,43 @@ async function handle(session) {
         reference: `STRIPE_SUB_${session.id}`,
         note: `Subscription — ${plan.label} (${role})`,
         meta: {
-          planName, role, cycle, organizationId,
-          stripeSessionId: session.id, stripeAmount, stripeCurrency,
+          planName, role, cycle,
+          organizationId: organizationId || null,
+          userId: userId || null,
+          stripeSessionId: session.id,
+          stripeAmount,
+          stripeCurrency,
           exchangeRate: USD_PKR_RATE,
         },
       });
     });
 
     console.log(
-      `[stripe.checkoutCompleted] upgraded ${organizationId} → ${role}:${planName} + credited PKR ${platform.amount.toFixed(2)}`
+      `[stripe.checkoutCompleted] upgraded ${role} (org:${organizationId || '-'}, user:${userId || '-'}) → ${planName} | isTrial=false | PKR ${platform.amount.toFixed(2)} → admin`
     );
 
-    const owner = await prisma.user.findFirst({
-      where: { organizationId, userRoles: { some: { role: { name: 'BRAND_OWNER' } } } },
-      select: { id: true },
-    }).catch(() => null);
+    // ✅ Clear trial gate cache so next request doesn't 402
+    try {
+      const { clearTrialCache } = require('../../../../middleware/trialGate');
+      if (userId) clearTrialCache(userId);
+    } catch (e) {
+      // silent
+    }
+
+    // Send receipt email
+    const owner = organizationId
+      ? await prisma.user
+          .findFirst({
+            where: {
+              organizationId,
+              userRoles: { some: { role: { name: 'BRAND_OWNER' } } },
+            },
+            select: { id: true },
+          })
+          .catch(() => null)
+      : userId
+      ? { id: userId }
+      : null;
 
     if (owner?.id) {
       sendToUser(owner.id, 'paymentReceipt', {
@@ -193,10 +237,9 @@ async function handle(session) {
   }
 }
 
-/**
- * WALLET TOP-UP handler
- * Credits the caller's wallet after successful payment.
- */
+// =====================================================
+// WALLET TOP-UP (unchanged)
+// =====================================================
 async function handleWalletTopUp(session) {
   const meta = session.metadata || {};
   const { walletOwnerType, walletOwnerId, userId } = meta;
@@ -211,13 +254,11 @@ async function handleWalletTopUp(session) {
   const platform = toPlatformCurrency(stripeAmount, stripeCurrency);
 
   await prisma.$transaction(async (tx) => {
-    // Find/create wallet
     const wallet = await findWalletByOwner({
       type: walletOwnerType,
       id: walletOwnerId,
     });
 
-    // Update payment record
     let paymentId = null;
     const pending = await tx.payment.findFirst({
       where: { externalId: session.id, status: 'PENDING' },
@@ -256,8 +297,11 @@ async function handleWalletTopUp(session) {
           stripePaymentIntentId: session.payment_intent || null,
           paidAt: new Date(),
           metadata: {
-            walletOwnerType, walletOwnerId, userId,
-            stripeAmount, stripeCurrency,
+            walletOwnerType,
+            walletOwnerId,
+            userId,
+            stripeAmount,
+            stripeCurrency,
             exchangeRate: USD_PKR_RATE,
           },
         },
@@ -265,7 +309,6 @@ async function handleWalletTopUp(session) {
       paymentId = created.id;
     }
 
-    // Credit wallet (idempotent by reference)
     await creditWalletFromTopUp(tx, {
       walletId: wallet.id,
       amount: platform.amount,
@@ -281,7 +324,6 @@ async function handleWalletTopUp(session) {
     `[stripe.checkoutCompleted] topup OK — ${walletOwnerType}:${walletOwnerId} + PKR ${platform.amount.toFixed(2)}`
   );
 
-  // Optional: receipt email
   if (userId) {
     sendToUser(userId, 'paymentReceipt', {
       planLabel: 'Wallet Top-up',

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   ArrowRight,
   Check,
@@ -56,6 +56,117 @@ const categories = [
 
 const loop = ["Product", "Understand", "Match", "Create", "Launch", "Measure"];
 
+// ======================================================
+// SCROLL-SPY SECTIONS
+// ======================================================
+const SECTIONS = [
+  { id: "shop", label: "Shop" },
+  { id: "edit", label: "Editorial" },
+  { id: "creators", label: "Creators" },
+] as const;
+
+// Offset used for both scroll-spy thresholds and smooth scroll target
+const NAV_OFFSET = 80;
+
+// ======================================================
+// HOOK — smooth scroll to a section (or top)
+// ======================================================
+function useSmoothScrollTo(offset = NAV_OFFSET) {
+  return useCallback(
+    (id: string | null) => {
+      if (typeof window === "undefined") return;
+
+      if (!id || id === "top" || id === "home") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (history.replaceState) {
+          history.replaceState(null, "", window.location.pathname);
+        }
+        return;
+      }
+
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      const top =
+        el.getBoundingClientRect().top + window.scrollY - offset;
+
+      window.scrollTo({ top, behavior: "smooth" });
+
+      if (history.replaceState) {
+        history.replaceState(null, "", `#${id}`);
+      }
+    },
+    [offset]
+  );
+}
+
+// ======================================================
+// HOOK — track active section based on scroll position
+// ======================================================
+function useScrollSpy(ids: readonly string[], offset = NAV_OFFSET) {
+  const [activeId, setActiveId] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window === "undefined" || ids.length === 0) return;
+
+    let rafId: number | null = null;
+
+    const update = () => {
+      rafId = null;
+
+      // Scroll to top → no active item
+      if (window.scrollY < 80) {
+        setActiveId("");
+        return;
+      }
+
+      // Bottom of page → last section
+      const atBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 40;
+
+      if (atBottom) {
+        setActiveId(ids[ids.length - 1]);
+        return;
+      }
+
+      // Otherwise: find the last section whose top has crossed the offset line
+      const probeY = window.scrollY + offset + 60;
+      let current = "";
+
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const top = el.getBoundingClientRect().top + window.scrollY;
+        if (top <= probeY) current = id;
+        else break;
+      }
+
+      setActiveId(current);
+    };
+
+    const onScroll = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+
+    return () => {
+      if (rafId !== null) window.cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [ids.join(","), offset]);
+
+  return activeId;
+}
+
+// ======================================================
+// STOREFRONT
+// ======================================================
 function Storefront() {
   const [brands, setBrands] = useState<PublicBrand[]>([]);
   const [products, setProducts] = useState<PublicProduct[]>([]);
@@ -65,6 +176,12 @@ function Storefront() {
   const [loading, setLoading] = useState(true);
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const cart = useCart();
+
+  const scrollTo = useSmoothScrollTo(NAV_OFFSET);
+  const activeSection = useScrollSpy(
+    SECTIONS.map((s) => s.id),
+    NAV_OFFSET
+  );
 
   useEffect(() => {
     publicProductsApi
@@ -102,28 +219,52 @@ function Storefront() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
-          <Link to="/" className="flex shrink-0 items-center gap-2.5">
+          {/* LOGO → scroll to top */}
+          <button
+            type="button"
+            onClick={() => scrollTo(null)}
+            className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-80"
+            aria-label="StyleAI — back to top"
+          >
             <span className="grid size-8 place-items-center rounded-md bg-foreground text-background">
               <span className="font-display text-sm leading-none">S</span>
             </span>
             <span className="font-display text-[15px] font-medium tracking-tight">
               StyleAI
             </span>
-          </Link>
+          </button>
 
+          {/* NAV — scroll-spy + smooth scroll */}
           <nav
-            className="ml-6 hidden items-center gap-6 text-sm text-muted-foreground lg:flex"
+            className="ml-6 hidden items-center gap-6 text-sm lg:flex"
             aria-label="Shop"
           >
-            <a href="#shop" className="hover:text-foreground">
-              Shop
-            </a>
-            <a href="#edit" className="hover:text-foreground">
-              Editorial
-            </a>
-            <a href="#creators" className="hover:text-foreground">
-              Creators
-            </a>
+            {SECTIONS.map((s) => {
+              const isActive = activeSection === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => scrollTo(s.id)}
+                  aria-current={isActive ? "true" : undefined}
+                  className={cn(
+                    "relative py-1 transition-colors",
+                    isActive
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {s.label}
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "absolute -bottom-0.5 left-0 right-0 h-px bg-foreground transition-opacity",
+                      isActive ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </button>
+              );
+            })}
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
@@ -276,10 +417,8 @@ function Storefront() {
               Every piece is read, understood and matched by StyleAI.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <a href="#shop">
-                  Shop the collection <ArrowRight />
-                </a>
+              <Button size="lg" onClick={() => scrollTo("shop")}>
+                Shop the collection <ArrowRight />
               </Button>
             </div>
             <dl className="mt-12 grid max-w-md grid-cols-3 gap-6 border-t border-border pt-6">
@@ -311,7 +450,10 @@ function Storefront() {
         </section>
 
         {/* SHOP */}
-        <section id="shop" className="border-t border-border">
+        <section
+          id="shop"
+          className="scroll-mt-20 border-t border-border"
+        >
           <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
@@ -418,14 +560,14 @@ function Storefront() {
                       <div className="relative">
                         {/* MINI SLIDER on card */}
                         <ProductImageSlider
-                              images={p.images ?? []}
-                              alt={p.name}
-                              aspect="aspect-[3/4]"
-                              size="sm"
-                              showDots={false}
-                              showCounter={(p.images ?? []).length > 1}
-                              rounded="rounded-none"
-                            />
+                          images={p.images ?? []}
+                          alt={p.name}
+                          aspect="aspect-[3/4]"
+                          size="sm"
+                          showDots={false}
+                          showCounter={(p.images ?? []).length > 1}
+                          rounded="rounded-none"
+                        />
                         <span className="pointer-events-none absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium text-accent">
                           <Sparkles className="size-3" aria-hidden="true" />{" "}
                           {p.brand.name}
@@ -472,7 +614,10 @@ function Storefront() {
         </section>
 
         {/* EDITORIAL */}
-        <section id="edit" className="border-t border-border bg-card/50">
+        <section
+          id="edit"
+          className="scroll-mt-20 border-t border-border bg-card/50"
+        >
           <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
             <h2 className="max-w-lg font-display text-3xl font-medium tracking-tight">
               Behind every piece: the StyleAI loop.
@@ -498,7 +643,7 @@ function Storefront() {
         {/* CREATORS */}
         <section
           id="creators"
-          className="mx-auto max-w-6xl px-4 py-16 sm:px-6"
+          className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6"
         >
           <h2 className="font-display text-3xl font-medium tracking-tight">
             Styled by our creators

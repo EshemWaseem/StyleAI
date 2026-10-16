@@ -55,10 +55,9 @@ export function AddFundsModal({ onClose, onSuccess }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border p-4">
+    <div className="ui-overlay">
+      <div className="ui-panel ui-panel-md">
+        <div className="ui-panel-header">
           <div className="flex items-center gap-2">
             <CreditCard className="size-4 text-accent" />
             <h3 className="text-sm font-medium">Add funds to wallet</h3>
@@ -73,7 +72,7 @@ export function AddFundsModal({ onClose, onSuccess }: Props) {
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="space-y-4 p-5">
+        <form onSubmit={handleSubmit} className="ui-panel-body space-y-4">
           <div className="space-y-2">
             <Label htmlFor="amount">Amount (PKR)</Label>
             <Input

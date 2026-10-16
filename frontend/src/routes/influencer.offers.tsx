@@ -81,7 +81,7 @@ function MyListingsPage() {
             <span className="text-sm text-muted-foreground">Loading…</span>
           </div>
         ) : listings.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
+          <div className="ui-empty mt-8">
             <Sparkles className="mx-auto size-6 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium">No offers published</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -272,16 +272,16 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm">
-      <div className="my-8 w-full max-w-2xl rounded-xl border border-border bg-card shadow-lift">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+    <div className="ui-overlay">
+      <div className="ui-panel ui-panel-xl">
+        <div className="ui-panel-header">
           <h2 className="font-display text-lg font-medium">Publish a new offer</h2>
           <Button variant="ghost" size="icon" onClick={onClose} disabled={saving} title="Close" aria-label="Close">
             <X />
           </Button>
         </div>
 
-        <div className="space-y-5 p-6">
+        <div className="ui-panel-body space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="title">Offer name *</Label>
@@ -375,13 +375,13 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
           </div>
 
           {error && (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <div className="ui-error">
               {error}
             </div>
           )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+        <div className="ui-panel-footer">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button onClick={save} disabled={saving}>
             {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}

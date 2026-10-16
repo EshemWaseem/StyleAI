@@ -32,6 +32,50 @@ async function subscriptionCheckout(req, res, next) {
   } catch (e) { next(e); }
 }
 
+// POST /api/payments/subscription/verify-session
+// Fallback when webhook doesn't arrive (local dev / public URL issues).
+// Fetches Stripe session, applies the same logic as webhook.
+async function verifySession(req, res, next) {
+  try {
+    const { sessionId } = req.body || {};
+    if (!sessionId) {
+      return res.status(400).json({ message: 'sessionId is required', code: 'MISSING_SESSION_ID' });
+    }
+
+    const stripe = require('../services/payments/stripe/client');
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found', code: 'SESSION_NOT_FOUND' });
+    }
+
+    if (session.payment_status !== 'paid' && session.status !== 'complete') {
+      return res.status(400).json({
+        message: 'Payment not completed',
+        code: 'NOT_PAID',
+        payment_status: session.payment_status,
+        status: session.status,
+      });
+    }
+
+    // Apply same handler as webhook — idempotent
+    const { handle } = require('../services/payments/stripe/handlers/checkoutCompleted');
+    await handle(session);
+
+    // Clear trial gate cache so next request passes without 402
+    try {
+      const { clearTrialCache } = require('../middleware/trialGate');
+      if (req.user?.id) clearTrialCache(req.user.id);
+    } catch { /* trialGate may not be wired yet */ }
+
+    // Return fresh state
+    const svc = require('../services/billing');
+    const fresh = await svc.getMyBilling(req.user);
+
+    res.json({ ok: true, applied: true, subscription: fresh.subscription });
+  } catch (e) { next(e); }
+}
+
 // POST /api/payments/order/checkout
 async function orderCheckout(req, res, next) {
   try {
@@ -86,6 +130,7 @@ async function createPortal(req, res, next) {
 module.exports = {
   getMethods,
   subscriptionCheckout,
+  verifySession,
   orderCheckout,
   confirmCod,
   createPortal,

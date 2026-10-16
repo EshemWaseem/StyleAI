@@ -1,5 +1,5 @@
 // components/app-shell.tsx
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { useChatUnread } from "@/hooks/useChatUnread";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
 import {
@@ -23,6 +23,12 @@ import { AgencyProvider, useAgency } from "@/lib/agency/context";
 import { connectSocket, disconnectSocket } from "@/lib/websocket/client";
 import { cn } from "@/lib/utils";
 import { useRole, type RoleName } from "@/lib/role";
+import { billingApi } from "@/lib/billing";
+import {
+  isTrialExpiredSync,
+  markTrialExpired,
+  clearTrialExpired,
+} from "@/lib/api";
 
 // ======================================================
 // TYPES
@@ -183,7 +189,7 @@ const INFLUENCER_NAV: NavGroup[] = [
 ];
 
 // ======================================================
-// AGENCY NAV (Clean & Professional)
+// AGENCY NAV
 // ======================================================
 const AGENCY_NAV: NavGroup[] = [
   {
@@ -210,9 +216,7 @@ const AGENCY_NAV: NavGroup[] = [
   },
   {
     group: "Finance",
-    items: [
-      { to: "/wallet", label: "Wallet", icon: Wallet },
-    ],
+    items: [{ to: "/wallet", label: "Wallet", icon: Wallet }],
   },
   {
     group: "Account",
@@ -298,6 +302,7 @@ function SidebarNav({
     </nav>
   );
 }
+
 // ======================================================
 // AGENCY BRAND SWITCHER
 // ======================================================
@@ -346,7 +351,7 @@ function AgencyActingBanner() {
   if (!isAgency || !activeBrandId) return null;
 
   return (
-    <div className="sticky top-16 z-10 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 sm:px-6">
+    <div className="shrink-0 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 sm:px-6">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <Briefcase className="size-3.5 text-amber-500" />
         <span className="text-muted-foreground">Acting as</span>
@@ -469,6 +474,18 @@ function Assistant() {
 }
 
 // ======================================================
+// STANDALONE MODE HELPER — synchronous decision
+// ======================================================
+function computeStandalone(pathname: string, isAdmin: boolean): boolean {
+  if (isAdmin) return false;
+  if (pathname === "/trial-expired") return true;
+  if (pathname === "/billing" || pathname === "/plans") {
+    return isTrialExpiredSync();
+  }
+  return false;
+}
+
+// ======================================================
 // APP SHELL
 // ======================================================
 export function AppShell({
@@ -492,10 +509,18 @@ function AppShellInner({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useRole();
+  const location = useLocation();
 
   const userRoles = user?.roles ?? [];
   const isAdmin = userRoles.includes("SUPER_ADMIN");
   const isBrandOwner = userRoles.includes("BRAND_OWNER");
+
+  const [standalone, setStandalone] = useState<boolean>(() =>
+    computeStandalone(
+      typeof window !== "undefined" ? window.location.pathname : "",
+      userRoles.includes("SUPER_ADMIN")
+    )
+  );
 
   useEffect(() => {
     if (user) {
@@ -503,14 +528,88 @@ function AppShellInner({
     }
   }, [user]);
 
+  useEffect(() => {
+    const path = location.pathname;
+
+    const syncValue = computeStandalone(path, isAdmin);
+    setStandalone(syncValue);
+
+    if (path === "/trial-expired") return;
+
+    const isPlansOrBilling = path === "/billing" || path === "/plans";
+    if (!isPlansOrBilling) return;
+    if (isAdmin) return;
+
+    billingApi
+      .getMe()
+      .then((me) => {
+        const state = me.subscription?.effectiveState;
+        const expired =
+          state === "trial_expired" ||
+          state === "expired" ||
+          state === "past_due";
+
+        if (expired) {
+          markTrialExpired();
+        } else {
+          clearTrialExpired();
+        }
+        setStandalone(expired);
+      })
+      .catch(() => {
+        // Silent — keep sync value
+      });
+  }, [location.pathname, isAdmin]);
+
   function handleLogout() {
+    clearTrialExpired();
     disconnectSocket();
     logout();
   }
 
+  // ======================================================
+  // STANDALONE RENDER — minimal top bar, no sidebar
+  // ======================================================
+  if (standalone) {
+    return (
+      <TooltipProvider delayDuration={300}>
+        {/* ✅ data-app-shell → enables viewport-lock CSS for app pages only */}
+        <div
+          data-app-shell
+          className="flex h-[100dvh] flex-col overflow-hidden bg-background text-foreground"
+        >
+          <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/85 px-4 backdrop-blur-md sm:px-6">
+            <Brandmark />
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-2 rounded-md px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            >
+              <LogOut className="size-3.5" />
+              <span>Sign out</span>
+            </button>
+          </header>
+
+          <main className="hover-scroll flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+              {children}
+            </div>
+          </main>
+        </div>
+      </TooltipProvider>
+    );
+  }
+
+  // ======================================================
+  // NORMAL RENDER — full sidebar + navbar
+  // ======================================================
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="min-h-screen bg-background text-foreground">
+      {/* ✅ data-app-shell → enables viewport-lock CSS for app pages only */}
+      <div
+        data-app-shell
+        className="h-[100dvh] overflow-hidden bg-background text-foreground"
+      >
         <aside
           className={cn(
             "fixed inset-y-0 left-0 z-30 hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 lg:flex",
@@ -525,7 +624,7 @@ function AppShellInner({
           >
             <Brandmark collapsed={collapsed} />
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="hover-scroll flex-1 overflow-y-auto">
             <SidebarNav collapsed={collapsed} />
           </div>
           <div className="border-t border-sidebar-border p-3">
@@ -543,11 +642,11 @@ function AppShellInner({
 
         <div
           className={cn(
-            "transition-[padding] duration-200",
+            "flex h-full flex-col transition-[padding] duration-200",
             collapsed ? "lg:pl-[68px]" : "lg:pl-[248px]"
           )}
         >
-          <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
+          <header className="z-20 shrink-0 border-b border-border bg-background/85 backdrop-blur-md">
             <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
               <Sheet>
                 <SheetTrigger asChild>
@@ -555,12 +654,12 @@ function AppShellInner({
                     <Command />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[268px] bg-sidebar p-0">
+                <SheetContent side="left" className="sidebar-sheet-content w-[268px] bg-sidebar p-0">
                   <SheetTitle className="sr-only">Navigation</SheetTitle>
                   <div className="flex h-16 items-center border-b border-sidebar-border px-4">
                     <Brandmark />
                   </div>
-                  <div className="overflow-y-auto">
+                  <div className="hover-scroll overflow-y-auto">
                     <SidebarNav />
                   </div>
                 </SheetContent>
@@ -675,8 +774,10 @@ function AppShellInner({
 
           <AgencyActingBanner />
 
-          <main className="mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-            {children}
+          <main className="hover-scroll flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <div className="ui-page-content">
+              {children}
+            </div>
           </main>
         </div>
       </div>

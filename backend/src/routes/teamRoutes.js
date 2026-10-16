@@ -1,8 +1,11 @@
+// routes/teamRoutes.js
 const router = require('express').Router();
 const { authenticate, requirePermission } = require('../middleware/auth');
+const { resolveActingBrand } = require('../middleware/actingBrand');
 const ctrl = require('../controllers/teamController');
 
 router.use(authenticate);
+router.use(resolveActingBrand); // ✅ agency X-Acting-Brand support
 
 router.get('/',    requirePermission('team.read'),   ctrl.list);
 router.get('/:teamId', requirePermission('team.read'),   ctrl.getOne);

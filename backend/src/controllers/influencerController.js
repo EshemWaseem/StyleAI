@@ -109,6 +109,46 @@ async function uploadAvatar(req, res, next) {
   }
 }
 
+
+
+// ── Add this import at the top of influencerController.js ──
+const { scrapeSocialProfile } = require('../services/influencer/apifyScraper');
+
+// ── Add this new controller function ──
+async function scrapeProfile(req, res, next) {
+  try {
+    const { platform, handle } = req.body;
+
+    // Basic input validation
+    if (!platform || !handle) {
+      return res.status(400).json({
+        message: 'platform and handle are required',
+        code: 'MISSING_FIELDS',
+      });
+    }
+
+    const SUPPORTED = ['INSTAGRAM', 'TIKTOK', 'YOUTUBE'];
+    if (!SUPPORTED.includes(platform.toUpperCase())) {
+      return res.json({
+        found: false,
+        reason: `${platform} is not supported for auto-fetch. Please fill manually.`,
+      });
+    }
+
+    const data = await scrapeSocialProfile(platform, handle);
+    return res.json(data);
+  } catch (err) {
+    // Don't crash the server — return graceful error
+    console.error('[scrapeProfile] Apify error:', err.message);
+    return res.status(502).json({
+      found: false,
+      reason: 'Scraper temporarily unavailable. Please fill manually.',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
+  }
+}
+
+// ── Update module.exports ──
 module.exports = {
   list,
   getOne,
@@ -120,4 +160,20 @@ module.exports = {
   unsave,
   uploadAvatar,
   avatarUpload,
+  scrapeProfile,   // ← NEW
 };
+
+
+
+// module.exports = {
+//   list,
+//   getOne,
+//   getMe,
+//   create,
+//   update,
+//   remove,
+//   save,
+//   unsave,
+//   uploadAvatar,
+//   avatarUpload,
+// };

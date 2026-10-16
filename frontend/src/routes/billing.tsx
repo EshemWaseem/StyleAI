@@ -1,26 +1,27 @@
-import { swalError , swalConfirm } from "@/lib/swal";
+import { swalError, swalConfirm } from "@/lib/swal";
 // routes/billing.tsx
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   AlertCircle, Loader2, CreditCard, Check, Sparkles,
   CheckCircle2, XCircle, Clock, Trash2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { PageHeader, Panel, SectionTitle } from '@/components/ui-kit';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { PaymentMethodPicker } from '@/components/payments/PaymentMethodPicker';
-import { UsageBar } from '@/components/billing/UsageBar';
-import { billingApi, type BillingMeResponse, type Plan, type BillingRole } from '@/lib/billing';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { PaymentMethodPicker } from "@/components/payments/PaymentMethodPicker";
+import { UsageBar } from "@/components/billing/UsageBar";
+import { billingApi, type BillingMeResponse, type Plan, type BillingRole } from "@/lib/billing";
 import {
   paymentsApi,
   executeCheckout,
   type PaymentProvider,
-} from '@/lib/payments';
-import { cn } from '@/lib/utils';
+} from "@/lib/payments";
+import { clearTrialExpired } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute('/billing')({
-  head: () => ({ meta: [{ title: 'Billing — StyleAI' }] }),
+export const Route = createFileRoute("/billing")({
+  head: () => ({ meta: [{ title: "Billing — StyleAI" }] }),
   component: BillingPage,
 });
 
@@ -29,20 +30,20 @@ function BillingPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState('');
-  const [ok, setOk] = useState('');
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
   const [showPlans, setShowPlans] = useState(false);
 
   const [providers, setProviders] = useState<PaymentProvider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(null);
-  const [cycle, setCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
+  const [cycle, setCycle] = useState<"MONTHLY" | "YEARLY">("MONTHLY");
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
 
   async function load() {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const me = await billingApi.getMe();
       setData(me);
@@ -57,31 +58,65 @@ function BillingPage() {
       }
 
       try {
-        const methods = await paymentsApi.getMethods('SUBSCRIPTION');
+        const methods = await paymentsApi.getMethods("SUBSCRIPTION");
         setProviders(methods.providers);
         if (!selectedProvider && methods.providers.length) {
           setSelectedProvider(methods.providers[0]);
         }
       } catch { /* ignore */ }
     } catch (e: any) {
-      setError(e?.message || 'Failed to load billing');
+      setError(e?.message || "Failed to load billing");
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { load(); }, []);
+  // ------------------------------------------------------
+  // Initial load — handles Stripe return + trial flag cleanup
+  // ------------------------------------------------------
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    const status = params.get("status");
+
+    (async () => {
+      if (status === "success" && sessionId) {
+        // Verify the session directly with Stripe (fallback if webhook failed)
+        try {
+          await paymentsApi.verifySession(sessionId);
+        } catch (e) {
+          console.warn("[billing] verify-session failed:", e);
+        }
+        // Clear trial flag so app exits standalone mode
+        clearTrialExpired();
+        setOk("Payment successful — your plan is now active.");
+      } else if (status === "success") {
+        clearTrialExpired();
+        setOk("Payment successful — your plan is now active.");
+      } else if (status === "cancel") {
+        setError("Payment was cancelled.");
+      }
+
+      await load();
+
+      // Clean URL so refreshing doesn't re-trigger
+      if (status || sessionId) {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function upgrade(planName: string) {
     if (!selectedProvider) {
-      setError('Please choose a payment method first.');
+      setError("Please choose a payment method first.");
       return;
     }
     if (!(await swalConfirm(`Switch to ${planName} (${cycle.toLowerCase()}) via ${selectedProvider}?`))) return;
 
     setBusy(planName);
-    setError('');
-    setOk('');
+    setError("");
+    setOk("");
     try {
       const session = await paymentsApi.createSubscriptionCheckout({
         planName,
@@ -89,64 +124,64 @@ function BillingPage() {
         provider: selectedProvider,
       });
       executeCheckout(session, selectedProvider);
-      if (session.method === 'NONE') {
+      if (session.method === "NONE") {
         setOk(`Switched to ${planName}`);
         await load();
       }
     } catch (e: any) {
-      setError(e?.message || 'Upgrade failed');
+      setError(e?.message || "Upgrade failed");
       setBusy(null);
     }
   }
 
   async function cancel() {
-    if (!(await swalConfirm('Cancel at end of current period?'))) return;
-    setBusy('cancel');
+    if (!(await swalConfirm("Cancel at end of current period?"))) return;
+    setBusy("cancel");
     try {
       await billingApi.cancel();
       await load();
     } catch (e: any) {
-      setError(e?.message || 'Cancel failed');
+      setError(e?.message || "Cancel failed");
     } finally {
       setBusy(null);
     }
   }
 
   async function resume() {
-    setBusy('resume');
+    setBusy("resume");
     try {
       await billingApi.resume();
       await load();
     } catch (e: any) {
-      setError(e?.message || 'Resume failed');
+      setError(e?.message || "Resume failed");
     } finally {
       setBusy(null);
     }
   }
 
   async function handleDeleteInvoice(id: string) {
-    if (!(await swalConfirm('Delete this failed invoice?'))) return;
+    if (!(await swalConfirm("Delete this failed invoice?"))) return;
     setDeletingId(id);
     try {
       await billingApi.deleteInvoice(id);
       await load();
     } catch (e: any) {
-      swalError(e?.message || 'Delete failed');
+      swalError(e?.message || "Delete failed");
     } finally {
       setDeletingId(null);
     }
   }
 
   async function handleDeleteAllFailed() {
-    const failedCount = data?.invoices.filter((i) => i.status === 'FAILED').length ?? 0;
+    const failedCount = data?.invoices.filter((i) => i.status === "FAILED").length ?? 0;
     if (!failedCount) return;
-    if (!(await swalConfirm(`Delete all ${failedCount} failed invoice${failedCount === 1 ? '' : 's'}?`))) return;
+    if (!(await swalConfirm(`Delete all ${failedCount} failed invoice${failedCount === 1 ? "" : "s"}?`))) return;
     setDeletingAll(true);
     try {
       await billingApi.deleteAllFailed();
       await load();
     } catch (e: any) {
-      swalError(e?.message || 'Bulk delete failed');
+      swalError(e?.message || "Bulk delete failed");
     } finally {
       setDeletingAll(false);
     }
@@ -156,16 +191,13 @@ function BillingPage() {
   const isTrial = sub?.isTrial;
   const trialDaysLeft = sub?.trialDaysLeft ?? 0;
   const state = sub?.effectiveState;
-  const isFree = sub?.planName === 'free';
+  const isFree = sub?.planName === "free";
   const isAdmin = data?.isAdmin;
-  const failedCount = data?.invoices.filter((i) => i.status === 'FAILED').length ?? 0;
+  const failedCount = data?.invoices.filter((i) => i.status === "FAILED").length ?? 0;
 
-  // ======================================================
-  // ADMIN — no billing
-  // ======================================================
   if (isAdmin) {
     return (
-      <ProtectedRoute roles={['SUPER_ADMIN']} skipTrialCheck>
+      <ProtectedRoute roles={["SUPER_ADMIN"]}>
         <PageHeader
           eyebrow="Administration"
           title="Billing"
@@ -181,7 +213,7 @@ function BillingPage() {
   }
 
   return (
-    <ProtectedRoute roles={['BRAND_OWNER', 'AGENCY', 'INFLUENCER']} skipTrialCheck>
+    <ProtectedRoute roles={["BRAND_OWNER", "AGENCY", "INFLUENCER"]}>
       <PageHeader
         eyebrow="Administration"
         title="Billing"
@@ -189,18 +221,17 @@ function BillingPage() {
         actions={
           <Button onClick={() => setShowPlans((s) => !s)}>
             <Sparkles className="mr-1.5 size-4" />
-            {showPlans ? 'Hide plans' : (isTrial ? 'Upgrade now' : isFree ? 'Upgrade' : 'Change plan')}
+            {showPlans ? "Hide plans" : (isTrial ? "Upgrade now" : isFree ? "Upgrade" : "Change plan")}
           </Button>
         }
       />
 
-      {/* Trial banner */}
-      {isTrial && state === 'trial' && (
+      {isTrial && state === "trial" && (
         <div className="mt-6 flex items-start gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
           <Clock className="mt-0.5 size-4 shrink-0 text-amber-500" />
           <div>
             <p className="font-medium text-amber-600 dark:text-amber-400">
-              Free trial — {trialDaysLeft} day{trialDaysLeft === 1 ? '' : 's'} left
+              Free trial — {trialDaysLeft} day{trialDaysLeft === 1 ? "" : "s"} left
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Upgrade before your trial ends to keep using all features.
@@ -209,8 +240,7 @@ function BillingPage() {
         </div>
       )}
 
-      {/* Trial expired banner */}
-      {state === 'trial_expired' && (
+      {state === "trial_expired" && (
         <div className="mt-6 flex items-start gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
           <div className="flex-1">
@@ -241,7 +271,6 @@ function BillingPage() {
         </div>
       ) : !data ? null : (
         <>
-          {/* Payment method + cycle */}
           {showPlans && (
             <Panel className="mt-6">
               <SectionTitle
@@ -259,19 +288,19 @@ function BillingPage() {
                   Billing cycle
                 </label>
                 <div className="mt-2 flex gap-2">
-                  {(['MONTHLY', 'YEARLY'] as const).map((c) => (
+                  {(["MONTHLY", "YEARLY"] as const).map((c) => (
                     <button
                       key={c}
                       type="button"
                       onClick={() => setCycle(c)}
                       className={cn(
-                        'rounded-md border px-3 py-1.5 text-xs font-medium',
+                        "rounded-md border px-3 py-1.5 text-xs font-medium",
                         cycle === c
-                          ? 'border-accent bg-accent/10 text-accent'
-                          : 'border-border text-muted-foreground'
+                          ? "border-accent bg-accent/10 text-accent"
+                          : "border-border text-muted-foreground"
                       )}
                     >
-                      {c === 'MONTHLY' ? 'Monthly' : 'Yearly (save ~2 months)'}
+                      {c === "MONTHLY" ? "Monthly" : "Yearly (save ~2 months)"}
                     </button>
                   ))}
                 </div>
@@ -279,7 +308,6 @@ function BillingPage() {
             </Panel>
           )}
 
-          {/* Plan picker */}
           {showPlans && plans.length > 0 && (
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {plans.map((p) => {
@@ -289,9 +317,9 @@ function BillingPage() {
                   <article
                     key={p.name}
                     className={cn(
-                      'flex flex-col rounded-xl border bg-card p-5',
-                      current ? 'border-accent ring-1 ring-accent' : 'border-border',
-                      p.popular && !current && 'border-accent/40'
+                      "flex flex-col rounded-xl border bg-card p-5",
+                      current ? "border-accent ring-1 ring-accent" : "border-border",
+                      p.popular && !current && "border-accent/40"
                     )}
                   >
                     {p.popular && (
@@ -305,10 +333,10 @@ function BillingPage() {
                     )}
                     <p className="mt-3 text-sm">
                       {p.priceMonthly === null
-                        ? 'Contact sales'
+                        ? "Contact sales"
                         : p.priceMonthly === 0
-                        ? (isTrialPlan ? 'Free trial' : 'Free')
-                        : `${p.currency} ${(cycle === 'YEARLY' ? p.priceYearly : p.priceMonthly)?.toLocaleString()}/${cycle === 'YEARLY' ? 'yr' : 'mo'}`}
+                        ? (isTrialPlan ? "Free trial" : "Free")
+                        : `${p.currency} ${(cycle === "YEARLY" ? p.priceYearly : p.priceMonthly)?.toLocaleString()}/${cycle === "YEARLY" ? "yr" : "mo"}`}
                     </p>
                     {p.takeRate != null && p.takeRate > 0 && (
                       <p className="mt-1 text-[10px] text-accent">
@@ -327,14 +355,14 @@ function BillingPage() {
 
                     <Button
                       className="mt-4 w-full"
-                      variant={current ? 'outline' : 'default'}
+                      variant={current ? "outline" : "default"}
                       disabled={current || isTrialPlan || busy === p.name || !selectedProvider}
                       onClick={() => upgrade(p.name)}
                     >
                       {current
-                        ? 'Current plan'
+                        ? "Current plan"
                         : isTrialPlan
-                        ? 'Trial used'
+                        ? "Trial used"
                         : busy === p.name
                         ? <><Loader2 className="mr-2 size-4 animate-spin" />Redirecting…</>
                         : `Switch to ${p.label}`}
@@ -345,7 +373,6 @@ function BillingPage() {
             </div>
           )}
 
-          {/* Current plan + Usage + Invoices */}
           <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.4fr]">
             <Panel>
               <SectionTitle
@@ -354,19 +381,19 @@ function BillingPage() {
               />
               <div className="flex items-center justify-between">
                 <p className="font-display text-3xl font-medium">
-                  {data.plan?.label || '—'}
+                  {data.plan?.label || "—"}
                 </p>
-                {state === 'trial' && (
+                {state === "trial" && (
                   <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase text-amber-500">
                     Trial
                   </span>
                 )}
-                {state === 'active' && (
+                {state === "active" && (
                   <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium uppercase text-emerald-500">
                     Active
                   </span>
                 )}
-                {state === 'trial_expired' && (
+                {state === "trial_expired" && (
                   <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium uppercase text-destructive">
                     Expired
                   </span>
@@ -391,18 +418,18 @@ function BillingPage() {
 
               <div className="mt-6 flex flex-wrap gap-2">
                 {sub?.cancelAtPeriodEnd ? (
-                  <Button variant="outline" onClick={resume} disabled={busy === 'resume'}>
+                  <Button variant="outline" onClick={resume} disabled={busy === "resume"}>
                     Resume subscription
                   </Button>
                 ) : (
                   !isTrial && !isFree && (
-                    <Button variant="outline" onClick={cancel} disabled={busy === 'cancel'}>
+                    <Button variant="outline" onClick={cancel} disabled={busy === "cancel"}>
                       Cancel plan
                     </Button>
                   )
                 )}
                 <Button variant="ghost" onClick={() => setShowPlans(true)}>
-                  {isTrial ? 'Upgrade now' : isFree ? 'Upgrade' : 'Change plan'}
+                  {isTrial ? "Upgrade now" : isFree ? "Upgrade" : "Change plan"}
                 </Button>
               </div>
 
@@ -410,9 +437,9 @@ function BillingPage() {
                 <div className="flex items-center gap-2">
                   <CreditCard className="size-3.5" />
                   <span>
-                    Payment methods:{' '}
+                    Payment methods:{" "}
                     <strong className="text-foreground">
-                      {providers.length ? providers.join(' · ') : 'None available'}
+                      {providers.length ? providers.join(" · ") : "None available"}
                     </strong>
                   </span>
                 </div>
@@ -420,7 +447,6 @@ function BillingPage() {
             </Panel>
 
             <div className="space-y-6">
-              {/* Usage panel */}
               {data.usage && data.plan?.limits && (
                 <Panel>
                   <SectionTitle
@@ -465,11 +491,10 @@ function BillingPage() {
                 </Panel>
               )}
 
-              {/* Invoices */}
               <Panel className="overflow-hidden">
                 <SectionTitle
                   title="Invoices"
-                  description={`${data.invoices.length} invoice${data.invoices.length === 1 ? '' : 's'}`}
+                  description={`${data.invoices.length} invoice${data.invoices.length === 1 ? "" : "s"}`}
                   action={
                     failedCount > 0 ? (
                       <Button
@@ -521,17 +546,17 @@ function BillingPage() {
                             </td>
                             <td className="py-3">
                               <span className={cn(
-                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase',
-                                inv.status === 'SUCCEEDED' ? 'bg-emerald-500/15 text-emerald-500'
-                                : inv.status === 'PENDING' ? 'bg-amber-500/15 text-amber-500'
-                                : 'bg-destructive/15 text-destructive'
+                                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase",
+                                inv.status === "SUCCEEDED" ? "bg-emerald-500/15 text-emerald-500"
+                                : inv.status === "PENDING" ? "bg-amber-500/15 text-amber-500"
+                                : "bg-destructive/15 text-destructive"
                               )}>
-                                {inv.status === 'SUCCEEDED' ? <CheckCircle2 className="size-3" /> : inv.status === 'FAILED' ? <XCircle className="size-3" /> : null}
+                                {inv.status === "SUCCEEDED" ? <CheckCircle2 className="size-3" /> : inv.status === "FAILED" ? <XCircle className="size-3" /> : null}
                                 {inv.status}
                               </span>
                             </td>
                             <td className="py-3 text-right">
-                              {inv.status === 'FAILED' && (
+                              {inv.status === "FAILED" && (
                                 <Button
                                   variant="ghost"
                                   size="icon"

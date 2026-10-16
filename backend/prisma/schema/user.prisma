@@ -10,10 +10,17 @@ model User {
   password String
   isActive Boolean @default(true)
 
-  // ✅ NEW — contact + location
+  // ✅ Contact + location
   phone       String?
   country     String?
   countryCode String?   // ISO2 — "PK", "US" etc
+
+  // ✅ NEW — Login security / audit
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastFailedLoginAt   DateTime?
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
 
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
@@ -32,13 +39,15 @@ model User {
   brandTeamMemberships BrandTeamMember[] @relation("BrandTeamMemberUser")
   brandTeamInvitesSent BrandTeamMember[] @relation("BrandTeamMemberInviter")
 
+  // ✅ UNNAMED — matches influencer.prisma's unnamed `user` field
   influencerProfile Influencer?
-  offersCreated     CustomOffer[]     @relation("OfferCreator")
-  offersReviewed    CustomOffer[]     @relation("OfferReviewer")
-  notifications     Notification[]
-  campaignMessages  CampaignMessage[] @relation("CampaignMessageSender")
-  directMessages    DirectMessage[]   @relation("DirectMessageSender")
-  wallet            Wallet?
+
+  offersCreated    CustomOffer[]     @relation("OfferCreator")
+  offersReviewed   CustomOffer[]     @relation("OfferReviewer")
+  notifications    Notification[]
+  campaignMessages CampaignMessage[] @relation("CampaignMessageSender")
+  directMessages   DirectMessage[]   @relation("DirectMessageSender")
+  wallet           Wallet?
   notificationPreference NotificationPreference?
 
   assistantConversations AssistantConversation[] @relation("AssistantConversations")
@@ -49,6 +58,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([organizationId])
+  @@index([lockedUntil])
 }
 
 model Role {

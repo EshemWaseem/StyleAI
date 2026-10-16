@@ -158,15 +158,17 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
 
   if (loading) {
     return (
-      <div className="flex h-[500px] items-center justify-center rounded-lg border border-border bg-card">
-        <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
+      // <div className="flex h-[500px] items-center justify-center rounded-lg border border-border bg-card">
+     <div className="ui-card flex h-[500px] items-center justify-center">
+      <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
         <span className="text-sm text-muted-foreground">Loading chat…</span>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[600px] flex-col overflow-hidden rounded-lg border border-border bg-card">
+    // <div className="flex h-[600px] flex-col overflow-hidden rounded-lg border border-border bg-card">
+      <div className="ui-card flex h-[600px] flex-col overflow-hidden">
       <div className="flex items-center justify-between border-b border-border bg-muted/20 px-3 py-1.5">
         <div className="flex items-center gap-1.5">
           <span className={`inline-block size-1.5 rounded-full ${wsConnected ? "bg-emerald-500" : "bg-amber-500"}`} />

@@ -1,6 +1,7 @@
 import { swalError } from "@/lib/swal";
 // components/assistant/AssistantChat.tsx
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Loader2, Sparkles, X, Send, BookOpen, Plus,
 } from "lucide-react";
@@ -53,6 +54,22 @@ export function AssistantChat({
       50
     );
   }, [messages]);
+
+  // ---- ESC to close ----
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  // ---- Body scroll lock ----
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
   // ---- Send message ----
   async function send(textArg?: string) {
@@ -143,9 +160,15 @@ export function AssistantChat({
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-foreground/30 p-4 pt-12 backdrop-blur-sm">
-      <div className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lift">
+  return createPortal(
+    <div
+      className="ui-overlay !z-[100] !items-start !pt-12"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="ui-panel ui-panel-xl !my-0 flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden"
+      >
         {/* ============ Header ============ */}
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
@@ -329,6 +352,7 @@ export function AssistantChat({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

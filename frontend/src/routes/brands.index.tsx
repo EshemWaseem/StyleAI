@@ -149,7 +149,7 @@ function BrandPage() {
       />
 
       {!hasBrand ? (
-        <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
+        <div className="ui-empty mt-8">
           <div className="mx-auto grid size-12 place-items-center rounded-full bg-accent/15 text-accent">
             <Plus className="size-5" />
           </div>
@@ -355,11 +355,8 @@ function BrandFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-lg space-y-4 rounded-xl border border-border bg-card p-6 shadow-lift"
-      >
+    <div className="ui-overlay">
+      <form onSubmit={handleSubmit} className="ui-panel ui-panel-md ui-panel-body space-y-4">
         <div>
           <h2 className="font-display text-xl font-medium">Create your brand</h2>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -368,7 +365,7 @@ function BrandFormModal({
         </div>
 
         {error && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          <div className="ui-error">
             {error}
           </div>
         )}

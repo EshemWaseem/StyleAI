@@ -1,360 +1,564 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-
+@import "./styles/responsive.css";
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
- */
+/* ======================================================
+   Theme tokens
+   ====================================================== */
 
 @theme inline {
-  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    "Work Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Instrument Serif", Georgia, serif;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm:  calc(var(--radius) - 4px);
+  --radius-md:  calc(var(--radius) - 2px);
+  --radius-lg:  var(--radius);
+  --radius-xl:  calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
+
+  --color-background:        var(--background);
+  --color-foreground:        var(--foreground);
+  --color-card:              var(--card);
+  --color-card-foreground:   var(--card-foreground);
+  --color-popover:           var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
+  --color-primary:           var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
+  --color-secondary:         var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
+  --color-muted:             var(--muted);
+  --color-muted-foreground:  var(--muted-foreground);
+  --color-accent:            var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
+  --color-destructive:       var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  --color-border:            var(--border);
+  --color-input:             var(--input);
+  --color-ring:              var(--ring);
   --color-ring-offset-background: var(--background);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
+  --color-chart-1:           var(--chart-1);
+  --color-chart-2:           var(--chart-2);
+  --color-chart-3:           var(--chart-3);
+  --color-chart-4:           var(--chart-4);
+  --color-chart-5:           var(--chart-5);
+  --color-sidebar:           var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary:   var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent:    var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-brand-soft: var(--brand-soft);
-  --color-highlight: var(--highlight);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-ink: var(--ink);
-  --shadow-soft: 0 1px 2px oklch(0.2 0.01 60 / 0.04), 0 8px 24px -16px oklch(0.2 0.01 60 / 0.18);
-  --shadow-lift: 0 2px 4px oklch(0.2 0.01 60 / 0.05), 0 18px 40px -22px oklch(0.2 0.01 60 / 0.28);
+  --color-sidebar-border:    var(--sidebar-border);
+  --color-sidebar-ring:      var(--sidebar-ring);
+  --color-brand-soft:        var(--brand-soft);
+  --color-highlight:         var(--highlight);
+  --color-success:           var(--success);
+  --color-warning:           var(--warning);
+  --color-ink:               var(--ink);
+
+  --shadow-soft: 0 1px 2px oklch(0.2 0.01 60 / 0.04),
+                 0 8px 24px -16px oklch(0.2 0.01 60 / 0.18);
+  --shadow-lift: 0 2px 4px oklch(0.2 0.01 60 / 0.05),
+                 0 18px 40px -22px oklch(0.2 0.01 60 / 0.28);
 }
+
+/* ======================================================
+   Color palette — dark (default)
+   ====================================================== */
 
 :root {
   --radius: 0.5rem;
-  --background: oklch(0.135 0.008 145);
-  --foreground: oklch(0.95 0.008 135);
-  --card: oklch(0.17 0.009 145);
-  --card-foreground: oklch(0.95 0.008 135);
-  --popover: oklch(0.185 0.01 145);
+
+  --background:        oklch(0.135 0.008 145);
+  --foreground:        oklch(0.95  0.008 135);
+  --card:              oklch(0.17  0.009 145);
+  --card-foreground:   oklch(0.95  0.008 135);
+  --popover:           oklch(0.185 0.01  145);
   --popover-foreground: oklch(0.95 0.008 135);
-  --primary: oklch(0.49 0.075 145);
+  --primary:           oklch(0.49  0.075 145);
   --primary-foreground: oklch(0.97 0.008 135);
-  --secondary: oklch(0.205 0.01 145);
+  --secondary:         oklch(0.205 0.01  145);
   --secondary-foreground: oklch(0.9 0.009 135);
-  --muted: oklch(0.205 0.009 145);
-  --muted-foreground: oklch(0.69 0.015 140);
-  --accent: oklch(0.54 0.09 145);
-  --accent-foreground: oklch(0.98 0.006 135);
-  --destructive: oklch(0.55 0.17 27);
+  --muted:             oklch(0.205 0.009 145);
+  --muted-foreground:  oklch(0.69  0.015 140);
+  --accent:            oklch(0.54  0.09  145);
+  --accent-foreground: oklch(0.98  0.006 135);
+  --destructive:       oklch(0.55  0.17   27);
   --destructive-foreground: oklch(0.985 0.003 85);
-  --border: oklch(0.27 0.012 145);
-  --input: oklch(0.27 0.012 145);
-  --ring: oklch(0.57 0.085 145);
-  --brand-soft: oklch(0.24 0.025 145);
-  --highlight: oklch(0.57 0.085 145);
-  --success: oklch(0.68 0.1 145);
-  --warning: oklch(0.72 0.11 75);
-  --ink: oklch(0.105 0.006 145);
-  --chart-1: oklch(0.66 0.09 145);
+  --border:            oklch(0.27  0.012 145);
+  --input:             oklch(0.27  0.012 145);
+  --ring:              oklch(0.57  0.085 145);
+
+  --brand-soft:  oklch(0.24 0.025 145);
+  --highlight:   oklch(0.57 0.085 145);
+  --success:     oklch(0.68 0.1   145);
+  --warning:     oklch(0.72 0.11   75);
+  --ink:         oklch(0.105 0.006 145);
+
+  --chart-1: oklch(0.66 0.09  145);
   --chart-2: oklch(0.73 0.055 105);
-  --chart-3: oklch(0.68 0.07 55);
+  --chart-3: oklch(0.68 0.07   55);
   --chart-4: oklch(0.62 0.055 220);
-  --chart-5: oklch(0.74 0.08 28);
-  --sidebar: oklch(0.115 0.007 145);
-  --sidebar-foreground: oklch(0.91 0.009 135);
-  --sidebar-primary: oklch(0.52 0.08 145);
-  --sidebar-primary-foreground: oklch(0.98 0.006 135);
-  --sidebar-accent: oklch(0.2 0.018 145);
-  --sidebar-accent-foreground: oklch(0.95 0.008 135);
-  --sidebar-border: oklch(0.235 0.01 145);
-  --sidebar-ring: oklch(0.57 0.085 145);
+  --chart-5: oklch(0.74 0.08   28);
+
+  --sidebar:                    oklch(0.115 0.007 145);
+  --sidebar-foreground:         oklch(0.91  0.009 135);
+  --sidebar-primary:            oklch(0.52  0.08  145);
+  --sidebar-primary-foreground: oklch(0.98  0.006 135);
+  --sidebar-accent:             oklch(0.2   0.018 145);
+  --sidebar-accent-foreground:  oklch(0.95  0.008 135);
+  --sidebar-border:             oklch(0.235 0.01  145);
+  --sidebar-ring:               oklch(0.57  0.085 145);
 }
 
+/* ======================================================
+   Color palette — .dark override
+   ====================================================== */
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
+  --background:        oklch(0.129 0.042 264.695);
+  --foreground:        oklch(0.984 0.003 247.858);
+  --card:              oklch(0.208 0.042 265.755);
+  --card-foreground:   oklch(0.984 0.003 247.858);
+  --popover:           oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
+  --primary:           oklch(0.929 0.013 255.508);
   --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
+  --secondary:         oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
+  --muted:             oklch(0.279 0.041 260.031);
+  --muted-foreground:  oklch(0.704 0.04  256.788);
+  --accent:            oklch(0.279 0.041 260.031);
   --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
+  --destructive:       oklch(0.704 0.191  22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  --border:  oklch(1 0 0 / 10%);
+  --input:   oklch(1 0 0 / 15%);
+  --ring:    oklch(0.551 0.027 264.364);
+
   --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-2: oklch(0.696 0.17  162.48);
+  --chart-3: oklch(0.769 0.188  70.08);
   --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --chart-5: oklch(0.645 0.246  16.439);
+
+  --sidebar:                    oklch(0.208 0.042 265.755);
+  --sidebar-foreground:         oklch(0.984 0.003 247.858);
+  --sidebar-primary:            oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --sidebar-accent:             oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground:  oklch(0.984 0.003 247.858);
+  --sidebar-border:             oklch(1 0 0 / 10%);
+  --sidebar-ring:               oklch(0.551 0.027 264.364);
 }
 
+/* ======================================================
+   Base layer
+   ====================================================== */
+
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
+  * { border-color: var(--color-border); }
 
   body {
     background-color: var(--color-background);
-    color: var(--color-foreground);
-    font-family: var(--font-sans);
-    letter-spacing: 0;
-    min-width: 320px;
+    color:            var(--color-foreground);
+    font-family:      var(--font-sans);
+    letter-spacing:   0;
+    min-width:        320px;
   }
 
   button, a { outline-offset: 3px; }
 }
 
+/* ======================================================
+   Page transition
+   ====================================================== */
+
 @media (prefers-reduced-motion: no-preference) {
-  .page-enter { animation: page-enter 420ms ease-out both; }
+  .page-enter {
+    animation: page-enter 420ms ease-out both;
+  }
 }
-
-/* @keyframes page-enter {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-} */
-
-
 
 @keyframes page-enter {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
-
-
 /* ======================================================
-   Select / Option dark-mode fix (Windows Chrome default
-   renders options with white background + light text)
+   Select styling
    ====================================================== */
 
 select {
-  color: var(--color-foreground);
+  color:            var(--color-foreground);
   background-color: transparent;
 }
-
 select option {
   background-color: var(--color-popover);
-  color: var(--color-popover-foreground);
+  color:            var(--color-popover-foreground);
 }
-
 select option:checked,
 select option:hover {
   background-color: var(--color-accent);
-  color: var(--color-accent-foreground);
+  color:            var(--color-accent-foreground);
 }
 
-
-
-
 /* ======================================================
-   Phone input — matches native Input / Country dropdown
+   PhoneInput
    ====================================================== */
 
 .PhoneInput {
-  display: flex !important;
-  align-items: center !important;
-  width: 100% !important;
-  height: 2.5rem !important;
-  padding: 0 0.75rem !important;
-  font-family: var(--font-sans) !important;
-  font-size: 0.875rem !important;
-  color: var(--color-foreground) !important;
+  display:          flex !important;
+  align-items:      center !important;
+  width:            100% !important;
+  height:           2.5rem !important;
+  padding:          0 0.75rem !important;
+  font-family:      var(--font-sans) !important;
+  font-size:        0.875rem !important;
+  color:            var(--color-foreground) !important;
   background-color: var(--color-background) !important;
-  border: 1px solid var(--color-input) !important;
-  border-radius: var(--radius) !important;
-  transition: border-color 150ms ease, box-shadow 150ms ease !important;
+  border:           1px solid var(--color-input) !important;
+  border-radius:    var(--radius) !important;
+  transition:       border-color 150ms ease, box-shadow 150ms ease !important;
 }
-
 .PhoneInput:hover {
   border-color: color-mix(in oklch, var(--color-border) 60%, var(--color-accent)) !important;
 }
-
 .PhoneInput:focus-within {
   border-color: var(--color-accent) !important;
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-accent) 25%, transparent) !important;
+  box-shadow:   0 0 0 2px color-mix(in oklch, var(--color-accent) 25%, transparent) !important;
 }
-
 .PhoneInput--disabled,
 .PhoneInput[aria-disabled="true"] {
   background-color: var(--color-muted) !important;
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
+  opacity:          0.6 !important;
+  cursor:           not-allowed !important;
 }
-
 .PhoneInput input,
 .PhoneInputInput {
-  flex: 1 !important;
-  height: 100% !important;
-  background: transparent !important;
-  border: none !important;
-  outline: none !important;
-  color: var(--color-foreground) !important;
-  font-size: 0.875rem !important;
-  font-family: var(--font-sans) !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  box-shadow: none !important;
+  flex:             1 !important;
+  height:           100% !important;
+  background:       transparent !important;
+  border:           none !important;
+  outline:          none !important;
+  color:            var(--color-foreground) !important;
+  font-size:        0.875rem !important;
+  font-family:      var(--font-sans) !important;
+  padding:          0 !important;
+  margin:           0 !important;
+  box-shadow:       none !important;
 }
-
 .PhoneInput input::placeholder {
-  color: var(--color-muted-foreground) !important;
+  color:   var(--color-muted-foreground) !important;
   opacity: 0.6 !important;
 }
-
 .PhoneInputCountry {
-  display: flex !important;
-  align-items: center !important;
-  margin-right: 0.5rem !important;
+  display:       flex !important;
+  align-items:   center !important;
+  margin-right:  0.5rem !important;
   padding-right: 0.5rem !important;
-  border-right: 1px solid var(--color-border) !important;
+  border-right:  1px solid var(--color-border) !important;
 }
-
 .PhoneInputCountryIcon {
-  width: 1.25rem !important;
-  height: 1.25rem !important;
+  width:         1.25rem !important;
+  height:        1.25rem !important;
   border-radius: 2px !important;
-  box-shadow: none !important;
-  overflow: hidden !important;
+  box-shadow:    none !important;
+  overflow:      hidden !important;
 }
-
 .PhoneInputCountryIcon--border {
   background-color: transparent !important;
-  box-shadow: none !important;
+  box-shadow:       none !important;
 }
-
 .PhoneInputCountrySelect {
-  background: transparent !important;
-  color: var(--color-foreground) !important;
-  border: none !important;
-  outline: none !important;
-  font-size: 0.8125rem !important;
+  background:  transparent !important;
+  color:       var(--color-foreground) !important;
+  border:      none !important;
+  outline:     none !important;
+  font-size:   0.8125rem !important;
   font-weight: 500 !important;
-  cursor: pointer !important;
-  padding: 0 !important;
+  cursor:      pointer !important;
+  padding:     0 !important;
   margin-left: 0.25rem !important;
-  appearance: none !important;
+  appearance:  none !important;
 }
-
 .PhoneInputCountrySelect option {
   background-color: var(--color-popover) !important;
-  color: var(--color-popover-foreground) !important;
+  color:            var(--color-popover-foreground) !important;
 }
-
 .PhoneInputCountrySelectArrow {
-  color: var(--color-muted-foreground) !important;
-  opacity: 0.6 !important;
-  margin-left: 0.25rem !important;
-  width: 0.375rem !important;
-  height: 0.375rem !important;
+  color:        var(--color-muted-foreground) !important;
+  opacity:      0.6 !important;
+  margin-left:  0.25rem !important;
+  width:        0.375rem !important;
+  height:       0.375rem !important;
   border-width: 0 1.5px 1.5px 0 !important;
 }
 
+/* ======================================================
+   Scrollbar styling
+   ====================================================== */
 
-
-
-/* ============================================================
-   SCROLLBAR — Thin + Design Colors
-   ============================================================ */
-
-/* Webkit (Chrome, Edge, Safari) */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 999px;
-  transition: background 0.2s ease;
+  background-color: color-mix(in oklch, var(--color-accent) 45%, transparent);
+  border-radius:    999px;
+  transition:       background-color 0.2s ease;
+  border:           1px solid transparent;
+  background-clip:  padding-box;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background-color: color-mix(in oklch, var(--color-accent) 75%, transparent);
+  background-clip:  padding-box;
 }
-
-::-webkit-scrollbar-corner {
-  background: transparent;
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--color-accent);
+  background-clip:  padding-box;
 }
+::-webkit-scrollbar-corner { background: transparent; }
 
-/* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--border)) transparent;
+  scrollbar-color: color-mix(in oklch, var(--color-accent) 50%, transparent) transparent;
 }
 
-/* Extra-thin — modal ke andar */
-.modal-scroll::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
+/* Modal scrollbar */
+.modal-scroll::-webkit-scrollbar       { width: 4px; height: 4px; }
 .modal-scroll::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 999px;
+  background-color: color-mix(in oklch, var(--color-accent) 50%, transparent);
+  border-radius:    999px;
 }
 .modal-scroll::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.5);
+  background-color: color-mix(in oklch, var(--color-accent) 85%, transparent);
+}
+
+/* ======================================================
+   UI Panel / Overlay system
+   ====================================================== */
+
+.ui-overlay {
+  position:         fixed;
+  inset:            0;
+  z-index:          50;
+  display:          flex;
+  align-items:      flex-start;
+  justify-content:  center;
+  overflow-y:       auto;
+  background-color: color-mix(in oklch, var(--color-foreground) 40%, transparent);
+  backdrop-filter:  blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding:          1rem;
+  /* last item breathing room inside overlay scroll */
+  padding-bottom:   calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 640px) {
+  .ui-overlay { padding: 1.5rem; }
+}
+
+.ui-panel {
+  position:         relative;
+  margin-top:       2rem;
+  margin-bottom:    2rem;
+  width:            100%;
+  border-radius:    var(--radius-xl);
+  border:           1px solid var(--color-border);
+  background-color: var(--color-card);
+  color:            var(--color-card-foreground);
+  box-shadow:       var(--shadow-lift);
+}
+
+.ui-panel-sm  { max-width: 24rem; }
+.ui-panel-md  { max-width: 32rem; }
+.ui-panel-lg  { max-width: 42rem; }
+.ui-panel-xl  { max-width: 56rem; }
+.ui-panel-2xl { max-width: 72rem; }
+
+.ui-panel-header {
+  position:         sticky;
+  top:              0;
+  z-index:          10;
+  display:          flex;
+  align-items:      flex-start;
+  justify-content:  space-between;
+  gap:              1rem;
+  border-bottom:    1px solid var(--color-border);
+  border-top-left-radius:  var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  background-color: var(--color-card);
+  padding:          1rem 1.5rem;
+}
+
+.ui-panel-body   { padding: 1.5rem; }
+
+.ui-panel-footer {
+  display:         flex;
+  align-items:     center;
+  justify-content: flex-end;
+  gap:             0.5rem;
+  border-top:      1px solid var(--color-border);
+  padding:         1rem 1.5rem;
+}
+
+/* ======================================================
+   UI Cards / Empty / Error
+   ====================================================== */
+
+.ui-card {
+  border-radius:    var(--radius-xl);
+  border:           1px solid var(--color-border);
+  background-color: var(--color-card);
+  color:            var(--color-card-foreground);
+}
+
+.ui-empty {
+  border-radius: var(--radius-xl);
+  border:        1px dashed var(--color-border);
+  padding:       3rem 2rem;
+  text-align:    center;
+  color:         var(--color-muted-foreground);
+}
+
+.ui-error {
+  border-radius:    var(--radius-md);
+  border:           1px solid color-mix(in oklch, var(--color-destructive) 30%, transparent);
+  background-color: color-mix(in oklch, var(--color-destructive) 10%, transparent);
+  padding:          0.5rem 0.75rem;
+  font-size:        0.75rem;
+  color:            var(--color-destructive);
+}
+
+/* ======================================================
+   Page layout
+   ====================================================== */
+
+.ui-page-content {
+  margin-left:  auto;
+  margin-right: auto;
+  width:        100%;
+  max-width:    1400px;
+  display:      flex;
+  flex-direction: column;
+  flex:         1;
+  min-height:   0;
+  padding:      1rem;
+
+  /*
+    KEY FIX: page-level bottom clearance so the last
+    list tile gets 3 px of air above the viewport edge
+    when scrolled to the end.
+  */
+  padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 640px) {
+  .ui-page-content {
+    padding-left:   1.5rem;
+    padding-right:  1.5rem;
+    padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+  }
+}
+@media (min-width: 1024px) {
+  .ui-page-content {
+    padding-left:   2rem;
+    padding-right:  2rem;
+    padding-top:    1.25rem;
+    padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.ui-page-content > *:not(.ui-page-full) { flex-shrink: 0; }
+.ui-page-content > *:last-child:not(.ui-page-full) { flex-grow: 1; }
+
+.ui-page-full {
+  display:        flex;
+  flex-direction: column;
+  flex:           1;
+  min-height:     0;
+}
+
+/* ======================================================
+   Chat shell
+   ====================================================== */
+
+.ui-chat-shell {
+  display:          grid;
+  grid-template-columns: 1fr;
+  min-height:       0;
+  flex:             1;
+  margin-top:       1rem;
+  overflow:         hidden;
+  border-radius:    var(--radius-xl);
+  border:           1px solid var(--color-border);
+  background-color: var(--color-card);
+}
+@media (min-width: 768px) {
+  .ui-chat-shell { grid-template-columns: 320px 1fr; }
+}
+
+.ui-chat-sidebar {
+  display:        flex;
+  min-height:     0;
+  flex-direction: column;
+  border-bottom:  1px solid var(--color-border);
+  /*
+    Inner list inside chat sidebar also needs clearance:
+    children should use resp-scroll which adds 3 px.
+  */
+}
+@media (min-width: 768px) {
+  .ui-chat-sidebar {
+    border-bottom: 0;
+    border-right:  1px solid var(--color-border);
+  }
+}
+
+/* ======================================================
+   Hover-reveal scrollbar
+   ====================================================== */
+
+.hover-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  /*
+    Same 3 px fix so hover-scroll lists aren't clipped
+  */
+  padding-bottom:       3px;
+  scroll-padding-bottom: 3px;
+}
+.hover-scroll:hover {
+  scrollbar-color: color-mix(in oklch, var(--color-accent) 35%, transparent) transparent;
+}
+.hover-scroll::-webkit-scrollbar       { width: 6px; height: 6px; }
+.hover-scroll::-webkit-scrollbar-track { background: transparent; }
+.hover-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius:    999px;
+  transition:       background-color 0.2s ease;
+  border:           1px solid transparent;
+  background-clip:  padding-box;
+}
+.hover-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklch, var(--color-accent) 35%, transparent);
+  background-clip:  padding-box;
+}
+.hover-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklch, var(--color-accent) 70%, transparent);
+  background-clip:  padding-box;
+}
+
+/* ======================================================
+   No-scrollbar utility
+   ====================================================== */
+
+.no-scrollbar {
+  scrollbar-width:   none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width:   0;
+  height:  0;
 }

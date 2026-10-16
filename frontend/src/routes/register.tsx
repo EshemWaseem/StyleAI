@@ -1,3 +1,4 @@
+// routes/register.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
   type RoleName,
 } from "@/lib/role";
 import { joinRequestsApi } from "@/lib/join-requests";
+import type { ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/register")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -36,7 +38,8 @@ export const Route = createFileRoute("/register")({
 const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
   SUPER_ADMIN: "",
   BRAND_OWNER: "Manage your brand, products, campaigns, and team.",
-  BRAND_TEAM_MEMBER: "Request to join a brand and collaborate on daily operations.",
+  BRAND_TEAM_MEMBER:
+    "Request to join a brand and collaborate on daily operations.",
   INFLUENCER: "Discover products and partner with brands.",
   AGENCY: "Run campaigns for multiple brands from one workspace.",
   SHOPPER: "Shop the atelier — save favourites and track orders.",
@@ -70,7 +73,9 @@ async function fetchPublicBrands(): Promise<PublicBrandOption[]> {
   return data.brands ?? [];
 }
 
-async function fetchPublicBrandRoles(brandId: string): Promise<PublicRoleOption[]> {
+async function fetchPublicBrandRoles(
+  brandId: string
+): Promise<PublicRoleOption[]> {
   const res = await fetch(`${PUBLIC_BASE}/api/brands/${brandId}/public-roles`);
   if (!res.ok) return [];
   const data = await res.json();
@@ -103,11 +108,11 @@ function RegisterPage() {
   const [requestMessage, setRequestMessage] = useState("");
 
   const [geo, setGeo] = useState<CountryPhoneFieldsValue>({
-        country: null,
-        state: null,
-        city: null,
-        phone: undefined,
-        });
+    country: null,
+    state: null,
+    city: null,
+    phone: undefined,
+  });
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -144,7 +149,6 @@ function RegisterPage() {
     fetchPublicBrandRoles(selectedBrandId)
       .then((rs) => {
         setBrandRoles(rs);
-        // Auto-select first role
         if (rs[0]) setSelectedRoleId(rs[0].id);
       })
       .finally(() => setRolesLoading(false));
@@ -164,25 +168,25 @@ function RegisterPage() {
       return;
     }
     if (isTeamMember && !selectedRoleId) {
-  setError("Please select the role you'd like to apply for.");
-  return;
-}
+      setError("Please select the role you'd like to apply for.");
+      return;
+    }
 
-//  Validate geo for org owners
-        if (needsOrg) {
-          const geoErr = validateCountryPhone(geo, {
-            requirePhone: true,
-            requireCountry: true,
-            requireStateCity: false,
-          });
-          if (geoErr) {
-            setError(geoErr);
-            return;
-          }
-        }
+    // Validate geo for org owners
+    if (needsOrg) {
+      const geoErr = validateCountryPhone(geo, {
+        requirePhone: true,
+        requireCountry: true,
+        requireStateCity: false,
+      });
+      if (geoErr) {
+        setError(geoErr);
+        return;
+      }
+    }
 
-        setLoading(true);
-        try {
+    setLoading(true);
+    try {
       const created = await register({
         name: name.trim(),
         email: email.trim(),
@@ -231,8 +235,43 @@ function RegisterPage() {
       setTimeout(() => {
         navigate({ to: getDashboardPath(created.roles) });
       }, 1200);
-    } catch (err: any) {
-      setError(err?.message || "Could not create your account.");
+    } catch (errRaw: any) {
+      const err = errRaw as ApiError;
+      const code = err?.code;
+      const status = err?.status;
+
+      if (status === 429 && code === "REGISTER_RATE_LIMIT") {
+        const retryAfter = Number(err?.retryAfter ?? 3600);
+        const mins = Math.ceil(retryAfter / 60);
+        setError(
+          `Too many accounts created from this network. Please try again in ${mins} minute${
+            mins === 1 ? "" : "s"
+          }.`
+        );
+      } else if (status === 409 || code === "DUPLICATE") {
+        setError(
+          "This email is already registered. Try signing in instead."
+        );
+      } else if (status === 429 && code === "AUTH_RATE_LIMIT") {
+        setError("Too many requests. Please slow down and try again.");
+      } else if (
+        status === 503 ||
+        code === "SERVICE_UNAVAILABLE" ||
+        code === "NETWORK_ERROR"
+      ) {
+        setError(
+          "Service is temporarily unavailable. Please try again in a moment."
+        );
+      } else if (status === 403) {
+        setError(
+          err?.message ||
+            "This role cannot be self-registered. Please contact an administrator."
+        );
+      } else if (status === 400) {
+        setError(err?.message || "Please check the values you entered.");
+      } else {
+        setError(err?.message || "Could not create your account.");
+      }
       setLoading(false);
     }
   }
@@ -348,36 +387,36 @@ function RegisterPage() {
           </div>
 
           {needsOrg && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="organizationName">Organization name</Label>
-                    <Input
-                      id="organizationName"
-                      type="text"
-                      autoComplete="organization"
-                      required
-                      placeholder="Noor Atelier"
-                      value={organizationName}
-                      onChange={(e) => setOrganizationName(e.target.value)}
-                      disabled={loading}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Your workspace will be created under this name.
-                    </p>
-                  </div>
-                        
-                  {/* ✅ Country + Phone for brand owner / agency */}
-                  <CountryPhoneFields
-                    value={geo}
-                    onChange={setGeo}
-                    disabled={loading}
-                    showStateCity={false}
-                    showPhone={true}
-                    required
-                  />
-                </>
-              )}
-              
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="organizationName">Organization name</Label>
+                <Input
+                  id="organizationName"
+                  type="text"
+                  autoComplete="organization"
+                  required
+                  placeholder="Noor Atelier"
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
+                  disabled={loading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your workspace will be created under this name.
+                </p>
+              </div>
+
+              {/* Country + Phone for brand owner / agency */}
+              <CountryPhoneFields
+                value={geo}
+                onChange={setGeo}
+                disabled={loading}
+                showStateCity={false}
+                showPhone={true}
+                required
+              />
+            </>
+          )}
+
           {/* TEAMMATE — brand + role */}
           {isTeamMember && (
             <>
@@ -402,7 +441,8 @@ function RegisterPage() {
                 </select>
                 {!brandsLoading && brands.length === 0 && (
                   <p className="text-xs text-destructive">
-                    No brands available yet. Ask the brand owner to create one first.
+                    No brands available yet. Ask the brand owner to create one
+                    first.
                   </p>
                 )}
               </div>
@@ -411,10 +451,13 @@ function RegisterPage() {
                 <div className="space-y-2">
                   <Label>Role you're applying for *</Label>
                   {rolesLoading ? (
-                    <p className="text-xs text-muted-foreground">Loading roles…</p>
+                    <p className="text-xs text-muted-foreground">
+                      Loading roles…
+                    </p>
                   ) : brandRoles.length === 0 ? (
                     <p className="text-xs text-destructive">
-                      This brand hasn't set up custom roles yet. Try again later.
+                      This brand hasn't set up custom roles yet. Try again
+                      later.
                     </p>
                   ) : (
                     <div className="grid gap-2">
@@ -440,7 +483,9 @@ function RegisterPage() {
                               disabled={loading}
                             />
                             <div className="min-w-0">
-                              <div className="text-sm font-medium">{r.name}</div>
+                              <div className="text-sm font-medium">
+                                {r.name}
+                              </div>
                               {r.description && (
                                 <div className="text-xs text-muted-foreground">
                                   {r.description}

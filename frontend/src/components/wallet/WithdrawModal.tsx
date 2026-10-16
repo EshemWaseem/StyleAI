@@ -50,16 +50,16 @@ export function WithdrawModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm">
-      <form onSubmit={submit} className="my-8 w-full max-w-md rounded-xl border border-border bg-card shadow-lift">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+    <div className="ui-overlay">
+      <form onSubmit={submit} className="ui-panel ui-panel-md">
+        <div className="ui-panel-header">
           <h2 className="font-display text-lg font-medium">Withdraw funds</h2>
           <Button type="button" variant="ghost" size="icon" onClick={onClose} disabled={saving}>
             <X />
           </Button>
         </div>
 
-        <div className="space-y-4 p-6">
+        <div className="ui-panel-body space-y-4">
           <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
             Available: <strong className="text-foreground">{currency} {availableBalance.toFixed(2)}</strong>
           </div>
@@ -111,14 +111,10 @@ export function WithdrawModal({
             />
           </div>
 
-          {error && (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              {error}
-            </div>
-          )}
+          {error && <div className="ui-error">{error}</div>}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+        <div className="ui-panel-footer">
           <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button type="submit" disabled={saving}>
             {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ArrowUpRight className="mr-2 size-4" />}

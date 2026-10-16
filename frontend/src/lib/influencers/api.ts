@@ -8,6 +8,25 @@ import type {
   InfluencerInput,
 } from "./types";
 
+
+export interface ScrapeResult {
+  found: boolean;
+  reason?: string;
+  platform?: string;
+  handle?: string;
+  profileUrl?: string;
+  displayName?: string;
+  bio?: string;
+  avatarUrl?: string;
+  followerCount?: number;
+  followingCount?: number;
+  engagementRate?: number;
+  avgLikes?: number;
+  avgComments?: number;
+  isVerified?: boolean;
+}
+
+
 export const influencersApi = {
   list: (filters: InfluencerFilters = {}) => {
     const qs = new URLSearchParams();
@@ -69,4 +88,10 @@ export const influencersApi = {
       form
     );
   },
+
+  scrapeSocial: (platform: string, handle: string) =>
+  http.post<ScrapeResult>('/api/influencers/scrape-social', { platform, handle }),
+
+  
 };
+

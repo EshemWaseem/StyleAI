@@ -107,13 +107,9 @@ export function RoleEditorModal({ mode, role = null, onClose, onSaved }: Props) 
   const locked = isEdit && role?.isOwnerRole;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm">
-      <form
-        onSubmit={handleSubmit}
-        className="my-8 w-full max-w-2xl rounded-xl border border-border bg-card shadow-lift"
-      >
-        {/* HEADER */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+    <div className="ui-overlay">
+      <form onSubmit={handleSubmit} className="ui-panel ui-panel-xl">
+        <div className="ui-panel-header">
           <div>
             <h2 className="font-display text-xl font-medium">
               {isEdit ? "Edit role" : "New role"}
@@ -130,7 +126,7 @@ export function RoleEditorModal({ mode, role = null, onClose, onSaved }: Props) 
         </div>
 
         {/* BODY */}
-        <div className="max-h-[70vh] space-y-5 overflow-y-auto p-6">
+        <div className="modal-scroll ui-panel-body max-h-[70vh] space-y-5 overflow-y-auto">
           {error && (
             <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
@@ -281,7 +277,7 @@ export function RoleEditorModal({ mode, role = null, onClose, onSaved }: Props) 
         </div>
 
         {/* FOOTER */}
-        <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+        <div className="ui-panel-footer">
           <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>

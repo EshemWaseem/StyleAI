@@ -1,5 +1,6 @@
 // routes/influencerRoutes.js
 const router = require('express').Router();
+const rateLimit = require('express-rate-limit');
 const {
   authenticate,
   requirePermission,
@@ -9,10 +10,33 @@ const {
 const ctrl = require('../controllers/influencerController');
 const pricingCtrl = require('../controllers/pricingController');
 
+// ✅ Use centralized Redis store + IPv6-safe key generator
+const { makeStore, ipKeyGenerator } = require('../config/rateLimit');
+
 router.use(authenticate);
 
 // Roles that can browse creators (brand side + agency)
 const BROWSE_ROLES = ['SUPER_ADMIN', 'BRAND_OWNER', 'AGENCY', 'BRAND_TEAM_MEMBER'];
+
+// ------------------------------------------------------
+// Rate limiter for Apify scrape — protects credits
+// 10 verifications per user per hour
+// ------------------------------------------------------
+const scrapeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: makeStore('influencer-scrape'), // ✅ Redis-backed + unique prefix
+  keyGenerator: (req) =>
+    req.user?.id
+      ? `u:${req.user.id}`
+      : `ip:${ipKeyGenerator(req.ip)}`, // ✅ IPv6-safe
+  message: {
+    message: 'Too many profile verifications. Please try again later.',
+    code: 'SCRAPE_RATE_LIMIT',
+  },
+});
 
 // ----- Avatar upload -----
 router.post(
@@ -20,6 +44,15 @@ router.post(
   requirePermission('influencer.create'),
   ctrl.avatarUpload.single('avatar'),
   ctrl.uploadAvatar
+);
+
+// ----- Scrape social profile (Apify) — rate limited -----
+router.post(
+  '/scrape-social',
+  scrapeLimiter,
+  authorize('INFLUENCER', 'SUPER_ADMIN'),
+  requirePermission('influencer.create'),
+  ctrl.scrapeProfile
 );
 
 // ----- List (discover) — allow roles OR permission -----

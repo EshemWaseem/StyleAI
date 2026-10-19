@@ -14,6 +14,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EngagementsRouteImport } from './routes/engagements'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MatchedProductsRouteImport } from './routes/matched-products'
@@ -25,9 +26,11 @@ import { Route as PlansRouteImport } from './routes/plans'
 import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReplaceRouteImport } from './routes/replace'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as TrialExpiredRouteImport } from './routes/trial-expired'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAgenciesRouteImport } from './routes/admin/agencies'
@@ -96,6 +99,11 @@ const EngagementsRoute = EngagementsRouteImport.update({
   path: '/engagements',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KnowledgeRoute = KnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
@@ -151,6 +159,11 @@ const ReplaceRoute = ReplaceRouteImport.update({
   path: '/replace',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -164,6 +177,11 @@ const TeamRoute = TeamRouteImport.update({
 const TrialExpiredRoute = TrialExpiredRouteImport.update({
   id: '/trial-expired',
   path: '/trial-expired',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WalletRoute = WalletRouteImport.update({
@@ -383,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
   '/engagements': typeof EngagementsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/matched-products': typeof MatchedProductsRoute
@@ -394,9 +413,11 @@ export interface FileRoutesByFullPath {
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/replace': typeof ReplaceRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/trial-expired': typeof TrialExpiredRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/wallet': typeof WalletRoute
   '/admin/agencies': typeof AdminAgenciesRoute
   '/admin/ai': typeof AdminAiRoute
@@ -446,6 +467,7 @@ export interface FileRoutesByTo {
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
   '/engagements': typeof EngagementsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/matched-products': typeof MatchedProductsRoute
@@ -457,9 +479,11 @@ export interface FileRoutesByTo {
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/replace': typeof ReplaceRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/trial-expired': typeof TrialExpiredRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/wallet': typeof WalletRoute
   '/admin/agencies': typeof AdminAgenciesRoute
   '/admin/ai': typeof AdminAiRoute
@@ -510,6 +534,7 @@ export interface FileRoutesById {
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
   '/engagements': typeof EngagementsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/matched-products': typeof MatchedProductsRoute
@@ -521,9 +546,11 @@ export interface FileRoutesById {
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/replace': typeof ReplaceRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/trial-expired': typeof TrialExpiredRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/wallet': typeof WalletRoute
   '/admin/agencies': typeof AdminAgenciesRoute
   '/admin/ai': typeof AdminAiRoute
@@ -575,6 +602,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/engagements'
+    | '/forgot-password'
     | '/knowledge'
     | '/login'
     | '/matched-products'
@@ -586,9 +614,11 @@ export interface FileRouteTypes {
     | '/recommendations'
     | '/register'
     | '/replace'
+    | '/reset-password'
     | '/settings'
     | '/team'
     | '/trial-expired'
+    | '/verify-email'
     | '/wallet'
     | '/admin/agencies'
     | '/admin/ai'
@@ -638,6 +668,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/engagements'
+    | '/forgot-password'
     | '/knowledge'
     | '/login'
     | '/matched-products'
@@ -649,9 +680,11 @@ export interface FileRouteTypes {
     | '/recommendations'
     | '/register'
     | '/replace'
+    | '/reset-password'
     | '/settings'
     | '/team'
     | '/trial-expired'
+    | '/verify-email'
     | '/wallet'
     | '/admin/agencies'
     | '/admin/ai'
@@ -701,6 +734,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/engagements'
+    | '/forgot-password'
     | '/knowledge'
     | '/login'
     | '/matched-products'
@@ -712,9 +746,11 @@ export interface FileRouteTypes {
     | '/recommendations'
     | '/register'
     | '/replace'
+    | '/reset-password'
     | '/settings'
     | '/team'
     | '/trial-expired'
+    | '/verify-email'
     | '/wallet'
     | '/admin/agencies'
     | '/admin/ai'
@@ -765,6 +801,7 @@ export interface RootRouteChildren {
   BillingRoute: typeof BillingRoute
   DashboardRoute: typeof DashboardRoute
   EngagementsRoute: typeof EngagementsRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
   MatchedProductsRoute: typeof MatchedProductsRoute
@@ -776,9 +813,11 @@ export interface RootRouteChildren {
   RecommendationsRoute: typeof RecommendationsRoute
   RegisterRoute: typeof RegisterRoute
   ReplaceRoute: typeof ReplaceRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   TeamRoute: typeof TeamRoute
   TrialExpiredRoute: typeof TrialExpiredRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   WalletRoute: typeof WalletRoute
   AdminAgenciesRoute: typeof AdminAgenciesRoute
   AdminAiRoute: typeof AdminAiRoute
@@ -860,6 +899,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EngagementsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/knowledge': {
       id: '/knowledge'
       path: '/knowledge'
@@ -937,6 +983,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReplaceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -956,6 +1009,13 @@ declare module '@tanstack/react-router' {
       path: '/trial-expired'
       fullPath: '/trial-expired'
       preLoaderRoute: typeof TrialExpiredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wallet': {
@@ -1261,6 +1321,7 @@ const rootRouteChildren: RootRouteChildren = {
   BillingRoute: BillingRoute,
   DashboardRoute: DashboardRoute,
   EngagementsRoute: EngagementsRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
   MatchedProductsRoute: MatchedProductsRoute,
@@ -1272,9 +1333,11 @@ const rootRouteChildren: RootRouteChildren = {
   RecommendationsRoute: RecommendationsRoute,
   RegisterRoute: RegisterRoute,
   ReplaceRoute: ReplaceRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   TeamRoute: TeamRoute,
   TrialExpiredRoute: TrialExpiredRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   WalletRoute: WalletRoute,
   AdminAgenciesRoute: AdminAgenciesRoute,
   AdminAiRoute: AdminAiRoute,

@@ -5,7 +5,7 @@ const { resolveActingBrand } = require('../middleware/actingBrand');
 const ctrl = require('../controllers/listingController');
 
 router.use(authenticate);
-router.use(resolveActingBrand); // ✅ agency X-Acting-Brand support
+router.use(resolveActingBrand);
 
 router.get('/', ctrl.list);
 router.post('/', ctrl.create);

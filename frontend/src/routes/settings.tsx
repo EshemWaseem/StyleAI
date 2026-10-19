@@ -14,12 +14,15 @@ import {
   Lock,
   Bell,
   Loader2,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
+import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import {
   CountryPhoneFields,
   validateCountryPhone,
@@ -117,7 +120,6 @@ function SettingsPage() {
     if (!user) return;
     setName(user.name ?? "");
     setEmail(user.email ?? "");
-    // ✅ seed geo
     setGeo({
       country:
         user.country && user.countryCode
@@ -170,7 +172,6 @@ function SettingsPage() {
       return;
     }
 
-    // ✅ Validate phone (if provided)
     if (geo.phone) {
       const geoErr = validateCountryPhone(geo, {
         requirePhone: false,
@@ -207,13 +208,16 @@ function SettingsPage() {
         } catch {}
       }
     } catch (err: any) {
-      setAccountMsg({ type: "err", text: err?.message || "Failed to update account" });
+      setAccountMsg({
+        type: "err",
+        text: err?.message || "Failed to update account",
+      });
     } finally {
       setSavingAccount(false);
     }
   }
 
-  // ---------- Change password ----------
+  // ---------- Change password (NEW) ----------
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setPasswordMsg(null);
@@ -222,8 +226,18 @@ function SettingsPage() {
       setPasswordMsg({ type: "err", text: "Current password is required" });
       return;
     }
-    if (newPassword.length < 8) {
-      setPasswordMsg({ type: "err", text: "New password must be at least 8 characters" });
+    if (newPassword.length < 6) {
+      setPasswordMsg({
+        type: "err",
+        text: "New password must be at least 6 characters",
+      });
+      return;
+    }
+    if (currentPassword === newPassword) {
+      setPasswordMsg({
+        type: "err",
+        text: "New password must be different from your current password",
+      });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -233,13 +247,34 @@ function SettingsPage() {
 
     setSavingPassword(true);
     try {
-      await http.patch("/api/users/me/password", { currentPassword, newPassword });
-      setPasswordMsg({ type: "ok", text: "Password updated successfully" });
+      await http.post("/api/auth/change-password", {
+        currentPassword,
+        newPassword,
+      });
+      setPasswordMsg({
+        type: "ok",
+        text: "Password updated successfully. A confirmation email has been sent.",
+      });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
-      setPasswordMsg({ type: "err", text: err?.message || "Failed to update password" });
+      const code = err?.code;
+      let message = "Failed to update password";
+      if (code === "INVALID_CURRENT_PASSWORD") {
+        message = "Current password is incorrect.";
+      } else if (code === "SAME_PASSWORD") {
+        message = "New password must be different from your current password.";
+      } else if (code === "WEAK_PASSWORD") {
+        message = "New password must be at least 6 characters.";
+      } else if (err?.status === 429) {
+        message = "Too many attempts. Please try again in a few minutes.";
+      } else if (err?.status === 503) {
+        message = "Service is temporarily unavailable. Please try again.";
+      } else if (err?.message) {
+        message = err.message;
+      }
+      setPasswordMsg({ type: "err", text: message });
     } finally {
       setSavingPassword(false);
     }
@@ -270,7 +305,10 @@ function SettingsPage() {
       setPrefs(res.preferences);
       setPrefsMsg({ type: "ok", text: "Preferences saved" });
     } catch (err: any) {
-      setPrefsMsg({ type: "err", text: err?.message || "Failed to save preferences" });
+      setPrefsMsg({
+        type: "err",
+        text: err?.message || "Failed to save preferences",
+      });
     } finally {
       setPrefsSaving(false);
     }
@@ -285,6 +323,9 @@ function SettingsPage() {
   const influencerMode = isInfluencerOnly(roles);
   const brandMode = isBrandUser(roles);
   const adminMode = isAdmin(roles);
+
+  const passwordsMismatch =
+    confirmPassword.length > 0 && newPassword !== confirmPassword;
 
   return (
     <>
@@ -307,15 +348,27 @@ function SettingsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Full name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={savingAccount} autoComplete="name" />
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={savingAccount}
+                autoComplete="name"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={savingAccount} autoComplete="email" />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={savingAccount}
+                autoComplete="email"
+              />
             </div>
           </div>
 
-          {/* ✅ NEW — Phone + Country */}
           <CountryPhoneFields
             value={geo}
             onChange={setGeo}
@@ -330,7 +383,10 @@ function SettingsPage() {
             <Label>Roles</Label>
             <div className="flex flex-wrap gap-2">
               {roles.map((r) => (
-                <span key={r} className="inline-flex items-center rounded-full bg-accent/15 px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-accent">
+                <span
+                  key={r}
+                  className="inline-flex items-center rounded-full bg-accent/15 px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-accent"
+                >
                   {r.replace(/_/g, " ")}
                 </span>
               ))}
@@ -338,10 +394,18 @@ function SettingsPage() {
           </div>
 
           {accountMsg && (
-            <div className={accountMsg.type === "ok"
-              ? "flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-500"
-              : "flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"}>
-              {accountMsg.type === "ok" ? <CheckCircle2 className="size-3.5 shrink-0" /> : <AlertCircle className="size-3.5 shrink-0" />}
+            <div
+              className={
+                accountMsg.type === "ok"
+                  ? "flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-500"
+                  : "flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+              }
+            >
+              {accountMsg.type === "ok" ? (
+                <CheckCircle2 className="size-3.5 shrink-0" />
+              ) : (
+                <AlertCircle className="size-3.5 shrink-0" />
+              )}
               <span>{accountMsg.text}</span>
             </div>
           )}
@@ -356,48 +420,113 @@ function SettingsPage() {
       </Panel>
 
       {/* ======================================================
-          2. SECURITY
+          2. SECURITY — Password Change (UPGRADED)
       ====================================================== */}
       <Panel className="mt-6">
-        <SectionTitle title="Security" description="Change your login password." action={<Lock className="size-4 text-muted-foreground" />} />
+        <SectionTitle
+          title="Security"
+          description="Change your login password."
+          action={<Lock className="size-4 text-muted-foreground" />}
+        />
         <form onSubmit={handleChangePassword} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="currentPassword">Current password</Label>
-            <Input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} disabled={savingPassword} autoComplete="current-password" placeholder="••••••••" />
+            <PasswordInput
+              id="currentPassword"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              disabled={savingPassword}
+              autoComplete="current-password"
+              placeholder="Enter your current password"
+            />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New password</Label>
-              <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} disabled={savingPassword} autoComplete="new-password" placeholder="At least 8 characters" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm new password</Label>
-              <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} disabled={savingPassword} autoComplete="new-password" placeholder="Repeat new password" />
-            </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="newPassword">New password</Label>
+            <PasswordInput
+              id="newPassword"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              disabled={savingPassword}
+              autoComplete="new-password"
+              placeholder="At least 6 characters"
+              minLength={6}
+            />
+            <PasswordStrength password={newPassword} />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm new password</Label>
+            <PasswordInput
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={savingPassword}
+              autoComplete="new-password"
+              placeholder="Repeat new password"
+              minLength={6}
+            />
+            {passwordsMismatch && (
+              <p className="text-xs text-destructive">
+                Passwords do not match.
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+            <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
+            <span>
+              You will remain signed in on this device. Other devices will
+              need to sign in again with the new password.
+            </span>
+          </div>
+
           {passwordMsg && (
-            <div className={passwordMsg.type === "ok"
-              ? "flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-500"
-              : "flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"}>
-              {passwordMsg.type === "ok" ? <CheckCircle2 className="size-3.5 shrink-0" /> : <AlertCircle className="size-3.5 shrink-0" />}
+            <div
+              className={
+                passwordMsg.type === "ok"
+                  ? "flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-500"
+                  : "flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+              }
+            >
+              {passwordMsg.type === "ok" ? (
+                <CheckCircle2 className="size-3.5 shrink-0" />
+              ) : (
+                <AlertCircle className="size-3.5 shrink-0" />
+              )}
               <span>{passwordMsg.text}</span>
             </div>
           )}
+
           <div className="flex justify-end">
-            <Button type="submit" disabled={savingPassword}>
+            <Button
+              type="submit"
+              disabled={
+                savingPassword ||
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword ||
+                passwordsMismatch
+              }
+            >
               <KeyRound className="mr-1.5 size-3.5" />
               {savingPassword ? "Updating…" : "Update password"}
             </Button>
           </div>
         </form>
+
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-dashed border-border bg-muted/5 p-4 opacity-60">
             <p className="text-xs font-medium">Two-factor authentication</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Coming soon — extra security for logins.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Coming soon — extra security for logins.
+            </p>
           </div>
           <div className="rounded-lg border border-dashed border-border bg-muted/5 p-4 opacity-60">
             <p className="text-xs font-medium">Active sessions</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Coming soon — view and revoke devices.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Coming soon — view and revoke devices.
+            </p>
           </div>
         </div>
       </Panel>
@@ -417,21 +546,67 @@ function SettingsPage() {
             <Loader2 className="size-4 animate-spin" /> Loading preferences…
           </div>
         ) : !prefs ? (
-          <p className="py-4 text-sm text-muted-foreground">Could not load preferences. Refresh the page.</p>
+          <p className="py-4 text-sm text-muted-foreground">
+            Could not load preferences. Refresh the page.
+          </p>
         ) : (
           <div className="space-y-5">
-            <ToggleRow label="Trial & subscription reminders" description="Trial ending soon, trial expired, plan changes." checked={prefs.emailTrial} onToggle={() => togglePref("emailTrial")} disabled={prefsSaving} />
-            <ToggleRow label="Offers" description="New offers received, offers accepted or declined." checked={prefs.emailOffers} onToggle={() => togglePref("emailOffers")} disabled={prefsSaving} />
-            <ToggleRow label="Campaign updates" description="Content submitted, approved, or rejected." checked={prefs.emailCampaigns} onToggle={() => togglePref("emailCampaigns")} disabled={prefsSaving} />
-            <ToggleRow label="Wallet & withdrawals" description="Withdrawal requests, approvals, and rejections." checked={prefs.emailWallet} onToggle={() => togglePref("emailWallet")} disabled={prefsSaving} />
-            <ToggleRow label="Payment receipts" description="Subscription receipts and invoices." checked={prefs.emailPayments} onToggle={() => togglePref("emailPayments")} disabled={prefsSaving} />
-            <ToggleRow label="System announcements" description="Important platform updates and maintenance notices." checked={prefs.emailSystem} onToggle={() => togglePref("emailSystem")} disabled={prefsSaving} />
+            <ToggleRow
+              label="Trial & subscription reminders"
+              description="Trial ending soon, trial expired, plan changes."
+              checked={prefs.emailTrial}
+              onToggle={() => togglePref("emailTrial")}
+              disabled={prefsSaving}
+            />
+            <ToggleRow
+              label="Offers"
+              description="New offers received, offers accepted or declined."
+              checked={prefs.emailOffers}
+              onToggle={() => togglePref("emailOffers")}
+              disabled={prefsSaving}
+            />
+            <ToggleRow
+              label="Campaign updates"
+              description="Content submitted, approved, or rejected."
+              checked={prefs.emailCampaigns}
+              onToggle={() => togglePref("emailCampaigns")}
+              disabled={prefsSaving}
+            />
+            <ToggleRow
+              label="Wallet & withdrawals"
+              description="Withdrawal requests, approvals, and rejections."
+              checked={prefs.emailWallet}
+              onToggle={() => togglePref("emailWallet")}
+              disabled={prefsSaving}
+            />
+            <ToggleRow
+              label="Payment receipts"
+              description="Subscription receipts and invoices."
+              checked={prefs.emailPayments}
+              onToggle={() => togglePref("emailPayments")}
+              disabled={prefsSaving}
+            />
+            <ToggleRow
+              label="System announcements"
+              description="Important platform updates and maintenance notices."
+              checked={prefs.emailSystem}
+              onToggle={() => togglePref("emailSystem")}
+              disabled={prefsSaving}
+            />
 
             {prefsMsg && (
-              <div className={prefsMsg.type === "ok"
-                ? "flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-500"
-                : "flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"}>
-                {prefsMsg.type === "ok" ? <CheckCircle2 className="size-3.5 shrink-0" /> : <AlertCircle className="size-3.5 shrink-0" />}
+              <div
+                className={
+                  prefsMsg.type === "ok"
+                    ? "flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-500"
+                    : "flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                }
+              >
+                {prefsMsg.type === "ok" ? (
+                  <CheckCircle2 className="size-3.5 shrink-0" />
+                ) : (
+                  <AlertCircle className="size-3.5 shrink-0" />
+                )}
                 <span>{prefsMsg.text}</span>
               </div>
             )}
@@ -451,41 +626,63 @@ function SettingsPage() {
       ====================================================== */}
       {influencerMode && (
         <Panel className="mt-6">
-          <SectionTitle title="Creator profile" description="Your public creator identity — edited on the profile page." action={<Pencil className="size-4 text-muted-foreground" />} />
+          <SectionTitle
+            title="Creator profile"
+            description="Your public creator identity — edited on the profile page."
+            action={<Pencil className="size-4 text-muted-foreground" />}
+          />
           {profile ? (
             <>
               <div className="flex items-center gap-4">
                 {profile.avatarUrl ? (
-                  <img src={profile.avatarUrl} alt={profile.displayName} className="size-14 rounded-full border border-border object-cover" />
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.displayName}
+                    className="size-14 rounded-full border border-border object-cover"
+                  />
                 ) : (
                   <div className="grid size-14 place-items-center rounded-full bg-muted text-lg font-medium text-muted-foreground">
                     {profile.displayName.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="font-display text-base font-medium">{profile.displayName}</p>
+                  <p className="font-display text-base font-medium">
+                    {profile.displayName}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     @{profile.username}
-                    {profile.categories.length > 0 ? ` · ${profile.categories.join(", ")}` : ""}
+                    {profile.categories.length > 0
+                      ? ` · ${profile.categories.join(", ")}`
+                      : ""}
                   </p>
                 </div>
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/influencers/$slug" params={{ slug: profile.slug }}>
+                  <Link
+                    to="/influencers/$slug"
+                    params={{ slug: profile.slug }}
+                  >
                     <Pencil className="mr-1.5 size-3.5" /> Edit profile
                   </Link>
                 </Button>
               </div>
               {!profile.profileCompleted && (
                 <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
-                  <p className="font-medium text-amber-500">Profile incomplete</p>
-                  <p className="mt-1 text-muted-foreground">Add your bio, categories, and social accounts so brands can find you.</p>
+                  <p className="font-medium text-amber-500">
+                    Profile incomplete
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    Add your bio, categories, and social accounts so brands can
+                    find you.
+                  </p>
                 </div>
               )}
             </>
           ) : (
             <div className="rounded-lg border border-dashed border-border bg-muted/10 p-6 text-center">
               <User className="mx-auto size-5 text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">Profile loading failed. Refresh the page.</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Profile loading failed. Refresh the page.
+              </p>
             </div>
           )}
         </Panel>
@@ -493,24 +690,37 @@ function SettingsPage() {
 
       {brandMode && (
         <Panel className="mt-6">
-          <SectionTitle title="Brand & team" description="Managed on dedicated pages." />
+          <SectionTitle
+            title="Brand & team"
+            description="Managed on dedicated pages."
+          />
           <div className="space-y-3">
-            <Link to="/brands" className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50">
+            <Link
+              to="/brands"
+              className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+            >
               <div className="flex items-center gap-3">
                 <Building2 className="size-4 text-accent" />
                 <div>
                   <p className="text-sm font-medium">Brand profile</p>
-                  <p className="text-xs text-muted-foreground">Name, logo, voice, style, target audience</p>
+                  <p className="text-xs text-muted-foreground">
+                    Name, logo, voice, style, target audience
+                  </p>
                 </div>
               </div>
               <ExternalLink className="size-4 text-muted-foreground" />
             </Link>
-            <Link to="/team" className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50">
+            <Link
+              to="/team"
+              className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+            >
               <div className="flex items-center gap-3">
                 <User className="size-4 text-accent" />
                 <div>
                   <p className="text-sm font-medium">Team</p>
-                  <p className="text-xs text-muted-foreground">Members, roles, and invitations</p>
+                  <p className="text-xs text-muted-foreground">
+                    Members, roles, and invitations
+                  </p>
                 </div>
               </div>
               <ExternalLink className="size-4 text-muted-foreground" />
@@ -521,24 +731,38 @@ function SettingsPage() {
 
       {adminMode && (
         <Panel className="mt-6">
-          <SectionTitle title="Platform administration" description="System-wide controls." action={<ShieldCheck className="size-4 text-muted-foreground" />} />
+          <SectionTitle
+            title="Platform administration"
+            description="System-wide controls."
+            action={<ShieldCheck className="size-4 text-muted-foreground" />}
+          />
           <div className="space-y-3">
-            <Link to="/admin" className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50">
+            <Link
+              to="/admin"
+              className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+            >
               <div className="flex items-center gap-3">
                 <ShieldCheck className="size-4 text-accent" />
                 <div>
                   <p className="text-sm font-medium">Platform health</p>
-                  <p className="text-xs text-muted-foreground">Service status, latency, AI usage</p>
+                  <p className="text-xs text-muted-foreground">
+                    Service status, latency, AI usage
+                  </p>
                 </div>
               </div>
               <ExternalLink className="size-4 text-muted-foreground" />
             </Link>
-            <Link to="/admin/users" className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50">
+            <Link
+              to="/admin/users"
+              className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+            >
               <div className="flex items-center gap-3">
                 <User className="size-4 text-accent" />
                 <div>
                   <p className="text-sm font-medium">Users & access</p>
-                  <p className="text-xs text-muted-foreground">Manage users, roles, and permissions</p>
+                  <p className="text-xs text-muted-foreground">
+                    Manage users, roles, and permissions
+                  </p>
                 </div>
               </div>
               <ExternalLink className="size-4 text-muted-foreground" />
@@ -551,23 +775,35 @@ function SettingsPage() {
           5. DATA & TRUST
       ====================================================== */}
       <Panel className="mt-6">
-        <SectionTitle title="Data & trust" description="How StyleAI handles your data." />
+        <SectionTitle
+          title="Data & trust"
+          description="How StyleAI handles your data."
+        />
         <div className="space-y-4 text-sm">
           <div>
             <p className="font-medium">Organisation isolation</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Data never crosses brands or organisations.</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Data never crosses brands or organisations.
+            </p>
           </div>
           <div>
             <p className="font-medium">AI processing</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Product images and brand documents are processed to build your private profile.</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Product images and brand documents are processed to build your
+              private profile.
+            </p>
           </div>
           <div>
             <p className="font-medium">Human review</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Generated content and imagery require approval before publishing.</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Generated content and imagery require approval before publishing.
+            </p>
           </div>
           <div>
             <p className="font-medium">Predictions</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Forecasts are estimates and are never presented as guarantees.</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Forecasts are estimates and are never presented as guarantees.
+            </p>
           </div>
         </div>
       </Panel>
@@ -597,7 +833,11 @@ function ToggleRow({
         <p className="text-sm font-medium">{label}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
       </div>
-      <Switch checked={checked} onCheckedChange={onToggle} disabled={disabled} />
+      <Switch
+        checked={checked}
+        onCheckedChange={onToggle}
+        disabled={disabled}
+      />
     </div>
   );
 }

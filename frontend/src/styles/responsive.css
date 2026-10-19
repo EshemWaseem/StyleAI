@@ -1,8 +1,4 @@
-/* ======================================================
-   StyleAI — Responsive Layout Helpers
-   ====================================================== */
 
-/* ── Layout Splits ───────────────────────────────────── */
 
 .resp-split {
   display: flex;
@@ -295,14 +291,6 @@ main:focus-visible {
   background-color: color-mix(in oklch, var(--color-accent) 35%, transparent);
   color: var(--color-foreground);
 }
-
-/* ======================================================
-   RADIX UI FIX — pointer-events lock leak
-   ------------------------------------------------------
-   Radix dialogs/sheets/dropdowns sometimes fail to remove
-   `pointer-events: none` from body after closing, leaving
-   the entire page unclickable. This forces cleanup.
-   ====================================================== */
 
 /* When no modal is open, body must be clickable */
 body:not([data-scroll-locked]) {

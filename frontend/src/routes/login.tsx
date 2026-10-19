@@ -1,12 +1,13 @@
 // routes/login.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Lock, AlertTriangle } from "lucide-react";
+import { Loader2, Lock, AlertTriangle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useRole, getDashboardPath } from "@/lib/role";
-import type { ApiError } from "@/lib/api";
+import { http, type ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -50,9 +51,15 @@ function LoginPage() {
   // Captcha flag (future hook)
   const [captchaRequired, setCaptchaRequired] = useState(false);
 
+  // Email-not-verified state
+  const [emailNotVerified, setEmailNotVerified] = useState<{
+    maskedEmail: string;
+  } | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
+
   const isLocked = lockedUntil !== null && countdown > 0;
 
-  // Already logged in? Redirect
   useEffect(() => {
     if (redirecting) return;
     if (!authLoading && user) {
@@ -61,7 +68,6 @@ function LoginPage() {
     }
   }, [user, authLoading, navigate, redirecting]);
 
-  // Countdown timer
   useEffect(() => {
     if (!lockedUntil) {
       setCountdown(0);
@@ -87,6 +93,8 @@ function LoginPage() {
 
     setError("");
     setPendingNotice("");
+    setEmailNotVerified(null);
+    setResendSent(false);
     setAttemptsRemaining(null);
     setLoading(true);
 
@@ -99,7 +107,6 @@ function LoginPage() {
       const code = err?.code;
       const status = err?.status;
 
-      // ---------- Pending approval ----------
       if (code === "PENDING_APPROVAL") {
         setPendingNotice(
           err.message ||
@@ -109,7 +116,18 @@ function LoginPage() {
         return;
       }
 
-      // ---------- Account locked (423) ----------
+      if (code === "EMAIL_NOT_VERIFIED") {
+        setEmailNotVerified({
+          maskedEmail:
+            err?.data?.email ||
+            (email.includes("@")
+              ? `${email.slice(0, 2)}***@${email.split("@")[1]}`
+              : email),
+        });
+        setLoading(false);
+        return;
+      }
+
       if (status === 423 || code === "ACCOUNT_LOCKED") {
         const retryAfter = Number(
           err?.retryAfter ?? err?.data?.retryAfter ?? 900
@@ -123,7 +141,6 @@ function LoginPage() {
         return;
       }
 
-      // ---------- Rate limited (429) ----------
       if (status === 429) {
         const retryAfter = Number(err?.retryAfter ?? 900);
 
@@ -139,9 +156,7 @@ function LoginPage() {
           );
         } else if (code === "AUTH_RATE_LIMIT") {
           setLockedUntil(Date.now() + retryAfter * 1000);
-          setLockMessage(
-            "Too many requests. Please slow down and try again."
-          );
+          setLockMessage("Too many requests. Please slow down and try again.");
         } else {
           setError("Too many requests. Please try again in a moment.");
         }
@@ -149,7 +164,6 @@ function LoginPage() {
         return;
       }
 
-      // ---------- Invalid credentials (401) ----------
       if (status === 401 || code === "INVALID_CREDENTIALS") {
         const remaining = err?.data?.attemptsRemaining;
         if (typeof remaining === "number") setAttemptsRemaining(remaining);
@@ -159,7 +173,6 @@ function LoginPage() {
         return;
       }
 
-      // ---------- Service unavailable ----------
       if (
         status === 503 ||
         code === "SERVICE_UNAVAILABLE" ||
@@ -172,13 +185,31 @@ function LoginPage() {
         return;
       }
 
-      // ---------- Fallback ----------
       setError(err?.message || "Could not sign in. Please try again.");
       setLoading(false);
     }
   }
 
-  // Redirecting loader
+  async function handleResendVerification() {
+    if (!email || resending) return;
+    setResending(true);
+    setResendSent(false);
+    try {
+      await http.post(
+        "/api/auth/verify-email/resend",
+        { email },
+        { skipAuth: true }
+      );
+      setResendSent(true);
+    } catch {
+      setError(
+        "Could not resend verification email. Please try again in a moment."
+      );
+    } finally {
+      setResending(false);
+    }
+  }
+
   if (redirecting) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
@@ -208,7 +239,6 @@ function LoginPage() {
         </p>
 
         <form className="mt-8 space-y-4" onSubmit={handleSubmit} noValidate>
-          {/* Pending approval — amber */}
           {pendingNotice && (
             <div
               role="alert"
@@ -219,7 +249,42 @@ function LoginPage() {
             </div>
           )}
 
-          {/* Account locked / rate limited — amber with timer */}
+          {/* NEW: Email not verified */}
+          {emailNotVerified && (
+            <div
+              role="alert"
+              className="flex flex-col gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+            >
+              <div className="flex items-start gap-2">
+                <Mail className="mt-0.5 size-3.5 shrink-0" />
+                <div className="flex-1">
+                  <div className="font-medium">Verify your email</div>
+                  <div className="mt-0.5 text-[11px] opacity-90">
+                    We sent a verification link to{" "}
+                    <span className="font-medium">
+                      {emailNotVerified.maskedEmail}
+                    </span>
+                    . Check your inbox (and spam folder).
+                  </div>
+                </div>
+              </div>
+              {resendSent ? (
+                <div className="text-[11px] opacity-90">
+                  ✓ New verification email sent. Please check your inbox.
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resending}
+                  className="self-start rounded-md bg-amber-500/20 px-2 py-1 text-[11px] font-medium hover:bg-amber-500/30 disabled:opacity-50"
+                >
+                  {resending ? "Sending…" : "Resend verification email"}
+                </button>
+              )}
+            </div>
+          )}
+
           {isLocked && (
             <div
               role="alert"
@@ -240,7 +305,6 @@ function LoginPage() {
             </div>
           )}
 
-          {/* Standard error — red */}
           {error && !isLocked && (
             <div
               role="alert"
@@ -250,7 +314,6 @@ function LoginPage() {
             </div>
           )}
 
-          {/* Attempts remaining warning */}
           {!isLocked && attemptsRemaining !== null && attemptsRemaining > 0 && (
             <div
               role="alert"
@@ -265,7 +328,6 @@ function LoginPage() {
             </div>
           )}
 
-          {/* CAPTCHA placeholder (future) */}
           {captchaRequired && !isLocked && (
             <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
               Security check will be required on next attempt.
@@ -287,10 +349,17 @@ function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Link
+                to="/forgot-password"
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Forgot password?
+              </Link>
+            </div>
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="current-password"
               required
               placeholder="••••••••"
@@ -298,14 +367,6 @@ function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading || isLocked}
             />
-            <div className="flex justify-end">
-              <Link
-                to="/login"
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                Forgot password?
-              </Link>
-            </div>
           </div>
 
           <Button

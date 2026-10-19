@@ -7,32 +7,20 @@ const content = require('../controllers/contentPipelineController');
 const chat = require('../controllers/campaignChatController');
 
 router.use(authenticate);
-router.use(resolveActingBrand); // ✅ agency X-Acting-Brand support
+router.use(resolveActingBrand);
 
-// ======================================================
-// CHAT — global (MUST come before /:id routes)
-// ======================================================
 router.get('/unread-total', chat.unreadTotal);
 
-// ======================================================
-// CAMPAIGN CRUD
-// ======================================================
 router.get('/', ctrl.list);
 router.get('/:id', ctrl.getOne);
 router.patch('/:id', ctrl.update);
 router.post('/:id/complete', ctrl.complete);
 
-// ======================================================
-// SHIPPING FLOW
-// ======================================================
-router.post('/:id/address', ctrl.submitAddress);   // influencer
-router.post('/:id/ship', ctrl.ship);               // brand
-router.post('/:id/receive', ctrl.receive);         // influencer
-router.post('/:id/deadline', ctrl.setDeadline);    // brand
+router.post('/:id/address', ctrl.submitAddress);
+router.post('/:id/ship', ctrl.ship);
+router.post('/:id/receive', ctrl.receive);
+router.post('/:id/deadline', ctrl.setDeadline);
 
-// ======================================================
-// CONTENT PIPELINE — deliverable-scoped
-// ======================================================
 router.post('/deliverables/:deliverableId/raw', content.submitRaw);
 router.post('/deliverables/:deliverableId/edit', content.startEditing);
 router.post('/deliverables/:deliverableId/final', content.submitFinal);
@@ -42,9 +30,6 @@ router.post('/deliverables/:deliverableId/publish', content.publish);
 router.post('/deliverables/:deliverableId/metrics', content.metrics);
 router.post('/deliverables/:deliverableId/final-influencer', content.submitFinalAsInfluencer);
 
-// ======================================================
-// CHAT — campaign-scoped
-// ======================================================
 router.get('/:id/messages', chat.list);
 router.post('/:id/messages', chat.send);
 router.post('/:id/messages/read', chat.markRead);

@@ -1,8 +1,7 @@
-// src/services/admin/storefront.js
 const prisma = require('../../config/prisma');
 const { assertSuperAdmin, httpError, writeAudit } = require('./helpers');
+const { notifyUser } = require('../notifications');
 
-// HERO
 async function listHero(adminUser) {
   assertSuperAdmin(adminUser);
   return prisma.storefrontHero.findMany({
@@ -76,7 +75,6 @@ async function deleteHero(adminUser, id, req) {
   return { id };
 }
 
-// SECTIONS
 async function listSections(adminUser) {
   assertSuperAdmin(adminUser);
   const sections = await prisma.storefrontSection.findMany({
@@ -223,9 +221,6 @@ async function setSectionProducts(adminUser, sectionId, productIds, req) {
   return { sectionId, count: ids.length };
 }
 
-// ------------------------------------------------------
-// BRAND APPLICATIONS
-// ------------------------------------------------------
 async function listBrandsWithStatus(adminUser, filters = {}) {
   assertSuperAdmin(adminUser);
   const { search, status } = filters;
@@ -266,6 +261,23 @@ async function listBrandsWithStatus(adminUser, filters = {}) {
     organization: b.organization,
     productCount: b._count.products,
   }));
+}
+
+async function findBrandOwners(brandId) {
+  const brand = await prisma.brand.findUnique({
+    where: { id: brandId },
+    select: { organizationId: true },
+  });
+  if (!brand) return [];
+
+  return prisma.user.findMany({
+    where: {
+      organizationId: brand.organizationId,
+      isActive: true,
+      userRoles: { some: { role: { name: 'BRAND_OWNER' } } },
+    },
+    select: { id: true },
+  });
 }
 
 async function reviewBrandApplication(adminUser, brandId, approve, reason, req) {
@@ -314,6 +326,28 @@ async function reviewBrandApplication(adminUser, brandId, approve, reason, req) 
     meta: { brandName: brand.name, reason: reason ?? null, products: appliedIds.length },
     ipAddress: req?.ip,
   });
+
+  findBrandOwners(brandId)
+    .then((owners) => {
+      for (const owner of owners) {
+        notifyUser(owner.id, {
+          type: shouldDecline ? 'STOREFRONT_APPLICATION_DECLINED' : 'STOREFRONT_APPLICATION_APPROVED',
+          title: shouldDecline
+            ? `Storefront application for ${brand.name} was not approved`
+            : `🎉 ${brand.name} is live on StyleAI`,
+          body: shouldDecline
+            ? (reason?.trim() || 'You can update your products and re-apply anytime.')
+            : `${appliedIds.length} product${appliedIds.length === 1 ? '' : 's'} are now visible on the public storefront.`,
+          link: shouldDecline ? '/dashboard' : '/products',
+          meta: { brandId: brand.id, status: shouldDecline ? 'DECLINED' : 'APPROVED' },
+          emailTemplate: shouldDecline ? 'brandApplicationDeclined' : 'brandApplicationApproved',
+          emailData: shouldDecline
+            ? { brandName: brand.name, reason: reason?.trim() || '' }
+            : { brandName: brand.name, productCount: appliedIds.length },
+        }).catch((e) => console.error('[notify.brand-review]', e.message));
+      }
+    })
+    .catch((e) => console.error('[findBrandOwners]', e.message));
 
   return prisma.brand.findUnique({
     where: { id: brandId },
@@ -390,9 +424,6 @@ async function searchApprovedProducts(adminUser, filters = {}) {
   }));
 }
 
-// ------------------------------------------------------
-// EDITORIAL
-// ------------------------------------------------------
 async function getEditorial(adminUser) {
   assertSuperAdmin(adminUser);
   return prisma.storefrontEditorial.findFirst({
@@ -416,19 +447,11 @@ async function upsertEditorial(adminUser, data, req) {
   if (existing) {
     record = await prisma.storefrontEditorial.update({
       where: { id: existing.id },
-      data: {
-        title: data.title.trim(),
-        steps,
-        isActive: data.isActive !== false,
-      },
+      data: { title: data.title.trim(), steps, isActive: data.isActive !== false },
     });
   } else {
     record = await prisma.storefrontEditorial.create({
-      data: {
-        title: data.title.trim(),
-        steps,
-        isActive: data.isActive !== false,
-      },
+      data: { title: data.title.trim(), steps, isActive: data.isActive !== false },
     });
   }
 
@@ -463,5 +486,5 @@ module.exports = {
   listSections, getSection, createSection, updateSection, deleteSection, setSectionProducts,
   listBrandsWithStatus, reviewBrandApplication, revokeBrandOptIn,
   searchApprovedProducts,
-   getEditorial, upsertEditorial, deleteEditorial,
+  getEditorial, upsertEditorial, deleteEditorial,
 };

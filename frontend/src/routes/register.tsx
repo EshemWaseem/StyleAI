@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Clock } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrength } from "@/components/ui/password-strength";
+import { CheckCircle2, Clock, Mail } from "lucide-react";
 import {
   CountryPhoneFields,
   validateCountryPhone,
@@ -20,7 +22,7 @@ import {
   type RoleName,
 } from "@/lib/role";
 import { joinRequestsApi } from "@/lib/join-requests";
-import type { ApiError } from "@/lib/api";
+import { http, type ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/register")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -44,10 +46,6 @@ const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
   AGENCY: "Run campaigns for multiple brands from one workspace.",
   SHOPPER: "Shop the atelier — save favourites and track orders.",
 };
-
-// ======================================================
-// PUBLIC DATA FETCHERS
-// ======================================================
 
 const PUBLIC_BASE =
   (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
@@ -82,18 +80,15 @@ async function fetchPublicBrandRoles(
   return data.roles ?? [];
 }
 
-// ======================================================
-// PAGE
-// ======================================================
-
 function RegisterPage() {
-  const { register, user, loading: authLoading } = useRole();
+  const { user, loading: authLoading } = useRole();
   const navigate = useNavigate();
   const { role: roleParam } = Route.useSearch();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<RoleName>(roleParam ?? "BRAND_OWNER");
   const [organizationName, setOrganizationName] = useState("");
 
@@ -115,20 +110,24 @@ function RegisterPage() {
   });
 
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+  const [verifySent, setVerifySent] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [resending, setResending] = useState(false);
+  const [resendDone, setResendDone] = useState(false);
 
   const needsOrg = ROLES_REQUIRING_ORG.includes(role);
   const isTeamMember = role === "BRAND_TEAM_MEMBER";
+  const passwordsMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
 
   useEffect(() => {
-    if (!authLoading && user && !requestSent) {
+    if (!authLoading && user && !requestSent && !verifySent) {
       navigate({ to: getDashboardPath(user.roles) });
     }
-  }, [user, authLoading, navigate, requestSent]);
+  }, [user, authLoading, navigate, requestSent, verifySent]);
 
-  // Load brands for teammate
   useEffect(() => {
     if (isTeamMember && brands.length === 0 && !brandsLoading) {
       setBrandsLoading(true);
@@ -138,7 +137,6 @@ function RegisterPage() {
     }
   }, [isTeamMember, brands.length, brandsLoading]);
 
-  // Load roles when brand selected
   useEffect(() => {
     if (!isTeamMember || !selectedBrandId) {
       setBrandRoles([]);
@@ -154,13 +152,41 @@ function RegisterPage() {
       .finally(() => setRolesLoading(false));
   }, [isTeamMember, selectedBrandId]);
 
+  async function handleResendVerify() {
+    if (!registeredEmail || resending) return;
+    setResending(true);
+    setResendDone(false);
+    try {
+      await http.post(
+        "/api/auth/verify-email/resend",
+        { email: registeredEmail },
+        { skipAuth: true }
+      );
+      setResendDone(true);
+    } catch (err: any) {
+      setError(
+        err?.message ||
+          "Could not resend verification email. Please try again in a moment."
+      );
+    } finally {
+      setResending(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setSuccess("");
 
     if (!name.trim() || !email.trim() || !password) {
       setError("Name, email, and password are required.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
     if (needsOrg && !organizationName.trim()) {
@@ -172,7 +198,6 @@ function RegisterPage() {
       return;
     }
 
-    // Validate geo for org owners
     if (needsOrg) {
       const geoErr = validateCountryPhone(geo, {
         requirePhone: true,
@@ -187,54 +212,52 @@ function RegisterPage() {
 
     setLoading(true);
     try {
-      const created = await register({
-        name: name.trim(),
-        email: email.trim(),
-        password,
-        role,
-        ...(needsOrg && {
-          organizationName: organizationName.trim(),
-          country: geo.country?.name,
-          phone: geo.phone,
-        }),
-      });
+      const res = await http.post<{
+        message: string;
+        token: string | null;
+        emailVerified?: boolean;
+        pendingApproval?: boolean;
+        user: any;
+      }>(
+        "/api/auth/register",
+        {
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          role,
+          ...(needsOrg && {
+            organizationName: organizationName.trim(),
+            country: geo.country?.name,
+            phone: geo.phone,
+          }),
+        },
+        { skipAuth: true }
+      );
 
-      // ======================================================
-      // TEAMMATE FLOW — send join request with role, then log out
-      // ======================================================
-      if (isTeamMember) {
+      // For BRAND_TEAM_MEMBER — try to send join request after registration
+      if (isTeamMember && res.token) {
         try {
+          localStorage.setItem("token", res.token);
           await joinRequestsApi.create(
             selectedBrandId,
             requestMessage.trim() || undefined,
             selectedRoleId
           );
-        } catch (reqErr: any) {
-          setError(
-            "Account created, but we could not send your request. Please contact the brand directly. " +
-              (reqErr?.message || "")
-          );
-          setLoading(false);
-          return;
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        } catch {
+          // ignore — user can be verified and pending anyway
         }
-
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-
-        setSuccess(
-          "Account created! Your request has been sent to the brand for approval. You'll be able to log in once they accept."
-        );
-        setRequestSent(true);
-        return;
       }
 
-      // ======================================================
-      // NORMAL FLOW
-      // ======================================================
-      setSuccess(`Welcome, ${created.name}! Your account has been created.`);
-      setTimeout(() => {
-        navigate({ to: getDashboardPath(created.roles) });
-      }, 1200);
+      // Always show verify-email screen now (since email not verified)
+      setRegisteredEmail(email.trim().toLowerCase());
+      if (isTeamMember) {
+        setRequestSent(true);
+      } else {
+        setVerifySent(true);
+      }
+      setLoading(false);
     } catch (errRaw: any) {
       const err = errRaw as ApiError;
       const code = err?.code;
@@ -249,9 +272,7 @@ function RegisterPage() {
           }.`
         );
       } else if (status === 409 || code === "DUPLICATE") {
-        setError(
-          "This email is already registered. Try signing in instead."
-        );
+        setError("This email is already registered. Try signing in instead.");
       } else if (status === 429 && code === "AUTH_RATE_LIMIT") {
         setError("Too many requests. Please slow down and try again.");
       } else if (
@@ -277,7 +298,7 @@ function RegisterPage() {
   }
 
   // ======================================================
-  // PENDING SCREEN
+  // TEAM MEMBER PENDING SCREEN
   // ======================================================
   if (requestSent) {
     return (
@@ -287,15 +308,85 @@ function RegisterPage() {
             <CheckCircle2 className="size-7" />
           </div>
           <h1 className="mt-6 font-display text-3xl font-medium tracking-tight">
-            Request sent
+            Account created
           </h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            {success}
+            We've sent a verification link to{" "}
+            <strong className="text-foreground">{registeredEmail}</strong>.
+            Please verify your email, then wait for the brand owner's approval.
           </p>
+
           <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground">
             <Clock className="size-3.5" />
             Waiting for brand owner approval
           </div>
+
+          {resendDone ? (
+            <p className="mt-6 text-xs text-emerald-500">
+              ✓ New verification email sent.
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResendVerify}
+              disabled={resending}
+              className="mt-6 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground disabled:opacity-50"
+            >
+              {resending ? "Sending…" : "Resend verification email"}
+            </button>
+          )}
+
+          <div className="mt-8 flex flex-col gap-2">
+            <Button asChild className="w-full">
+              <Link to="/login">Back to sign in</Link>
+            </Button>
+            <Button asChild variant="ghost" className="w-full">
+              <Link to="/">Go to storefront</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ======================================================
+  // VERIFY EMAIL SCREEN (normal user)
+  // ======================================================
+  if (verifySent) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
+        <div className="w-full max-w-md text-center">
+          <div className="mx-auto grid size-14 place-items-center rounded-full bg-accent/15 text-accent">
+            <Mail className="size-7" />
+          </div>
+          <h1 className="mt-6 font-display text-3xl font-medium tracking-tight">
+            Verify your email
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            We've sent a verification link to{" "}
+            <strong className="text-foreground">{registeredEmail}</strong>.
+            Click the link in the email to activate your account.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            The link expires in 24 hours. Check your spam folder if you don't
+            see it.
+          </p>
+
+          {resendDone ? (
+            <p className="mt-6 text-xs text-emerald-500">
+              ✓ New verification email sent. Check your inbox.
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResendVerify}
+              disabled={resending}
+              className="mt-6 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground disabled:opacity-50"
+            >
+              {resending ? "Sending…" : "Resend verification email"}
+            </button>
+          )}
+
           <div className="mt-8 flex flex-col gap-2">
             <Button asChild className="w-full">
               <Link to="/login">Back to sign in</Link>
@@ -405,7 +496,6 @@ function RegisterPage() {
                 </p>
               </div>
 
-              {/* Country + Phone for brand owner / agency */}
               <CountryPhoneFields
                 value={geo}
                 onChange={setGeo}
@@ -417,7 +507,6 @@ function RegisterPage() {
             </>
           )}
 
-          {/* TEAMMATE — brand + role */}
           {isTeamMember && (
             <>
               <div className="space-y-2">
@@ -531,9 +620,8 @@ function RegisterPage() {
 
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="new-password"
               required
               minLength={6}
@@ -542,9 +630,33 @@ function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
             />
+            <PasswordStrength password={password} />
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm password</Label>
+            <PasswordInput
+              id="confirmPassword"
+              autoComplete="new-password"
+              required
+              minLength={6}
+              placeholder="Re-enter password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={loading}
+            />
+            {passwordsMismatch && (
+              <p className="text-xs text-destructive">
+                Passwords do not match.
+              </p>
+            )}
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading || passwordsMismatch}
+          >
             {loading
               ? isTeamMember
                 ? "Sending request…"

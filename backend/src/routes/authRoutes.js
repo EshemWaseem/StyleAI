@@ -2,21 +2,39 @@
 const express = require('express');
 const router = express.Router();
 
-const { register, login, me } = require('../controllers/authController');
+const {
+  register,
+  login,
+  forgotPassword,
+  resetPassword,
+  changePassword,
+  verifyEmail,
+  resendVerification,
+  me,
+} = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 const {
   registerLimiter,
   loginIpLimiter,
   loginEmailLimiter,
+  passwordResetLimiter,
 } = require('../config/rateLimit');
 
-// Register — strict per-IP
 router.post('/register', registerLimiter, register);
-
-// Login — two layers (per IP + per email)
 router.post('/login', loginIpLimiter, loginEmailLimiter, login);
 
-// Current user
+// Password reset
+router.post('/forgot-password', passwordResetLimiter, forgotPassword);
+router.post('/reset-password', resetPassword);
+
+// Password change (authenticated)
+router.post('/change-password', authenticate, changePassword);
+
+// Email verification
+router.post('/verify-email', verifyEmail);
+// Resend — reuse strict email-keyed limiter (3/hour per email)
+router.post('/verify-email/resend', passwordResetLimiter, resendVerification);
+
 router.get('/me', authenticate, me);
 
 module.exports = router;

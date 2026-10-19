@@ -25,6 +25,9 @@ const PUBLIC_PATHS = [
   "/",
   "/login",
   "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
   "/pending",
   "/trial-expired",
   "/invite",
@@ -38,15 +41,14 @@ function isPublicPath(pathname: string): boolean {
   });
 }
 
-// ======================================================
-// 404
-// ======================================================
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">
+          Page not found
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
@@ -63,10 +65,13 @@ function NotFoundComponent() {
   );
 }
 
-// ======================================================
-// Error boundary
-// ======================================================
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({
+  error,
+  reset,
+}: {
+  error: Error;
+  reset: () => void;
+}) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -80,7 +85,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          Something went wrong on our end. You can try refreshing or head back
+          home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -104,10 +110,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-// ======================================================
-// Root route
-// ======================================================
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+}>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -162,9 +167,6 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-// ======================================================
-// Root component
-// ======================================================
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -183,10 +185,6 @@ function RootComponent() {
   );
 }
 
-// ======================================================
-// Full-screen loader — used while auth is resolving
-// or while redirecting. Shell is NOT rendered.
-// ======================================================
 function FullScreenLoader() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
@@ -198,15 +196,6 @@ function FullScreenLoader() {
   );
 }
 
-/**
- * STRICT gate:
- * - Public path → render bare (no shell)
- * - Not public + no user → redirect to /login, shell NEVER renders
- * - Not public + loading → loader, shell NEVER renders
- * - Not public + user pendingApproval → redirect to /pending
- * - /dashboard specific redirects (admin, agency, shopper, no-org brand)
- * - Otherwise → render shell + outlet
- */
 function AppShellGate() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, loading } = useRole();
@@ -215,23 +204,12 @@ function AppShellGate() {
   const isPublic = isPublicPath(pathname);
   const isDashboard = pathname === "/dashboard";
 
-  // ------------------------------------------------------
-  // Compute redirect target — pure function of state + path
-  // ------------------------------------------------------
   const redirectTarget: string | null = (() => {
-    // Public paths never redirect
     if (isPublic) return null;
-
-    // Still resolving auth → don't redirect yet, show loader
     if (loading) return null;
-
-    // No user, protected path → login
     if (!user) return "/login";
-
-    // Pending brand team member → /pending
     if (user.pendingApproval) return "/pending";
 
-    // /dashboard role-based redirects
     if (isDashboard) {
       if (user.roles.includes("SUPER_ADMIN")) return "/admin";
       if (user.roles.includes("AGENCY")) return "/agency";
@@ -256,27 +234,19 @@ function AppShellGate() {
     }
   }, [redirectTarget, navigate]);
 
-  // ------------------------------------------------------
-  // Block shell when:
-  //   - auth is resolving (loading), OR
-  //   - we're about to redirect, OR
-  //   - we're on a protected path with no user
-  // ------------------------------------------------------
-  const blockShell =
-    !isPublic &&
-    (loading || !!redirectTarget || !user);
+  const blockShell = !isPublic && (loading || !!redirectTarget || !user);
 
   if (blockShell) {
     return <FullScreenLoader />;
   }
 
   if (isPublic) {
-  return (
-    <div data-public-shell className="min-h-dvh">
-      <Outlet />
-    </div>
-  );
-}
+    return (
+      <div data-public-shell className="min-h-dvh">
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <AppShell>

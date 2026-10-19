@@ -10,17 +10,28 @@ model User {
   password String
   isActive Boolean @default(true)
 
-  // ✅ Contact + location
+  // Contact + location
   phone       String?
   country     String?
-  countryCode String?   // ISO2 — "PK", "US" etc
+  countryCode String?
 
-  // ✅ NEW — Login security / audit
+  // Login security / audit
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
   lastFailedLoginAt   DateTime?
   lastLoginAt         DateTime?
   lastLoginIp         String?
+
+  // Password reset
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+
+  // Email verification
+  // @default(true) → existing users migrated as verified; new registrations set false explicitly
+  emailVerified      Boolean   @default(true)
+  emailVerifyToken   String?
+  emailVerifyExpires DateTime?
+  emailVerifySentAt  DateTime?
 
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
@@ -39,7 +50,6 @@ model User {
   brandTeamMemberships BrandTeamMember[] @relation("BrandTeamMemberUser")
   brandTeamInvitesSent BrandTeamMember[] @relation("BrandTeamMemberInviter")
 
-  // ✅ UNNAMED — matches influencer.prisma's unnamed `user` field
   influencerProfile Influencer?
 
   offersCreated    CustomOffer[]     @relation("OfferCreator")
@@ -59,6 +69,8 @@ model User {
 
   @@index([organizationId])
   @@index([lockedUntil])
+  @@index([passwordResetToken])
+  @@index([emailVerifyToken])
 }
 
 model Role {

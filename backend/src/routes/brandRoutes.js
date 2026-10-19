@@ -4,17 +4,11 @@ const { authenticate, requirePermission } = require('../middleware/auth');
 const { resolveActingBrand } = require('../middleware/actingBrand');
 const ctrl = require('../controllers/brandController');
 
-// ======================================================
-// PUBLIC — must be BEFORE authenticate
-// ======================================================
 router.get('/public', ctrl.listPublicBrands);
 router.get('/:brandId/public-roles', ctrl.getPublicBrandRoles);
 
-// ======================================================
-// AUTH required
-// ======================================================
 router.use(authenticate);
-router.use(resolveActingBrand); // ✅ agency X-Acting-Brand support
+router.use(resolveActingBrand);
 
 router.get('/', requirePermission('brand.read'), ctrl.list);
 router.get('/:brandId', requirePermission('brand.read'), ctrl.getOne);

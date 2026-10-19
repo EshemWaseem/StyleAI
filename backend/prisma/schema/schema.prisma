@@ -1,14 +1,5 @@
-// schema.prisma 24-09
-// ======================================================
-// StyleAI — Prisma schema (main config)
-// ======================================================
-// All models live in sibling .prisma files in this folder.
-// Prisma resolves all of them together.
-// ======================================================
-
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["prismaSchemaFolder"]
+  provider = "prisma-client-js"
 }
 
 datasource db {

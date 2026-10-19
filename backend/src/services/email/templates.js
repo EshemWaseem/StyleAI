@@ -1,10 +1,3 @@
-// services/email/templates.js
-// ======================================================
-// Email templates — plain HTML, mobile-friendly.
-// Layout footer includes <!--UNSUBSCRIBE_LINK--> placeholder;
-// it is replaced at send time by email/index.js.
-// ======================================================
-
 const C = {
   bg: '#0a0a0a',
   card: '#ffffff',
@@ -18,12 +11,10 @@ const C = {
   info: '#2563eb',
 };
 
-// ------------------------------------------------------
-// Base layout
-// ------------------------------------------------------
 function layout({ preheader, title, bodyHtml, ctaText, ctaUrl }) {
-  const cta = ctaText && ctaUrl
-    ? `
+  const cta =
+    ctaText && ctaUrl
+      ? `
       <tr>
         <td style="padding: 8px 32px 32px;">
           <a href="${ctaUrl}"
@@ -34,7 +25,7 @@ function layout({ preheader, title, bodyHtml, ctaText, ctaUrl }) {
           </a>
         </td>
       </tr>`
-    : '';
+      : '';
 
   return `<!doctype html>
 <html>
@@ -101,11 +92,15 @@ function pill(text, color) {
   </span>`;
 }
 function infoBox(rows) {
-  const inner = rows.map(([k, v]) => `
+  const inner = rows
+    .map(
+      ([k, v]) => `
     <tr>
       <td style="padding:6px 0;font-size:13px;color:${C.muted};">${k}</td>
       <td style="padding:6px 0;font-size:13px;text-align:right;font-weight:600;color:${C.text};">${v}</td>
-    </tr>`).join('');
+    </tr>`
+    )
+    .join('');
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
            style="background:#f9fafb;border:1px solid ${C.border};border-radius:8px;
@@ -114,17 +109,19 @@ function infoBox(rows) {
     </table>`;
 }
 
-// ------------------------------------------------------
-// Templates (unchanged logic, just re-emitted)
-// ------------------------------------------------------
+function frontendBase() {
+  return (
+    (process.env.FRONTEND_URL || 'http://localhost:3000')
+      .split(',')[0]
+      .trim() || 'http://localhost:3000'
+  );
+}
 
 function welcome({ name, role }) {
-  const roleLabel = {
-    BRAND: 'Brand',
-    AGENCY: 'Agency',
-    INFLUENCER: 'Creator',
-    SHOPPER: 'Shopper',
-  }[role] || 'User';
+  const roleLabel =
+    { BRAND: 'Brand', AGENCY: 'Agency', INFLUENCER: 'Creator', SHOPPER: 'Shopper' }[
+      role
+    ] || 'User';
 
   const body = `
     ${h1(`Welcome to StyleAI, ${name || 'there'}!`)}
@@ -145,7 +142,7 @@ function welcome({ name, role }) {
       title: 'Welcome to StyleAI',
       bodyHtml: body,
       ctaText: 'Open Dashboard',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/dashboard`,
+      ctaUrl: `${frontendBase()}/dashboard`,
     }),
   };
 }
@@ -169,7 +166,7 @@ function trialExpiring({ name, role, daysLeft, planName }) {
       title: 'Trial ending soon',
       bodyHtml: body,
       ctaText: 'Upgrade Now',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/plans`,
+      ctaUrl: `${frontendBase()}/plans`,
     }),
   };
 }
@@ -188,7 +185,7 @@ function trialExpired({ name, role }) {
       title: 'Trial expired',
       bodyHtml: body,
       ctaText: 'Choose a Plan',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/plans`,
+      ctaUrl: `${frontendBase()}/plans`,
     }),
   };
 }
@@ -212,7 +209,7 @@ function offerReceived({ influencerName, brandName, offerTitle, amount, currency
       title: 'New offer',
       bodyHtml: body,
       ctaText: 'View Offer',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/offers`,
+      ctaUrl: `${frontendBase()}/offers`,
     }),
   };
 }
@@ -236,7 +233,7 @@ function offerAccepted({ brandName, influencerName, offerTitle, amount, currency
       title: 'Offer accepted',
       bodyHtml: body,
       ctaText: 'View Campaign',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/campaigns`,
+      ctaUrl: `${frontendBase()}/campaigns`,
     }),
   };
 }
@@ -259,17 +256,16 @@ function offerDeclined({ brandName, influencerName, offerTitle, reason }) {
       title: 'Offer declined',
       bodyHtml: body,
       ctaText: 'Browse Influencers',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/influencers`,
+      ctaUrl: `${frontendBase()}/influencers`,
     }),
   };
 }
 
 function contentSubmitted({ brandName, influencerName, campaignTitle, stage }) {
-  const stageLabel = {
-    RAW: 'raw content',
-    EDIT: 'edited content',
-    FINAL: 'final content',
-  }[stage] || 'content';
+  const stageLabel =
+    { RAW: 'raw content', EDIT: 'edited content', FINAL: 'final content' }[
+      stage
+    ] || 'content';
 
   const body = `
     ${pill('New submission', C.info)}
@@ -289,7 +285,7 @@ function contentSubmitted({ brandName, influencerName, campaignTitle, stage }) {
       title: 'Content submitted',
       bodyHtml: body,
       ctaText: 'Review Content',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/campaigns`,
+      ctaUrl: `${frontendBase()}/campaigns`,
     }),
   };
 }
@@ -312,7 +308,7 @@ function contentApproved({ influencerName, campaignTitle, amount, currency }) {
       title: 'Content approved',
       bodyHtml: body,
       ctaText: 'View Wallet',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/wallet`,
+      ctaUrl: `${frontendBase()}/wallet`,
     }),
   };
 }
@@ -339,7 +335,7 @@ function paymentReceipt({ name, planLabel, amount, currency, cycle, invoiceNumbe
       title: 'Payment receipt',
       bodyHtml: body,
       ctaText: 'View Billing',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/billing`,
+      ctaUrl: `${frontendBase()}/billing`,
     }),
   };
 }
@@ -363,7 +359,7 @@ function withdrawalRequested({ userName, amount, currency, reference }) {
       title: 'Withdrawal request',
       bodyHtml: body,
       ctaText: 'Review Withdrawals',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/admin/withdrawals`,
+      ctaUrl: `${frontendBase()}/admin/withdrawals`,
     }),
   };
 }
@@ -391,7 +387,171 @@ function withdrawalReviewed({ name, amount, currency, approved, reference, reaso
       title: ok ? 'Withdrawal approved' : 'Withdrawal rejected',
       bodyHtml: body,
       ctaText: 'View Wallet',
-      ctaUrl: `${process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000'}/wallet`,
+      ctaUrl: `${frontendBase()}/wallet`,
+    }),
+  };
+}
+
+function brandApplicationReceived({ brandName, productCount, notes }) {
+  const body = `
+    ${pill('New application', C.info)}
+    ${h1('New storefront application')}
+    ${p(`<strong>${brandName}</strong> has applied to be featured on the public storefront.`)}
+    ${infoBox([
+      ['Brand', brandName],
+      ['Products', `${productCount} selected`],
+      ['Applied', new Date().toLocaleDateString()],
+    ])}
+    ${notes ? p(`<em>"${notes}"</em>`) : ''}
+    ${p('Review the full application in the admin panel.')}
+  `;
+  return {
+    subject: `Storefront application — ${brandName}`,
+    html: layout({
+      preheader: `${brandName} applied for storefront`,
+      title: 'New storefront application',
+      bodyHtml: body,
+      ctaText: 'Review Application',
+      ctaUrl: `${frontendBase()}/admin/storefront`,
+    }),
+  };
+}
+
+function brandApplicationApproved({ brandName, productCount }) {
+  const body = `
+    ${pill('Approved ✓', C.success)}
+    ${h1('Your brand is now live on StyleAI')}
+    ${p(`Great news! <strong>${brandName}</strong> has been approved for the public storefront.`)}
+    ${infoBox([
+      ['Brand', brandName],
+      ['Visible products', `${productCount}`],
+      ['Status', 'Approved'],
+    ])}
+    ${p('Your products are now live and discoverable by shoppers. You can toggle individual product visibility from your catalog anytime.')}
+  `;
+  return {
+    subject: `🎉 ${brandName} is live on StyleAI`,
+    html: layout({
+      preheader: 'Your brand is now on the storefront',
+      title: 'Application approved',
+      bodyHtml: body,
+      ctaText: 'Manage Products',
+      ctaUrl: `${frontendBase()}/products`,
+    }),
+  };
+}
+
+function brandApplicationDeclined({ brandName, reason }) {
+  const body = `
+    ${pill('Not approved', C.danger)}
+    ${h1('Storefront application update')}
+    ${p(`Hi, we've reviewed <strong>${brandName}</strong>'s storefront application.`)}
+    ${infoBox([
+      ['Brand', brandName],
+      ['Status', 'Not approved'],
+      ...(reason ? [['Reason', reason]] : []),
+    ])}
+    ${p('You can update your products and re-apply anytime from your dashboard.')}
+  `;
+  return {
+    subject: `${brandName} — storefront application update`,
+    html: layout({
+      preheader: 'Application not approved',
+      title: 'Application update',
+      bodyHtml: body,
+      ctaText: 'Go to Dashboard',
+      ctaUrl: `${frontendBase()}/dashboard`,
+    }),
+  };
+}
+
+function passwordReset({ name, resetUrl, expiresInMinutes }) {
+  const mins = Number(expiresInMinutes) || 60;
+  const body = `
+    ${h1('Reset your password')}
+    ${p(`Hi ${name || 'there'}, we received a request to reset your StyleAI password.`)}
+    ${p(`Click the button below to set a new password. This link will expire in <strong>${mins} minute${mins === 1 ? '' : 's'}</strong>.`)}
+    ${muted("If you didn't request this, you can safely ignore this email. Your password will not change.")}
+  `;
+  return {
+    subject: 'Reset your StyleAI password',
+    html: layout({
+      preheader: 'Reset your StyleAI password',
+      title: 'Reset your password',
+      bodyHtml: body,
+      ctaText: 'Reset password',
+      ctaUrl: resetUrl,
+    }),
+  };
+}
+
+function passwordChanged({ name }) {
+  const body = `
+    ${pill('Password changed', C.success)}
+    ${h1('Your password was changed')}
+    ${p(`Hi ${name || 'there'}, this is a confirmation that your StyleAI password was just changed.`)}
+    ${p("If this wasn't you, please reset your password again or contact support immediately.")}
+  `;
+  return {
+    subject: 'Your StyleAI password was changed',
+    html: layout({
+      preheader: 'Password changed successfully',
+      title: 'Password changed',
+      bodyHtml: body,
+      ctaText: 'Sign in',
+      ctaUrl: `${frontendBase()}/login`,
+    }),
+  };
+}
+
+// ======================================================
+// NEW — Email verification
+// ======================================================
+function verifyEmail({ name, verifyUrl, expiresInHours }) {
+  const hrs = Number(expiresInHours) || 24;
+  const body = `
+    ${h1('Verify your email address')}
+    ${p(`Hi ${name || 'there'}, thanks for signing up for StyleAI.`)}
+    ${p(`Click the button below to verify <strong>your email address</strong> and activate your account. This link will expire in <strong>${hrs} hour${hrs === 1 ? '' : 's'}</strong>.`)}
+    ${muted("If you didn't create this account, you can safely ignore this email.")}
+  `;
+  return {
+    subject: 'Verify your StyleAI email',
+    html: layout({
+      preheader: 'Confirm your email address',
+      title: 'Verify your email',
+      bodyHtml: body,
+      ctaText: 'Verify email',
+      ctaUrl: verifyUrl,
+    }),
+  };
+}
+
+// ======================================================
+// NEW — Account lockout notification
+// ======================================================
+function accountLocked({ name, lockedUntilMinutes, lastAttemptAt, ip }) {
+  const mins = Number(lockedUntilMinutes) || 15;
+  const body = `
+    ${pill('Account locked', C.danger)}
+    ${h1('Your account was temporarily locked')}
+    ${p(`Hi ${name || 'there'}, we noticed multiple failed login attempts on your StyleAI account.`)}
+    ${infoBox([
+      ['Locked for', `${mins} minute${mins === 1 ? '' : 's'}`],
+      ...(lastAttemptAt ? [['Last attempt', new Date(lastAttemptAt).toLocaleString()]] : []),
+      ...(ip ? [['From IP', ip]] : []),
+    ])}
+    ${p('Your account is temporarily locked. If this was you, wait for the lockout to end and try again with the correct password.')}
+    ${p('<strong>If this was NOT you</strong>, we recommend resetting your password immediately to protect your account.')}
+  `;
+  return {
+    subject: 'StyleAI — Your account was temporarily locked',
+    html: layout({
+      preheader: 'Multiple failed login attempts detected',
+      title: 'Account locked',
+      bodyHtml: body,
+      ctaText: 'Reset password',
+      ctaUrl: `${frontendBase()}/forgot-password`,
     }),
   };
 }
@@ -408,4 +568,11 @@ module.exports = {
   paymentReceipt,
   withdrawalRequested,
   withdrawalReviewed,
+  brandApplicationReceived,
+  brandApplicationApproved,
+  brandApplicationDeclined,
+  passwordReset,
+  passwordChanged,
+  verifyEmail,
+  accountLocked,
 };

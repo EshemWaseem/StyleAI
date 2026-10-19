@@ -5,20 +5,16 @@ const { resolveActingBrand } = require('../middleware/actingBrand');
 const ctrl = require('../controllers/offerController');
 
 router.use(authenticate);
-router.use(resolveActingBrand); // ✅ agency X-Acting-Brand support
+router.use(resolveActingBrand);
 
-// ----- Estimate (dry-run, no save) -----
 router.post('/estimate', ctrl.estimate);
 
-// ----- List + create -----
 router.get('/', ctrl.list);
 router.post('/', ctrl.create);
 
-// ----- Single offer -----
 router.get('/:offerId', ctrl.getOne);
 router.patch('/:offerId', ctrl.update);
 
-// ----- State transitions -----
 router.post('/:offerId/submit', ctrl.submit);
 router.post('/:offerId/cancel', ctrl.cancel);
 router.post('/:offerId/admin-review', ctrl.adminReview);

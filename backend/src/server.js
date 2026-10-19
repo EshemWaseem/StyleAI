@@ -48,7 +48,6 @@ const healthRoutes = require('./routes/healthRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
 
-// ✅ NEW — public storefront (hero + sections)
 const storefrontRoutes = require('./routes/storefrontRoutes');
 
 // ======================================================
@@ -59,31 +58,25 @@ const { requestId } = require('./middleware/requestId');
 const { trialGate } = require('./middleware/trialGate');
 
 const prisma = require('./config/prisma');
-
-const {
-  globalLimiter,
-  authUmbrellaLimiter,
-} = require('./config/rateLimit');
+const { globalLimiter, authUmbrellaLimiter } = require('./config/rateLimit');
 
 const app = express();
 
 // ======================================================
 // PROCESS SAFETY NETS
 // ======================================================
-process.on('unhandledRejection', (reason) => {
-  console.error('[fatal] Unhandled Rejection:', reason);
-});
-process.on('uncaughtException', (err) => {
-  console.error('[fatal] Uncaught Exception:', err);
-});
+process.on('unhandledRejection', (reason) =>
+  console.error('[fatal] Unhandled Rejection:', reason)
+);
+process.on('uncaughtException', (err) =>
+  console.error('[fatal] Uncaught Exception:', err)
+);
 
 // ======================================================
 // SECURITY + PERF
 // ======================================================
 app.set('trust proxy', 1);
-
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-
 app.use(
   compression({
     filter: (req, res) => {
@@ -135,13 +128,13 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // ======================================================
-// RATE LIMITING (Redis-backed)
+// RATE LIMITING
 // ======================================================
 app.use('/api', globalLimiter);
 app.use('/api/auth', authUmbrellaLimiter);
 
 // ======================================================
-// TRIAL ENFORCEMENT (Authoritative)
+// TRIAL ENFORCEMENT
 // ======================================================
 app.use(trialGate);
 
@@ -160,15 +153,9 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // ======================================================
-// HEALTH
+// HEALTH + ROUTES
 // ======================================================
 app.use('/api/health', healthRoutes);
-
-// ======================================================
-// ROUTES
-// ======================================================
-
-// ✅ PUBLIC storefront — no auth required
 app.use('/api/storefront', storefrontRoutes);
 
 app.use('/api/auth', authRoutes);
@@ -209,21 +196,42 @@ app.use(errorHandler);
 // SERVER + PRISMA WARMUP + QUEUE
 // ======================================================
 const PORT = process.env.PORT || 4000;
+const DB_RETRY_INTERVAL_MS = 30_000;
 
 (async () => {
+  let dbHealthy = false;
+  let queuesInitialized = false;
+  let workersStarted = false;
+  let retryTimer = null;
+
+  // ------------------------------------------------------
+  // 1. Prisma warmup
+  // ------------------------------------------------------
   try {
     await prisma.$connect();
     await prisma.$queryRaw`SELECT 1`;
+    dbHealthy = true;
     console.log('✅ Prisma connected & warmed');
   } catch (err) {
     console.error('⚠️  Prisma warmup failed:', err.message);
+    console.error(
+      '[startup] DB unreachable — HTTP will run, background workers will NOT start.'
+    );
+    console.error(
+      '[startup] Verify DATABASE_URL and that the DB server is running.'
+    );
   }
 
+  // ------------------------------------------------------
+  // 2. Init queues (Redis-backed — no DB needed)
+  //    Routes can enqueue; only workers need DB.
+  // ------------------------------------------------------
   try {
-    const { initQueues, startWorkers, QUEUE_ENABLED } = require('./services/queue');
+    const { initQueues, QUEUE_ENABLED } = require('./services/queue');
     if (QUEUE_ENABLED) {
       initQueues();
-      startWorkers();
+      queuesInitialized = true;
+      console.log('[queue] Queues initialized');
     } else {
       console.log('[queue] QUEUE_ENABLED=false — skipping queue init');
     }
@@ -231,11 +239,68 @@ const PORT = process.env.PORT || 4000;
     console.warn('[server] queue init failed (non-fatal):', err.message);
   }
 
+  // ------------------------------------------------------
+  // 3. Start workers — GATED on DB health
+  //    Prevents infinite worker-error loop when DB is down.
+  // ------------------------------------------------------
+  async function tryStartWorkers() {
+    if (workersStarted || !queuesInitialized) return;
+    try {
+      const { startWorkers, QUEUE_ENABLED } = require('./services/queue');
+      if (!QUEUE_ENABLED) {
+        workersStarted = true;
+        return;
+      }
+      startWorkers();
+      workersStarted = true;
+      console.log('[queue] Workers started');
+      if (retryTimer) {
+        clearInterval(retryTimer);
+        retryTimer = null;
+        console.log('[queue] ✅ DB online — worker retry loop stopped');
+      }
+    } catch (err) {
+      console.warn('[server] worker start failed:', err.message);
+    }
+  }
+
+  if (dbHealthy) {
+    await tryStartWorkers();
+  } else {
+    console.warn(
+      `[queue] DB unreachable — workers will retry every ${DB_RETRY_INTERVAL_MS / 1000}s`
+    );
+    retryTimer = setInterval(async () => {
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+        if (!dbHealthy) {
+          console.log('[queue] ✅ DB is online — starting workers now');
+          dbHealthy = true;
+        }
+        await tryStartWorkers();
+      } catch {
+        // DB still down — silent wait
+      }
+    }, DB_RETRY_INTERVAL_MS);
+    retryTimer.unref();
+  }
+
+  // ------------------------------------------------------
+  // 4. HTTP server
+  // ------------------------------------------------------
   const server = app.listen(PORT, () => {
     console.log(`🚀 Backend running on http://localhost:${PORT}`);
     console.log(`🌍 Env: ${process.env.NODE_ENV || 'development'}`);
+    if (!dbHealthy) {
+      console.warn(
+        '⚠️  Started in DEGRADED mode — DB is down. HTTP works, workers paused.'
+      );
+    }
   });
 
+  // ------------------------------------------------------
+  // 5. WebSocket
+  // ------------------------------------------------------
   try {
     const { initWebSocket } = require('./services/websocket');
     initWebSocket(server, allowedOrigins);
@@ -244,6 +309,9 @@ const PORT = process.env.PORT || 4000;
     console.error('⚠️  WebSocket init failed:', err.message);
   }
 
+  // ------------------------------------------------------
+  // 6. Cron
+  // ------------------------------------------------------
   let stopCronFn = null;
   try {
     const { startCron, stopCron } = require('./services/billing/cron');
@@ -253,6 +321,9 @@ const PORT = process.env.PORT || 4000;
     console.warn('[server] cron init failed:', err.message);
   }
 
+  // ------------------------------------------------------
+  // 7. Graceful shutdown
+  // ------------------------------------------------------
   let shuttingDown = false;
 
   async function shutdown(signal) {
@@ -260,6 +331,11 @@ const PORT = process.env.PORT || 4000;
     shuttingDown = true;
 
     console.log(`\n[shutdown] ${signal} received — closing gracefully...`);
+
+    if (retryTimer) {
+      clearInterval(retryTimer);
+      retryTimer = null;
+    }
 
     const forceTimer = setTimeout(() => {
       console.error('[shutdown] ⚠️  Forced exit after 10s timeout');
@@ -277,11 +353,13 @@ const PORT = process.env.PORT || 4000;
     }
 
     try {
-      const { stopWorkers, closeQueues, closeConnection } = require('./services/queue');
-      await stopWorkers();
-      await closeQueues();
-      await closeConnection();
-      console.log('[shutdown] queue closed');
+      if (workersStarted) {
+        const { stopWorkers, closeQueues, closeConnection } = require('./services/queue');
+        await stopWorkers();
+        await closeQueues();
+        await closeConnection();
+        console.log('[shutdown] queue closed');
+      }
     } catch (e) {
       console.error('[shutdown] queue close failed:', e.message);
     }

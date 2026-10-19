@@ -1,5 +1,5 @@
-// src/services/storefrontService.js
 const prisma = require('../config/prisma');
+const { notifyAdmins } = require('./notifications');
 
 function shapeProduct(p) {
   const images = (p.images || [])
@@ -24,7 +24,6 @@ function shapeProduct(p) {
   };
 }
 
-// HERO
 async function listHeroSlides() {
   const now = new Date();
   return prisma.storefrontHero.findMany({
@@ -39,7 +38,6 @@ async function listHeroSlides() {
   });
 }
 
-// EDITORIAL
 async function getEditorial() {
   return prisma.storefrontEditorial.findFirst({
     where: { isActive: true },
@@ -47,7 +45,6 @@ async function getEditorial() {
   });
 }
 
-// CREATORS — top 3 real influencers from DB
 async function listTopCreators() {
   const creators = await prisma.influencer.findMany({
     where: {
@@ -83,7 +80,6 @@ async function listTopCreators() {
   }));
 }
 
-// SECTIONS
 async function resolveSectionProducts(section) {
   if (section.type === 'MANUAL') {
     const links = await prisma.storefrontSectionProduct.findMany({
@@ -160,17 +156,20 @@ async function getStorefront() {
   return { hero, sections, editorial, creators };
 }
 
-// ------------------------------------------------------
-// BRAND SIDE
-// ------------------------------------------------------
 async function resolveUserBrand(user) {
   if (!user.organizationId) {
-    const err = new Error('You must belong to a brand to apply'); err.status = 403; throw err;
+    const err = new Error('You must belong to a brand to apply');
+    err.status = 403;
+    throw err;
   }
-  const brand = await prisma.brand.findFirst({ where: { organizationId: user.organizationId } });
+  const brand = await prisma.brand.findFirst({
+    where: { organizationId: user.organizationId },
+  });
   if (!brand) {
     const err = new Error('Create your brand first');
-    err.status = 400; err.code = 'NO_BRAND'; throw err;
+    err.status = 400;
+    err.code = 'NO_BRAND';
+    throw err;
   }
   return brand;
 }
@@ -203,17 +202,20 @@ async function applyForStorefront(user, payload = {}) {
 
   if (brand.storefrontStatus === 'APPROVED') {
     const err = new Error('Your brand is already approved for the storefront');
-    err.status = 400; throw err;
+    err.status = 400;
+    throw err;
   }
   if (brand.storefrontStatus === 'REQUESTED') {
     const err = new Error('Your application is already under review');
-    err.status = 400; throw err;
+    err.status = 400;
+    throw err;
   }
 
   const raw = Array.isArray(payload?.products) ? payload.products : [];
   if (raw.length === 0) {
     const err = new Error('Select at least one product for the storefront');
-    err.status = 400; throw err;
+    err.status = 400;
+    throw err;
   }
 
   const ids = raw.map((p) => p.id).filter(Boolean);
@@ -223,7 +225,8 @@ async function applyForStorefront(user, payload = {}) {
   });
   if (found.length !== ids.length) {
     const err = new Error('One or more selected products are invalid');
-    err.status = 400; throw err;
+    err.status = 400;
+    throw err;
   }
 
   const VALID = ['ECOM', 'TRENDING', 'HERO'];
@@ -237,7 +240,7 @@ async function applyForStorefront(user, payload = {}) {
     notes: typeof payload?.notes === 'string' ? payload.notes.trim().slice(0, 500) : '',
   };
 
-  return prisma.brand.update({
+  const updated = await prisma.brand.update({
     where: { id: brand.id },
     data: {
       storefrontStatus: 'REQUESTED',
@@ -252,13 +255,31 @@ async function applyForStorefront(user, payload = {}) {
       storefrontApplication: true,
     },
   });
+
+  notifyAdmins({
+    type: 'STOREFRONT_APPLICATION_RECEIVED',
+    title: `Storefront application — ${brand.name}`,
+    body: `${products.length} product${products.length === 1 ? '' : 's'} submitted for review.`,
+    link: '/admin/storefront',
+    meta: { brandId: brand.id },
+    emailTemplate: 'brandApplicationReceived',
+    emailData: {
+      brandName: brand.name,
+      productCount: products.length,
+      notes: application.notes,
+    },
+  }).catch((e) => console.error('[storefront.apply.notify]', e.message));
+
+  return updated;
 }
 
 async function withdrawApplication(user) {
   const brand = await resolveUserBrand(user);
 
   if (brand.storefrontStatus !== 'REQUESTED') {
-    const err = new Error('No pending application to withdraw'); err.status = 400; throw err;
+    const err = new Error('No pending application to withdraw');
+    err.status = 400;
+    throw err;
   }
 
   return prisma.brand.update({
@@ -277,15 +298,21 @@ async function toggleMyProductVisibility(user, productId, visible) {
 
   if (brand.storefrontStatus !== 'APPROVED') {
     const err = new Error('Your brand must be approved for the storefront before making products visible');
-    err.status = 403; err.code = 'BRAND_NOT_APPROVED'; throw err;
+    err.status = 403;
+    err.code = 'BRAND_NOT_APPROVED';
+    throw err;
   }
 
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product) {
-    const err = new Error('Product not found'); err.status = 404; throw err;
+    const err = new Error('Product not found');
+    err.status = 404;
+    throw err;
   }
   if (product.brandId !== brand.id) {
-    const err = new Error('Forbidden'); err.status = 403; throw err;
+    const err = new Error('Forbidden');
+    err.status = 403;
+    throw err;
   }
 
   return prisma.product.update({

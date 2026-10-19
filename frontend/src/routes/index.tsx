@@ -15,6 +15,7 @@ import {
   Package,
   Palette,
   Store,
+  UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,9 +62,15 @@ const categories = [
   "Outerwear",
 ];
 
-// ======================================================
-// SCROLL-SPY
-// ======================================================
+// Fallback editorial — used when admin hasn't configured one
+const DEFAULT_EDITORIAL: StorefrontEditorial = {
+  id: "default-editorial",
+  title: "Behind every piece: the StyleAI loop.",
+  steps: ["Product", "Understand", "Match", "Create", "Launch", "Measure"],
+  isActive: true,
+};
+
+// ✅ Fixed — NO filter, all 3 always show
 const SECTIONS = [
   { id: "shop", label: "Shop" },
   { id: "edit", label: "Editorial" },
@@ -163,9 +170,6 @@ function useScrollSpy(ids: readonly string[], offset = NAV_OFFSET) {
   return activeId;
 }
 
-// ======================================================
-// STOREFRONT
-// ======================================================
 function Storefront() {
   const [brands, setBrands] = useState<PublicBrand[]>([]);
   const [products, setProducts] = useState<PublicProduct[]>([]);
@@ -242,20 +246,17 @@ function Storefront() {
     scrollTo(id, () => setMobileNavOpen(false));
   }
 
-  const showEditorial = !!editorial && editorial.steps.length > 0;
-  const showCreators = creators.length > 0;
-
-  const visibleSections = SECTIONS.filter((s) => {
-    if (s.id === "edit") return showEditorial;
-    if (s.id === "creators") return showCreators;
-    return true;
-  });
+  // ✅ Always show something — custom OR fallback
+  const editorialToShow: StorefrontEditorial =
+    editorial && editorial.steps && editorial.steps.length > 0
+      ? editorial
+      : DEFAULT_EDITORIAL;
 
   const hasHeroSlides = heroSlides.length > 0;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* HEADER */}
+      {/* HEADER — all 3 nav items ALWAYS visible */}
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
           <button
@@ -274,9 +275,9 @@ function Storefront() {
 
           <nav
             className="ml-6 hidden items-center gap-6 text-sm lg:flex"
-            aria-label="Shop"
+            aria-label="Main"
           >
-            {visibleSections.map((s) => {
+            {SECTIONS.map((s) => {
               const isActive = activeSection === s.id;
               return (
                 <button
@@ -459,7 +460,7 @@ function Storefront() {
                 </SheetHeader>
 
                 <nav className="mt-6 flex flex-col gap-1">
-                  {visibleSections.map((s) => {
+                  {SECTIONS.map((s) => {
                     const isActive = activeSection === s.id;
                     return (
                       <button
@@ -521,7 +522,7 @@ function Storefront() {
       </header>
 
       <main>
-        {/* HERO — admin slides OR branding hero */}
+        {/* HERO */}
         {hasHeroSlides ? (
           <HeroCarousel
             slides={heroSlides}
@@ -531,7 +532,7 @@ function Storefront() {
           <BrandingHero onScrollToShop={() => scrollTo("shop")} />
         )}
 
-        {/* SHOP */}
+        {/* SHOP — always */}
         <section id="shop" className="scroll-mt-20 border-t border-border">
           <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
@@ -623,7 +624,7 @@ function Storefront() {
           </div>
         </section>
 
-        {/* ADMIN-CONTROLLED SECTIONS */}
+        {/* ADMIN SECTIONS */}
         {sections.map((sec) => (
           <section
             key={sec.id}
@@ -664,44 +665,52 @@ function Storefront() {
           </section>
         ))}
 
-        {/* EDITORIAL */}
-        {showEditorial && editorial && (
-          <section
-            id="edit"
-            className="scroll-mt-20 border-t border-border bg-card/50"
-          >
-            <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-              <h2 className="max-w-lg font-display text-2xl font-medium tracking-tight sm:text-3xl">
-                {editorial.title}
-              </h2>
-              <ol className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-3 sm:mt-8 sm:gap-y-4">
-                {editorial.steps.map((step, i) => (
-                  <li key={`${step}-${i}`} className="flex items-center gap-3">
-                    <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">
-                      {step}
-                    </span>
-                    {i < editorial.steps.length - 1 && (
-                      <ArrowRight
-                        className="size-3.5 text-muted-foreground sm:size-4"
-                        aria-hidden="true"
-                      />
-                    )}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </section>
-        )}
+        {/* EDITORIAL — ALWAYS renders (custom or default) */}
+        <section
+          id="edit"
+          className="scroll-mt-20 border-t border-border bg-card/50"
+        >
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+            <h2 className="max-w-lg font-display text-2xl font-medium tracking-tight sm:text-3xl">
+              {editorialToShow.title}
+            </h2>
+            <ol className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-3 sm:mt-8 sm:gap-y-4">
+              {editorialToShow.steps.map((step, i) => (
+                <li key={`${step}-${i}`} className="flex items-center gap-3">
+                  <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">
+                    {step}
+                  </span>
+                  {i < editorialToShow.steps.length - 1 && (
+                    <ArrowRight
+                      className="size-3.5 text-muted-foreground sm:size-4"
+                      aria-hidden="true"
+                    />
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
 
-        {/* CREATORS */}
-        {showCreators && (
-          <section
-            id="creators"
-            className="mx-auto max-w-6xl scroll-mt-20 px-4 py-12 sm:px-6 sm:py-16"
-          >
+        {/* CREATORS — ALWAYS renders (real creators OR join CTA) */}
+        <section
+          id="creators"
+          className="mx-auto max-w-6xl scroll-mt-20 px-4 py-12 sm:px-6 sm:py-16"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">
               Styled by our creators
             </h2>
+            {creators.length > 0 && (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/influencers">
+                  See all creators <ArrowRight />
+                </Link>
+              </Button>
+            )}
+          </div>
+
+          {creators.length > 0 ? (
             <div className="mt-6 grid gap-4 sm:mt-8 sm:grid-cols-3 sm:gap-5">
               {creators.map((c) => (
                 <Link
@@ -739,10 +748,32 @@ function Storefront() {
                 </Link>
               ))}
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="mt-6 rounded-xl border border-border bg-gradient-to-r from-accent/5 via-transparent to-transparent p-6 sm:mt-8 sm:p-8">
+              <div className="flex flex-wrap items-center gap-5">
+                <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-accent/15 text-accent">
+                  <UsersRound className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-display text-lg font-medium">
+                    Be among the first creators.
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    StyleAI features real creators styling real products. Apply
+                    to join our creator program — brands will discover you.
+                  </p>
+                </div>
+                <Button asChild>
+                  <Link to="/register" search={{ role: "INFLUENCER" }}>
+                    Join as creator <ArrowRight className="ml-1 size-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          )}
+        </section>
 
-        {/* ABOUT / WHY STYLEAI — always shown */}
+        {/* ABOUT — always */}
         <AboutSection />
       </main>
 
@@ -759,12 +790,11 @@ function Storefront() {
 }
 
 // ======================================================
-// BRANDING HERO — shown when admin has no slides
+// BRANDING HERO
 // ======================================================
 function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
   return (
     <section className="relative overflow-hidden border-b border-border">
-      {/* Decorative gradient background */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent/10 via-background to-background"
@@ -819,7 +849,7 @@ function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
 }
 
 // ======================================================
-// ABOUT — always shown at bottom
+// ABOUT
 // ======================================================
 function AboutSection() {
   const items = [
@@ -880,7 +910,7 @@ function AboutSection() {
 }
 
 // ======================================================
-// COMING SOON — shown when no products yet
+// COMING SOON
 // ======================================================
 function ComingSoon() {
   return (
@@ -900,7 +930,7 @@ function ComingSoon() {
 }
 
 // ======================================================
-// HERO CAROUSEL — admin slides
+// HERO CAROUSEL
 // ======================================================
 function HeroCarousel({
   slides,

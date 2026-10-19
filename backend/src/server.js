@@ -48,6 +48,9 @@ const healthRoutes = require('./routes/healthRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
 
+// ✅ NEW — public storefront (hero + sections)
+const storefrontRoutes = require('./routes/storefrontRoutes');
+
 // ======================================================
 // MIDDLEWARE
 // ======================================================
@@ -164,6 +167,10 @@ app.use('/api/health', healthRoutes);
 // ======================================================
 // ROUTES
 // ======================================================
+
+// ✅ PUBLIC storefront — no auth required
+app.use('/api/storefront', storefrontRoutes);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);

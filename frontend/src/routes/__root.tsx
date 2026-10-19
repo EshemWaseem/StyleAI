@@ -271,8 +271,12 @@ function AppShellGate() {
   }
 
   if (isPublic) {
-    return <Outlet />;
-  }
+  return (
+    <div data-public-shell className="min-h-dvh">
+      <Outlet />
+    </div>
+  );
+}
 
   return (
     <AppShell>

@@ -1,8 +1,11 @@
-
-
-
-
+// frontend/src/lib/brands.ts
 import { http } from "./api";
+
+export type StorefrontOptIn =
+  | "NOT_REQUESTED"
+  | "REQUESTED"
+  | "APPROVED"
+  | "DECLINED";
 
 export interface Brand {
   id: string;
@@ -18,6 +21,13 @@ export interface Brand {
   targetAge: string | null;
   targetGender: string | null;
   productCount?: number;
+
+  // ✅ Storefront application status
+  storefrontStatus?: StorefrontOptIn;
+  storefrontAppliedAt?: string | null;
+  storefrontReviewedAt?: string | null;
+  storefrontDeclineReason?: string | null;
+
   organization: { id: string; name: string; slug: string };
   createdAt: string;
   updatedAt: string;

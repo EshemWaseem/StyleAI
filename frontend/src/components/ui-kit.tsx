@@ -1,3 +1,4 @@
+// frontend/src/components/ui-kit.tsx
 import { ArrowUpRight, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";

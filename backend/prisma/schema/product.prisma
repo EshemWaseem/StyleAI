@@ -1,7 +1,4 @@
-// ======================================================
-// PRODUCT
-// ======================================================
-
+// product.prisma
 model Product {
   id          String   @id @default(uuid())
   brandId     String
@@ -16,22 +13,29 @@ model Product {
   occasion    String?
   inventory   Int?
 
+  // ✅ NEW — public storefront flag
+  storefrontVisible Boolean @default(false)
+
   aiContent  Json?
   aiAnalysis Json?
 
-  brand  Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  offers CustomOffer[]
-  images ProductImage[]
+  brand   Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  offers  CustomOffer[]
+  images  ProductImage[]
 
   cartItems  CartItem[]
   orderItems OrderItem[]
   campaigns  Campaign[]
+
+  // ✅ NEW — storefront section links
+  storefrontSections StorefrontSectionProduct[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([brandId, sku])
   @@index([brandId])
+  @@index([storefrontVisible])
 }
 
 model ProductImage {

@@ -1,3 +1,4 @@
+// frontend/src/routes/admin/products.tsx
 import { swalError , swalConfirm } from "@/lib/swal";
 // admin/products.tsx
 import { createFileRoute } from "@tanstack/react-router";

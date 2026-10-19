@@ -1,4 +1,4 @@
-// brand.prisma 24-09
+// brand.prisma
 // ======================================================
 // BRAND + TEAM ROLES + MEMBERS + JOIN/INVITE
 // ======================================================
@@ -19,6 +19,14 @@ model Brand {
   targetAge    String?
   targetGender String?
 
+  // Storefront application
+  storefrontStatus         StorefrontOptIn @default(NOT_REQUESTED)
+  storefrontAppliedAt      DateTime?
+  storefrontReviewedAt     DateTime?
+  storefrontReviewedBy     String?
+  storefrontDeclineReason  String?
+  storefrontApplication    Json?
+
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   products     Product[]
 
@@ -29,13 +37,14 @@ model Brand {
   teamMembers BrandTeamMember[]
   offers      CustomOffer[]
   campaigns   Campaign[]
-    orders      Order[]   
+  orders      Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([organizationId, slug])
   @@index([organizationId])
+  @@index([storefrontStatus])
 }
 
 model BrandTeamRole {

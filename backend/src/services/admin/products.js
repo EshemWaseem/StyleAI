@@ -1,3 +1,5 @@
+// backend/src/services/admin/products.js
+
 const prisma = require('../../config/prisma');
 const { assertSuperAdmin, httpError, writeAudit, parsePagination } = require('./helpers');
 

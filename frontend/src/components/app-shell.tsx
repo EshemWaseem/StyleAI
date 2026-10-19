@@ -57,6 +57,7 @@ const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/influencers", label: "Influencers", icon: Sparkles },
       { to: "/admin/agencies", label: "Agencies", icon: Briefcase },
       { to: "/admin/products", label: "Products", icon: Shapes },
+      { to: "/admin/storefront", label: "Storefront", icon: Star }, /* ✅ NEW */
       { to: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
     ],
   },

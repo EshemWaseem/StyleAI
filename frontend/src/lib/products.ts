@@ -18,6 +18,7 @@ export interface Product {
   season: string | null;
   occasion: string | null;
   inventory: number | null;
+  storefrontVisible?: boolean;
   images: ProductImage[];
   primaryImage: string | null;
   brand?: { id: string; name: string; slug: string };
@@ -120,11 +121,6 @@ export const productsApi = {
   update: (id: string, data: Partial<ProductInput>) =>
     http.patch<{ message: string; product: Product }>(`/api/products/${id}`, data),
 
-  /**
-   * Update product with image changes.
-   * @param keepImageIds — IDs of existing images to KEEP (others deleted)
-   * @param newFiles — new image files to ADD (appended at end)
-   */
   updateWithImages: (
     id: string,
     data: Partial<ProductInput>,
@@ -144,10 +140,6 @@ export const productsApi = {
     );
   },
 
-  /**
-   * Inventory-only update — restricted to inventory.manage permission.
-   * Backend ignores all other fields even if sent.
-   */
   updateInventory: (id: string, inventory: number | null) =>
     http.patch<{ message: string; product: Product }>(
       `/api/products/${id}/inventory`,
@@ -191,6 +183,66 @@ export const publicProductsApi = {
   brands: async (): Promise<{ count: number; brands: PublicBrand[] }> => {
     const res = await fetch(`${PUBLIC_BASE}/api/products/public/brands`);
     if (!res.ok) throw new Error("Failed to load brands");
+    return res.json();
+  },
+};
+
+// ======================================================
+// STOREFRONT (admin-controlled public sections)
+// ======================================================
+
+export interface StorefrontHeroSlide {
+  id: string;
+  imageUrl: string;
+  headline: string | null;
+  subheading: string | null;
+  ctaText: string | null;
+  ctaLink: string | null;
+  sortOrder: number;
+}
+
+export interface StorefrontSectionPublic {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  type: "MANUAL" | "AUTO";
+  layout: "GRID" | "CAROUSEL";
+  rule: string | null;
+  productLimit: number;
+  sortOrder: number;
+  products: PublicProduct[];
+}
+
+export interface StorefrontEditorial {
+  id: string;
+  title: string;
+  steps: string[];
+  isActive: boolean;
+}
+
+export interface StorefrontCreator {
+  id: string;
+  slug: string;
+  displayName: string;
+  username: string;
+  avatarUrl: string | null;
+  followerCount: number;
+  engagementRate: number;
+  country: string | null;
+  categories: string[];
+}
+
+export interface StorefrontResponse {
+  hero: StorefrontHeroSlide[];
+  sections: StorefrontSectionPublic[];
+  editorial: StorefrontEditorial | null;
+  creators: StorefrontCreator[];
+}
+
+export const publicStorefrontApi = {
+  get: async (): Promise<StorefrontResponse> => {
+    const res = await fetch(`${PUBLIC_BASE}/api/storefront`);
+    if (!res.ok) throw new Error("Failed to load storefront");
     return res.json();
   },
 };

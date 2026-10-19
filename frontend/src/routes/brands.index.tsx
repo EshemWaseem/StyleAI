@@ -1,3 +1,4 @@
+//frontend/src/routes/brands.index.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, AlertCircle, Globe, Lock } from "lucide-react";

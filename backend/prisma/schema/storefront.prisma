@@ -1,0 +1,85 @@
+// storefront.prisma
+// ======================================================
+// Admin-controlled public storefront
+// ======================================================
+
+enum StorefrontSectionType {
+  MANUAL
+  AUTO
+}
+
+enum StorefrontLayout {
+  GRID
+  CAROUSEL
+}
+
+enum StorefrontOptIn {
+  NOT_REQUESTED
+  REQUESTED
+  APPROVED
+  DECLINED
+}
+
+model StorefrontHero {
+  id         String    @id @default(uuid())
+  imageUrl   String
+  headline   String?
+  subheading String?
+  ctaText    String?
+  ctaLink    String?
+  sortOrder  Int       @default(0)
+  isActive   Boolean   @default(true)
+  startsAt   DateTime?
+  endsAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model StorefrontSection {
+  id           String                  @id @default(uuid())
+  title        String
+  subtitle     String?
+  type         StorefrontSectionType   @default(MANUAL)
+  layout       StorefrontLayout        @default(GRID)
+  rule         String?
+  productLimit Int                     @default(8)
+  sortOrder    Int                     @default(0)
+  isActive     Boolean                 @default(true)
+
+  products StorefrontSectionProduct[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model StorefrontSectionProduct {
+  id        String @id @default(uuid())
+  sectionId String
+  productId String
+  sortOrder Int    @default(0)
+
+  section StorefrontSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  product Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, productId])
+  @@index([sectionId])
+  @@index([productId])
+}
+
+// ✅ NEW — editorial block (admin-editable "loop" section)
+model StorefrontEditorial {
+  id        String   @id @default(uuid())
+  title     String
+  steps     String[]
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}

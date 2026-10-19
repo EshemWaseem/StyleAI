@@ -87,29 +87,15 @@
 }
 
 /* ── Scroll Areas ────────────────────────────────────── */
-/*
-   KEY FIX: padding-bottom ensures the last list tile
-   never touches the screen edge.
-   scroll-padding-bottom keeps keyboard / anchor jumps
-   from landing behind it.
-   The safe-area addition handles notched devices.
-*/
 
 .resp-scroll {
   overflow-y:                auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior:        contain;
-
-  /* 3 px breathing room + iOS home-bar clearance */
   padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
   scroll-padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
 }
 
-/*
-  When a resp-scroll is inside a panel that already has
-  bottom padding (footer bar, nav bar) we don't want to
-  double-count the safe area — use this variant instead.
-*/
 .resp-scroll-inset {
   overflow-y:                auto;
   -webkit-overflow-scrolling: touch;
@@ -127,22 +113,34 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* ── App Root Viewport Lock ──────────────────────────── */
+/* ======================================================
+   App Root Viewport Lock — SCOPED
+   ------------------------------------------------------
+   ✅ DEFAULT: normal document flow. Page scrolls.
+   ✅ When app shell is mounted (dashboard etc.):
+      lock viewport so internal containers scroll.
+   ====================================================== */
 
 html,
 body {
-  height:            100%;
-  overflow:          hidden;
-  margin:            0;
-  padding:           0;
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
   overscroll-behavior: none;
 }
 
-body > div#root,
-body > div:first-child {
-  height:    100%;
-  overflow:  hidden;
-  display:   flex;
+/* Lock ONLY when [data-app-shell] is present */
+html:has([data-app-shell]),
+body:has([data-app-shell]) {
+  height: 100%;
+  overflow: hidden;
+}
+
+body:has([data-app-shell]) > div#root,
+body:has([data-app-shell]) > div:first-child {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
   flex-direction: column;
 }
 
@@ -156,20 +154,167 @@ body > div:first-child {
   }
 }
 
-/* ── Mobile Sidebar Width Constraint ────────────────── */
-
-@media (max-width: 1023px) {
-  [role="dialog"][data-state="open"] {
-    width:     268px !important;
-    max-width: 85vw !important;
-  }
-
-  [role="dialog"][data-state="open"] > button[type="button"][aria-label] {
-    display: none;
-  }
-}
+/* ======================================================
+   Sidebar Sheet — scoped to sidebar only
+   ====================================================== */
 
 .sidebar-sheet-content {
   width:     268px !important;
   max-width: 85vw !important;
+}
+
+@media (max-width: 1023px) {
+  .sidebar-sheet-content {
+    width:     268px !important;
+    max-width: 85vw !important;
+  }
+
+  .sidebar-sheet-content > button[type="button"][aria-label] {
+    display: none;
+  }
+}
+
+/* ======================================================
+   Modal / Dialog responsive helpers
+   ====================================================== */
+
+@media (max-width: 640px) {
+  .ui-panel {
+    margin-top:    0.75rem;
+    margin-bottom: 0.75rem;
+    border-radius: var(--radius-lg);
+  }
+
+  .ui-panel-header {
+    padding: 0.875rem 1rem;
+  }
+
+  .ui-panel-body {
+    padding: 1rem;
+  }
+
+  .ui-panel-footer {
+    padding: 0.875rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .ui-panel-footer > * {
+    flex: 1 1 auto;
+  }
+}
+
+/* ── Prevent iOS double-tap zoom on small buttons ─────── */
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+
+
+
+/* ======================================================
+   GLOBAL CLICK / FOCUS FIXES
+   ------------------------------------------------------
+   Fixes common issues:
+   - Body/html focus outline appearing on click
+   - Mobile tap highlight flash
+   - Text selection on empty click
+   - Radix pointer-events lock leak
+   ====================================================== */
+
+/* 1. Remove focus outline from document containers */
+html,
+body,
+#root,
+body > div:first-child {
+  outline: none !important;
+}
+
+html:focus,
+html:focus-visible,
+body:focus,
+body:focus-visible,
+#root:focus,
+#root:focus-visible {
+  outline: none !important;
+}
+
+/* 2. Remove mobile tap highlight (Chrome/Android blue flash) */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* 3. Prevent accidental text selection on UI chrome */
+button,
+a,
+[role="button"],
+[role="menuitem"],
+[role="tab"],
+[role="option"],
+label,
+summary,
+nav,
+header,
+aside,
+[data-radix-popper-content-wrapper],
+[data-radix-popper-content-wrapper] * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Re-enable selection for text content */
+p,
+span:not([role]),
+h1, h2, h3, h4, h5, h6,
+li,
+td,
+th,
+input,
+textarea,
+code,
+pre,
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* 4. Kill focus ring on non-interactive elements */
+div:focus,
+div:focus-visible,
+section:focus,
+section:focus-visible,
+main:focus,
+main:focus-visible {
+  outline: none !important;
+}
+
+/* 5. Selection color — use theme accent */
+::selection {
+  background-color: color-mix(in oklch, var(--color-accent) 35%, transparent);
+  color: var(--color-foreground);
+}
+
+/* ======================================================
+   RADIX UI FIX — pointer-events lock leak
+   ------------------------------------------------------
+   Radix dialogs/sheets/dropdowns sometimes fail to remove
+   `pointer-events: none` from body after closing, leaving
+   the entire page unclickable. This forces cleanup.
+   ====================================================== */
+
+/* When no modal is open, body must be clickable */
+body:not([data-scroll-locked]) {
+  pointer-events: auto !important;
+}
+
+/* When scroll-lock is active (modal open), keep default */
+body[data-scroll-locked] {
+  pointer-events: auto;
+}
+
+/* Sometimes Radix adds it inline on body — override */
+body[style*="pointer-events: none"]:not([data-scroll-locked]) {
+  pointer-events: auto !important;
 }

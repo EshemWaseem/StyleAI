@@ -91,9 +91,9 @@ function AnalyticsPage() {
   );
 }
 
-// ======================================================
+//      ==
 // KPI card
-// ======================================================
+//      ==
 function Kpi({
   icon: Icon, label, value, note, accent = "accent",
 }: {
@@ -131,9 +131,9 @@ function fmtNum(n: number) {
   return String(n);
 }
 
-// ======================================================
+//      ==
 // ADMIN
-// ======================================================
+//      ==
 function AdminView({ data }: { data: PlatformAnalytics }) {
   return (
     <>
@@ -182,9 +182,9 @@ function AdminView({ data }: { data: PlatformAnalytics }) {
   );
 }
 
-// ======================================================
+//      ==
 // BRAND
-// ======================================================
+//      ==
 function BrandView({ data }: { data: BrandAnalytics }) {
   return (
     <>
@@ -256,9 +256,9 @@ function BrandView({ data }: { data: BrandAnalytics }) {
   );
 }
 
-// ======================================================
+//      ==
 // AGENCY
-// ======================================================
+//      ==
 function AgencyView({ data }: { data: AgencyAnalytics }) {
   return (
     <>
@@ -318,9 +318,9 @@ function AgencyView({ data }: { data: AgencyAnalytics }) {
   );
 }
 
-// ======================================================
+//      ==
 // INFLUENCER
-// ======================================================
+//      ==
 function InfluencerView({ data }: { data: InfluencerAnalytics }) {
   return (
     <>
@@ -342,9 +342,9 @@ function InfluencerView({ data }: { data: InfluencerAnalytics }) {
   );
 }
 
-// ======================================================
+//      ==
 // SHARED — campaigns table
-// ======================================================
+//      ==
 function CampaignsTable({
   title, campaigns, showBrand = false,
 }: {

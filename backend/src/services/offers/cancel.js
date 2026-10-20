@@ -1,9 +1,9 @@
 // services/offers/cancel.js
-// ======================================================
+//      ==
 // Cancel an offer — brand-side only, before influencer reviews.
 // Allowed only: DRAFT, PENDING (influencer hasn't responded yet).
 // Escrow is released back to brand wallet.
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError, shapeOffer } = require('./helpers');

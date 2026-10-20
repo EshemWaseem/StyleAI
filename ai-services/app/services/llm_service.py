@@ -53,9 +53,9 @@ class LLMService:
             await self._client.aclose()
             self._client = None
 
-    # ==================================================
+    #    ==========
     # PUBLIC — drop-in API
-    # ==================================================
+    #    ==========
     async def generate_json(
         self,
         prompt: str,
@@ -79,9 +79,9 @@ class LLMService:
     ) -> str:
         return await self._text_text(prompt, model, temperature, num_predict)
 
-    # ==================================================
+    #    ==========
     # ROUTING
-    # ==================================================
+    #    ==========
     async def _text_json(self, prompt, model, temperature, num_predict):
         provider = (settings.LLM_PROVIDER or "groq").lower()
         model = model or settings.text_model
@@ -120,9 +120,9 @@ class LLMService:
             return await self._ollama_json(prompt, model, temperature, num_predict, images=images)
         raise ValueError(f"Unknown VISION_PROVIDER: {provider}")
 
-    # ==================================================
+    #    ==========
     # GROQ
-    # ==================================================
+    #    ==========
     async def _groq_json(self, prompt, model, temperature, num_predict):
         raw = await self._groq_chat(prompt, model, temperature, num_predict, json_mode=True)
         return self._parse_json(raw)
@@ -194,9 +194,9 @@ class LLMService:
             raise ValueError("Empty response from Groq")
         return content.strip()
 
-    # ==================================================
+    #    ==========
     # GEMINI
-    # ==================================================
+    #    ==========
     async def _gemini_json(self, prompt, model, temperature, num_predict):
         raw = await self._gemini_call(
             prompt=prompt, model=model, temperature=temperature,
@@ -275,9 +275,9 @@ class LLMService:
             raise ValueError("Empty response from Gemini")
         return text.strip()
 
-    # ==================================================
+    #    ==========
     # OLLAMA (legacy — dev only)
-    # ==================================================
+    #    ==========
     async def _ollama_json(self, prompt, model, temperature, num_predict, images=None):
         raw = await self._ollama_call(prompt, model, temperature, num_predict, True, images)
         return self._parse_json(raw)
@@ -323,9 +323,9 @@ class LLMService:
             raise ValueError("Empty response from Ollama")
         return raw
 
-    # ==================================================
+    #    ==========
     # HELPERS
-    # ==================================================
+    #    ==========
     @staticmethod
     def _normalize_b64(img: str) -> str:
         if not img:

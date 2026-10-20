@@ -1,7 +1,7 @@
 // services/ai/models.js
-// ======================================================
+//      ==
 // Model registry CRUD.
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');

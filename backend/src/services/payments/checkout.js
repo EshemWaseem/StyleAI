@@ -1,7 +1,7 @@
 // services/payments/checkout.js
-// ======================================================
+//      ==
 // Subscription checkout — role-aware (BRAND | AGENCY | INFLUENCER)
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const config = require('../../config/payment_service');

@@ -1,10 +1,10 @@
 // components/ui/CountryPhoneFields.tsx
-// ======================================================
+//      ==
 // Searchable country/state/city + phone input
 // - Flags via flagcdn.com images (Windows-safe)
 // - Auto-selects country from IP on first mount
 // - Defensive ISO2 matching across library versions
-// ======================================================
+//      ==
 
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
@@ -25,7 +25,7 @@ import { GetCountries, GetState, GetCity } from "react-country-state-city";
 import PhoneInput, { isPossiblePhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 
-// ---------- ISO2 extractor — handles all library variants ----------
+//  - ISO2 extractor — handles all library variants  -
 function getIso2(c: any): string {
   if (!c) return "";
   return String(
@@ -35,9 +35,9 @@ function getIso2(c: any): string {
     .toUpperCase();
 }
 
-// ======================================================
+//      ==
 // Flag image (reliable on Windows)
-// ======================================================
+//      ==
 function FlagImg({
   iso2,
   className = "h-3.5 w-5",
@@ -79,9 +79,9 @@ interface Props {
   countryLabel?: string;
 }
 
-// ======================================================
+//      ==
 // Searchable Combobox
-// ======================================================
+//      ==
 function SearchableSelect({
   value,
   onChange,
@@ -181,9 +181,9 @@ function SearchableSelect({
   );
 }
 
-// ======================================================
+//      ==
 // MAIN COMPONENT
-// ======================================================
+//      ==
 export function CountryPhoneFields({
   value,
   onChange,
@@ -276,7 +276,7 @@ export function CountryPhoneFields({
 
   return (
     <div className="space-y-4">
-      {/* ---------- Phone ---------- */}
+      {/*  - Phone  - */}
       {showPhone && (
         <div className="space-y-2">
           <Label>{phoneLabel}{star}</Label>
@@ -298,7 +298,7 @@ export function CountryPhoneFields({
         </div>
       )}
 
-      {/* ---------- Country ---------- */}
+      {/*  - Country  - */}
       <div className="space-y-2">
         <Label>{countryLabel}{star}</Label>
         <SearchableSelect
@@ -329,7 +329,7 @@ export function CountryPhoneFields({
         />
       </div>
 
-      {/* ---------- State + City ---------- */}
+      {/*  - State + City  - */}
       {showStateCity && (
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
@@ -380,9 +380,9 @@ export function CountryPhoneFields({
   );
 }
 
-// ======================================================
+//      ==
 // Validation helper
-// ======================================================
+//      ==
 export function validateCountryPhone(
   v: CountryPhoneFieldsValue,
   {

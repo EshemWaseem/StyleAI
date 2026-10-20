@@ -1,8 +1,8 @@
 // middleware/errorHandler.js
-// ======================================================
+//      ==
 // Global error handler — every error that reaches the client
 // is sanitized. Raw Prisma / DB / filesystem messages never leak.
-// ======================================================
+//      ==
 
 function notFound(req, res) {
   res.status(404).json({
@@ -12,9 +12,9 @@ function notFound(req, res) {
   });
 }
 
-// ------------------------------------------------------
+//       
 // Helpers — detect infrastructure leaks
-// ------------------------------------------------------
+//       
 function isDbConnectionError(err) {
   const msg = String(err?.message || '').toLowerCase();
   const code = String(err?.code || '');
@@ -64,9 +64,9 @@ function genericMessageFor(status) {
   return 'Request could not be processed. Please check your input.';
 }
 
-// ======================================================
+//      ==
 // MAIN HANDLER
-// ======================================================
+//      ==
 function errorHandler(err, req, res, next) {
   // ---- DB unreachable → 503 with friendly message ----
   if (isDbConnectionError(err)) {

@@ -21,9 +21,9 @@ async function listTransactions(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// ======================================================
+//      ==
 // WALLET TOP-UP
-// ======================================================
+//      ==
 async function topUp(req, res, next) {
   try {
     const frontend = getFrontendOrigin();

@@ -1,8 +1,8 @@
-// ======================================================
+//      ==
 // BRAND TEAM PERMISSIONS — source of truth
 // These are brand-scoped permissions, assigned via custom roles.
 // Global Role/Permission tables are separate (system-wide).
-// ======================================================
+//      ==
 
 const BRAND_TEAM_PERMISSIONS = {
   CAMPAIGN: {
@@ -69,9 +69,9 @@ const BRAND_TEAM_PERMISSIONS = {
 const ALL_BRAND_TEAM_PERMISSION_KEYS = Object.values(BRAND_TEAM_PERMISSIONS)
   .flatMap((group) => group.permissions.map((p) => p.key));
 
-// ======================================================
+//      ==
 // DEFAULT ROLES — auto-created for every new brand
-// ======================================================
+//      ==
 
 const DEFAULT_BRAND_TEAM_ROLES = [
   {
@@ -142,9 +142,9 @@ const DEFAULT_BRAND_TEAM_ROLES = [
   },
 ];
 
-// ======================================================
+//      ==
 // VALIDATION
-// ======================================================
+//      ==
 
 function isValidPermission(key) {
   return ALL_BRAND_TEAM_PERMISSION_KEYS.includes(key);

@@ -3,9 +3,9 @@ const roleService = require('../services/brandTeamRoleService');
 const memberService = require('../services/brandTeamMemberService');
 const invitationService = require('../services/invitationService');
 
-// ======================================================
+//      ==
 // Effective user — agency acting on behalf of client brand
-// ======================================================
+//      ==
 function effectiveUser(req) {
   if (req.actingBrandId && req.actingOrganizationId) {
     return {
@@ -19,9 +19,9 @@ function effectiveUser(req) {
   return req.user;
 }
 
-// ======================================================
+//      ==
 // ROLES
-// ======================================================
+//      ==
 
 async function listRoles(req, res, next) {
   try {
@@ -92,9 +92,9 @@ async function listPermissions(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // MEMBERS
-// ======================================================
+//      ==
 
 async function listMembers(req, res, next) {
   try {
@@ -164,9 +164,9 @@ async function removeMember(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // DIRECT ADD — smart: adds user OR creates invitation
-// ======================================================
+//      ==
 
 async function directAdd(req, res, next) {
   try {
@@ -229,9 +229,9 @@ async function directAdd(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // ME
-// ======================================================
+//      ==
 
 async function getMyMembership(req, res, next) {
   try {

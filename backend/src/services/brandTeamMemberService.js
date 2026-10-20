@@ -2,9 +2,9 @@
 const prisma = require('../config/prisma');
 const { ensureDefaultRoles } = require('./brandTeamRoleService');
 
-// ======================================================
+//      ==
 // HELPERS
-// ======================================================
+//      ==
 
 async function resolveBrand(user, brandId = null) {
   if (brandId) {
@@ -70,9 +70,9 @@ function shape(member) {
   };
 }
 
-// ======================================================
+//      ==
 // LIST MEMBERS
-// ======================================================
+//      ==
 
 async function listMembers(user, brandId = null) {
   const brand = await resolveBrand(user, brandId);
@@ -91,9 +91,9 @@ async function listMembers(user, brandId = null) {
   return members.map(shape);
 }
 
-// ======================================================
+//      ==
 // GET ONE
-// ======================================================
+//      ==
 
 async function getMember(user, memberId) {
   const member = await prisma.brandTeamMember.findUnique({
@@ -121,9 +121,9 @@ async function getMember(user, memberId) {
   return shape(member);
 }
 
-// ======================================================
+//      ==
 // CHANGE MEMBER'S ROLE
-// ======================================================
+//      ==
 
 async function changeMemberRole(user, memberId, newRoleId) {
   const member = await prisma.brandTeamMember.findUnique({
@@ -166,9 +166,9 @@ async function changeMemberRole(user, memberId, newRoleId) {
   return shape(updated);
 }
 
-// ======================================================
+//      ==
 // SET MEMBER STATUS
-// ======================================================
+//      ==
 
 async function setMemberStatus(user, memberId, status) {
   if (!['ACTIVE', 'SUSPENDED'].includes(status)) {
@@ -207,9 +207,9 @@ async function setMemberStatus(user, memberId, status) {
   return shape(updated);
 }
 
-// ======================================================
+//      ==
 // REMOVE MEMBER
-// ======================================================
+//      ==
 
 async function removeMember(user, memberId) {
   const member = await prisma.brandTeamMember.findUnique({
@@ -264,9 +264,9 @@ async function removeMember(user, memberId) {
   return { id: memberId };
 }
 
-// ======================================================
+//      ==
 // MY MEMBERSHIP
-// ======================================================
+//      ==
 
 async function getMyMembership(user) {
   if (!user.organizationId) return null;
@@ -303,9 +303,9 @@ async function getMyMembership(user) {
   };
 }
 
-// ======================================================
+//      ==
 // DIRECT ADD MEMBER — smart (add or signal invite)
-// ======================================================
+//      ==
 
 async function directAddMember(user, { brandId = null, email, teamRoleId }) {
   if (!email || !email.trim()) {
@@ -343,9 +343,9 @@ async function directAddMember(user, { brandId = null, email, teamRoleId }) {
     where: { email: normalizedEmail },
   });
 
-  // ======================================================
+  //      ==
   // CASE 1: USER DOESN'T EXIST → signal invitation flow
-  // ======================================================
+  //      ==
   if (!targetUser) {
     return {
       type: 'USER_NOT_FOUND',
@@ -355,9 +355,9 @@ async function directAddMember(user, { brandId = null, email, teamRoleId }) {
     };
   }
 
-  // ======================================================
+  //      ==
   // CASE 2: USER EXISTS → check eligibility
-  // ======================================================
+  //      ==
 
   const existingMembership = await prisma.brandTeamMember.findUnique({
     where: { brandId_userId: { brandId: brand.id, userId: targetUser.id } },
@@ -496,9 +496,9 @@ module.exports = {
 // const prisma = require('../config/prisma');
 // const { ensureDefaultRoles } = require('./brandTeamRoleService');
 
-// // ======================================================
+// //      ==
 // // HELPERS
-// // ======================================================
+// //      ==
 
 // async function resolveBrand(user, brandId = null) {
 //   if (brandId) {
@@ -564,9 +564,9 @@ module.exports = {
 //   };
 // }
 
-// // ======================================================
+// //      ==
 // // LIST MEMBERS
-// // ======================================================
+// //      ==
 
 // async function listMembers(user, brandId = null) {
 //   const brand = await resolveBrand(user, brandId);
@@ -585,9 +585,9 @@ module.exports = {
 //   return members.map(shape);
 // }
 
-// // ======================================================
+// //      ==
 // // GET ONE
-// // ======================================================
+// //      ==
 
 // async function getMember(user, memberId) {
 //   const member = await prisma.brandTeamMember.findUnique({
@@ -615,9 +615,9 @@ module.exports = {
 //   return shape(member);
 // }
 
-// // ======================================================
+// //      ==
 // // CHANGE MEMBER'S ROLE
-// // ======================================================
+// //      ==
 
 // async function changeMemberRole(user, memberId, newRoleId) {
 //   const member = await prisma.brandTeamMember.findUnique({
@@ -660,9 +660,9 @@ module.exports = {
 //   return shape(updated);
 // }
 
-// // ======================================================
+// //      ==
 // // SUSPEND / REACTIVATE
-// // ======================================================
+// //      ==
 
 // async function setMemberStatus(user, memberId, status) {
 //   if (!['ACTIVE', 'SUSPENDED'].includes(status)) {
@@ -701,9 +701,9 @@ module.exports = {
 //   return shape(updated);
 // }
 
-// // ======================================================
+// //      ==
 // // REMOVE MEMBER
-// // ======================================================
+// //      ==
 
 // async function removeMember(user, memberId) {
 //   const member = await prisma.brandTeamMember.findUnique({
@@ -766,9 +766,9 @@ module.exports = {
 //   return { id: memberId };
 // }
 
-// // ======================================================
+// //      ==
 // // MY MEMBERSHIP (for current user)
-// // ======================================================
+// //      ==
 
 // async function getMyMembership(user) {
 //   if (!user.organizationId) return null;
@@ -805,11 +805,11 @@ module.exports = {
 //   };
 // }
 
-// // ======================================================
+// //      ==
 // // DIRECT ADD — owner adds user by email
 // // If user exists → immediately added
 // // If user doesn't exist → caller should fall back to invitation
-// // ======================================================
+// //      ==
 
 // async function directAddMember(user, { brandId = null, email, teamRoleId }) {
 //   if (!email || !email.trim()) {
@@ -846,9 +846,9 @@ module.exports = {
 //     },
 //   });
 
-//   // ======================================================
+//   //      ==
 //   // CASE 1: USER EXISTS → direct add
-//   // ======================================================
+//   //      ==
 //   if (targetUser) {
 //     // Check if user is already a member
 //     const existing = await prisma.brandTeamMember.findUnique({
@@ -951,9 +951,9 @@ module.exports = {
 //     };
 //   }
 
-//   // ======================================================
+//   //      ==
 //   // CASE 2: USER DOESN'T EXIST → return signal to create invitation
-//   // ======================================================
+//   //      ==
 //   return {
 //     type: 'USER_NOT_FOUND',
 //     email: normalizedEmail,

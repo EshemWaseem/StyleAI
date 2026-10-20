@@ -1,8 +1,8 @@
 // services/campaigns/chat.js
-// ======================================================
+//      ==
 // Campaign chat — send, list, mark read
 // Participants: brand owner/member, agency, influencer
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
@@ -18,9 +18,9 @@ try {
 
 const MAX_BODY = 2000;
 
-// ------------------------------------------------------
+//       
 // Determine sender role for a user on a campaign
-// ------------------------------------------------------
+//       
 function resolveSenderRole(user, campaign) {
   const isAdmin = user.roles?.includes('SUPER_ADMIN');
   const isAgency = user.roles?.includes('AGENCY') && campaign.agencyId === user.organizationId;
@@ -35,9 +35,9 @@ function resolveSenderRole(user, campaign) {
   return null;
 }
 
-// ------------------------------------------------------
+//       
 // Shaping
-// ------------------------------------------------------
+//       
 function shapeMessage(m, { currentUserId } = {}) {
   return {
     id: m.id,
@@ -52,9 +52,9 @@ function shapeMessage(m, { currentUserId } = {}) {
   };
 }
 
-// ------------------------------------------------------
+//       
 // LIST — 200 most recent, oldest first
-// ------------------------------------------------------
+//       
 async function listMessages(user, campaignId, query = {}) {
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },
@@ -78,9 +78,9 @@ async function listMessages(user, campaignId, query = {}) {
   };
 }
 
-// ------------------------------------------------------
+//       
 // SEND
-// ------------------------------------------------------
+//       
 async function sendMessage(user, campaignId, payload = {}) {
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },
@@ -129,9 +129,9 @@ async function sendMessage(user, campaignId, payload = {}) {
   return shaped;
 }
 
-// ------------------------------------------------------
+//       
 // MARK READ — flip the flag for the caller's role
-// ------------------------------------------------------
+//       
 async function markChatRead(user, campaignId) {
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },
@@ -164,9 +164,9 @@ async function markChatRead(user, campaignId) {
   return { updated: result.count };
 }
 
-// ------------------------------------------------------
+//       
 // UNREAD COUNT — per caller's role
-// ------------------------------------------------------
+//       
 async function getUnreadCount(user, campaignId) {
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },
@@ -196,9 +196,9 @@ async function getUnreadCount(user, campaignId) {
   return { unread: count };
 }
 
-// ------------------------------------------------------
+//       
 // TOTAL UNREAD — across all user's campaigns
-// ------------------------------------------------------
+//       
 async function getTotalUnreadForUser(user) {
   const roles = user.roles || [];
   const isAdmin = roles.includes('SUPER_ADMIN');

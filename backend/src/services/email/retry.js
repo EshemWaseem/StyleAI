@@ -1,11 +1,11 @@
 // services/email/retry.js
-// ======================================================
+//      ==
 // Lightweight in-memory retry queue for failed emails.
 // Uses exponential backoff: 30s, 2m, 10m (3 retries).
 //
 // When we add Redis + BullMQ later, this can be swapped.
 // For now: single-process, non-persistent, bounded.
-// ======================================================
+//      ==
 const { sendMail } = require('./send');
 
 const MAX_RETRIES = 3;

@@ -1,7 +1,7 @@
 // services/chat/parties.js
-// ======================================================
+//      ==
 // Search parties (influencers + agencies) to start a chat with
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 
@@ -12,7 +12,7 @@ async function searchParties(user, query = {}) {
 
   const results = [];
 
-  // ---------- INFLUENCERS ----------
+  //  - INFLUENCERS  -
   if (type === 'ALL' || type === 'INFLUENCER') {
     const where = {
       status: 'ACTIVE',
@@ -54,7 +54,7 @@ async function searchParties(user, query = {}) {
     );
   }
 
-  // ---------- AGENCIES (organizations with AGENCY-role users) ----------
+  //  - AGENCIES (organizations with AGENCY-role users)  -
   if (type === 'ALL' || type === 'AGENCY') {
     const where = {
       ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),

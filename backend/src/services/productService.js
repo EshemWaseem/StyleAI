@@ -353,9 +353,9 @@ async function deleteProduct(user, productId) {
   return { id: productId };
 }
 
-// ======================================================
+//      ==
 // PUBLIC — only storefront-visible + brand-approved
-// ======================================================
+//      ==
 async function listPublicProducts({ brandSlug, category, search, limit = 60 } = {}) {
   const where = {
     storefrontVisible: true,

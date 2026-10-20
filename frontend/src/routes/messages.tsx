@@ -21,9 +21,9 @@ export const Route = createFileRoute("/messages")({
   component: MessagesPage,
 });
 
-// ======================================================
+//      ==
 // Helpers
-// ======================================================
+//      ==
 
 function otherParty(c: Conversation): PartyInfo {
   if (c.mySide === "A") return c.partyB;
@@ -108,9 +108,9 @@ type PartyHit = {
   slug: string | null;
 };
 
-// ======================================================
+//      ==
 // Main Page
-// ======================================================
+//      ==
 
 function MessagesPage() {
   const { user } = useRole();
@@ -280,7 +280,7 @@ function MessagesPage() {
   return (
     <ProtectedRoute>
       <div className="ui-page-full">
-        {/* ============ COMPACT HEADER ============ */}
+        {/*    COMPACT HEADER    */}
         <div className="flex items-center justify-between gap-3 pb-3">
           <div className="flex items-baseline gap-2 sm:gap-3 min-w-0">
             <h1 className="font-display text-xl font-medium leading-none sm:text-2xl">
@@ -316,7 +316,7 @@ function MessagesPage() {
           </div>
         )}
 
-        {/* ============ CHAT SHELL (responsive: stack on mobile) ============ */}
+        {/*    CHAT SHELL (responsive: stack on mobile)    */}
         <div className="resp-split mt-1 min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
           {/* LEFT: Conversation list */}
           <div
@@ -633,9 +633,9 @@ function MessagesPage() {
   );
 }
 
-// ======================================================
+//      ==
 // New Chat Modal
-// ======================================================
+//      ==
 
 function NewChatModal({
   onClose,
@@ -793,9 +793,9 @@ function NewChatModal({
   );
 }
 
-// ======================================================
+//      ==
 // Message Bubble
-// ======================================================
+//      ==
 
 function Bubble({
   m,

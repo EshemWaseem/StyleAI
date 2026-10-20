@@ -33,9 +33,9 @@ export const campaignsApi = {
       {}
     ),
 
-  // ======================================================
+  //      ==
   // SHIPPING FLOW
-  // ======================================================
+  //      ==
   submitAddress: (id: string, payload: SubmitAddressInput) =>
     http.post<{ message: string; campaign: Campaign }>(
       `/api/campaigns/${id}/address`,
@@ -60,9 +60,9 @@ export const campaignsApi = {
       payload
     ),
 
-  // ======================================================
+  //      ==
   // CONTENT PIPELINE
-  // ======================================================
+  //      ==
   submitRaw: (deliverableId: string, payload: any) =>
     http.post<{ message: string; deliverable: any }>(
       `/api/campaigns/deliverables/${deliverableId}/raw`,
@@ -105,9 +105,9 @@ export const campaignsApi = {
       payload
     ),
 
-  // ======================================================
+  //      ==
   // CHAT
-  // ======================================================
+  //      ==
   listMessages: (campaignId: string, query?: { limit?: number }) => {
     const qs = query?.limit ? `?limit=${query.limit}` : "";
     return http.get<{ messages: any[]; campaignId: string }>(
@@ -134,9 +134,9 @@ export const campaignsApi = {
     http.get<{ unread: number }>(`/api/campaigns/${campaignId}/messages/unread`),
 };
 
-// ======================================================
+//      ==
 // AGENCY (kept for compatibility)
-// ======================================================
+//      ==
 export const agencyApi = {
   listClients: () =>
     http.get<{ clients: AgencyClientEntry[] }>("/api/agency/clients"),
@@ -178,9 +178,9 @@ export const agencyApi = {
 //       {}
 //     ),
 
-//   // ======================================================
+//   //      ==
 //   // SHIPPING FLOW
-//   // ======================================================
+//   //      ==
 //   submitAddress: (id: string, payload: SubmitAddressInput) =>
 //     http.post<{ message: string; campaign: Campaign }>(
 //       `/api/campaigns/${id}/address`,
@@ -205,9 +205,9 @@ export const agencyApi = {
 //       payload
 //     ),
 
-//   // ======================================================
+//   //      ==
 //   // CONTENT PIPELINE
-//   // ======================================================
+//   //      ==
 //   submitRaw: (deliverableId: string, payload: any) =>
 //     http.post<{ message: string; deliverable: any }>(
 //       `/api/campaigns/deliverables/${deliverableId}/raw`,
@@ -250,9 +250,9 @@ export const agencyApi = {
 //       payload
 //     ),
 
-//   // ======================================================
+//   //      ==
 //   // CHAT
-//   // ======================================================
+//   //      ==
 //   listMessages: (campaignId: string) =>
 //     http.get<{ messages: any[] }>(`/api/campaigns/${campaignId}/messages`),
 
@@ -269,9 +269,9 @@ export const agencyApi = {
 //     http.get<{ unread: number }>(`/api/campaigns/${campaignId}/messages/unread`),
 // };
 
-// // ======================================================
+// //      ==
 // // AGENCY (kept for compatibility)
-// // ======================================================
+// //      ==
 // export const agencyApi = {
 //   listClients: () =>
 //     http.get<{ clients: AgencyClientEntry[] }>("/api/agency/clients"),

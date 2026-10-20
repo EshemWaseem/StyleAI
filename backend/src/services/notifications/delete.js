@@ -1,7 +1,7 @@
 // services/notifications/delete.js
-// ======================================================
+//      ==
 // Delete one notification — owner only
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');

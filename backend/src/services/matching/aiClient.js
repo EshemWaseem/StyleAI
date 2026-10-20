@@ -1,7 +1,7 @@
 // services/matching/aiClient.js
-// ======================================================
+//      ==
 // Calls FastAPI /api/v1/match/influencers
-// ======================================================
+//      ==
 
 const { httpError } = require('../influencer/helpers');
 

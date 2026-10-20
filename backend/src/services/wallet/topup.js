@@ -1,8 +1,8 @@
 // services/wallet/topup.js
-// ======================================================
+//      ==
 // Wallet top-up: brand/agency/influencer → own wallet.
 // Delegates to the same payment gateway registry as subscriptions.
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');

@@ -6,7 +6,7 @@
  */
 
 module.exports = {
-  // ---------- Finance ----------
+  //  - Finance  -
   // finance: {
   //   brandCommissionPct: 2,
   //   influencerCommissionPct: 2,
@@ -16,7 +16,7 @@ module.exports = {
   //   influencerBonusPct: 5,
   //   currency: "USD",
   // },
-    // ---------- Finance ----------
+    //  - Finance  -
   // Dual-commission model (Upwork-style):
   //   Brand pays $1000
   //   Brand-side fee (5%)    → platform earns $50
@@ -51,7 +51,7 @@ module.exports = {
     currency: "USD",
   },
 
-  // ---------- Limits ----------
+  //  - Limits  -
   limits: {
     maxProductImages: 5,
     maxImageSizeMb: 5,
@@ -59,7 +59,7 @@ module.exports = {
     maxPortfolioItems: 20,
   },
 
-  // ---------- Feature flags ----------
+  //  - Feature flags  -
   features: {
     enableAIMatching: true,
     enableImageGeneration: false,

@@ -1,8 +1,8 @@
 // services/queue/queues.js
-// ======================================================
+//      ==
 // BullMQ queue definitions.
 // All queues share the same Redis connection + prefix.
-// ======================================================
+//      ==
 const { Queue } = require('bullmq');
 const { getConnection, QUEUE_ENABLED } = require('./connection');
 

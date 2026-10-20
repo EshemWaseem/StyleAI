@@ -1,7 +1,7 @@
 // services/recommendations/signals/index.js
-// ======================================================
+//      ==
 // Signals barrel — all signal modules
-// ======================================================
+//      ==
 
 const product = require('./productSignals');
 const campaign = require('./campaignSignals');

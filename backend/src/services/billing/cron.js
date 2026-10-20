@@ -1,12 +1,12 @@
 // services/billing/cron.js
-// ======================================================
+//      ==
 // Trial lifecycle sweep — runs every 6 hours
 // 1. Send reminders 3 days + 1 day before expiry
 // 2. Notify on expiry
 // 3. Cleanup abandoned trials (30-day grace, then soft-mark)
 //
 // ✅ NEW: in-app notification + email for each event.
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { notifyUser } = require('../notifications');
@@ -14,11 +14,11 @@ const { computeEffectiveState } = require('./helpers');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// ------------------------------------------------------
+//       
 // Helper: send one reminder for a given "days before expiry"
 // window. Only sends once per user per window (idempotent
 // by checking a flag in notification meta).
-// ------------------------------------------------------
+//       
 async function sendTrialReminderWindow({ daysLeft, minHours, maxHours }) {
   const now = Date.now();
   const minDate = new Date(now + minHours * 60 * 60 * 1000);
@@ -67,9 +67,9 @@ async function sendTrialReminderWindow({ daysLeft, minHours, maxHours }) {
   return sent;
 }
 
-// ------------------------------------------------------
+//       
 // 3-day reminder
-// ------------------------------------------------------
+//       
 async function sendTrial3DayReminders() {
   // Window: 48–96 hours from now (so daily 6h sweep catches it once)
   return sendTrialReminderWindow({
@@ -79,9 +79,9 @@ async function sendTrial3DayReminders() {
   });
 }
 
-// ------------------------------------------------------
+//       
 // 1-day reminder
-// ------------------------------------------------------
+//       
 async function sendTrial1DayReminders() {
   // Window: 0–48 hours from now
   return sendTrialReminderWindow({
@@ -91,9 +91,9 @@ async function sendTrial1DayReminders() {
   });
 }
 
-// ------------------------------------------------------
+//       
 // Trial expired
-// ------------------------------------------------------
+//       
 async function sendTrialExpiredNotifications() {
   const yesterday = new Date(Date.now() - DAY_MS);
   const today = new Date();
@@ -136,9 +136,9 @@ async function sendTrialExpiredNotifications() {
   return count;
 }
 
-// ------------------------------------------------------
+//       
 // Cleanup: mark trials that expired 30+ days ago as EXPIRED
-// ------------------------------------------------------
+//       
 async function cleanupStaleTrials() {
   const cutoff = new Date(Date.now() - 30 * DAY_MS);
   const result = await prisma.subscription.updateMany({
@@ -154,9 +154,9 @@ async function cleanupStaleTrials() {
   }
 }
 
-// ------------------------------------------------------
+//       
 // Master sweep
-// ------------------------------------------------------
+//       
 async function runTrialSweep() {
   const start = Date.now();
   try {
@@ -170,9 +170,9 @@ async function runTrialSweep() {
   }
 }
 
-// ------------------------------------------------------
+//       
 // Scheduler
-// ------------------------------------------------------
+//       
 let intervalHandle = null;
 
 function startCron() {
@@ -208,14 +208,14 @@ module.exports = {
 };
 
 
-//   02-10-2026  ------------------ 5:01
+//   02-10-2026     5:01
 // // services/billing/cron.js
-// // ======================================================
+// //      ==
 // // Trial lifecycle sweep — runs daily
 // // 1. Send reminders 1 day before expiry
 // // 2. Notify on expiry
 // // 3. Cleanup abandoned trials (30-day grace, then soft-mark)
-// // ======================================================
+// //      ==
 
 // const prisma = require('../../config/prisma');
 // const { notifyUser } = require('../notifications');
@@ -223,9 +223,9 @@ module.exports = {
 
 // const DAY_MS = 24 * 60 * 60 * 1000;
 
-// // ------------------------------------------------------
+// //       
 // // Notify brands/agencies 1 day before trial expires
-// // ------------------------------------------------------
+// //       
 // async function sendTrialEndingSoonReminders() {
 //   const tomorrow = new Date(Date.now() + DAY_MS);
 //   const today = new Date();
@@ -263,9 +263,9 @@ module.exports = {
 //   console.log(`[cron.trial] Sent ${count} trial-ending reminders`);
 // }
 
-// // ------------------------------------------------------
+// //       
 // // Notify on trial expiry (day it expires)
-// // ------------------------------------------------------
+// //       
 // async function sendTrialExpiredNotifications() {
 //   const yesterday = new Date(Date.now() - DAY_MS);
 //   const today = new Date();
@@ -301,10 +301,10 @@ module.exports = {
 //   console.log(`[cron.trial] Sent ${count} trial-expired notifications`);
 // }
 
-// // ------------------------------------------------------
+// //       
 // // Cleanup: mark trials that expired 30+ days ago as EXPIRED
 // // (soft state — data preserved, but status changes)
-// // ------------------------------------------------------
+// //       
 // async function cleanupStaleTrials() {
 //   const cutoff = new Date(Date.now() - 30 * DAY_MS);
 //   const result = await prisma.subscription.updateMany({
@@ -320,9 +320,9 @@ module.exports = {
 //   }
 // }
 
-// // ------------------------------------------------------
+// //       
 // // Master sweep — run all tasks
-// // ------------------------------------------------------
+// //       
 // async function runTrialSweep() {
 //   const start = Date.now();
 //   try {
@@ -335,10 +335,10 @@ module.exports = {
 //   }
 // }
 
-// // ------------------------------------------------------
+// //       
 // // Scheduler — simple setInterval, runs every 6 hours
 // // (good enough for trial reminders; no external dep)
-// // ------------------------------------------------------
+// //       
 // let intervalHandle = null;
 
 // function startCron() {

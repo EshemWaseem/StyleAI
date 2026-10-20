@@ -1,6 +1,6 @@
-// ======================================================
+//      ==
 // AGENCY — clients, tasks, profile, engagements
-// ======================================================
+//      ==
 
 model AgencyClient {
   id                   String             @id @default(uuid())
@@ -43,9 +43,9 @@ model AgencyTask {
   @@index([status])
 }
 
-// ======================================================
+//      ==
 // AGENCY PROFILE — service categories + rate card
-// ======================================================
+//      ==
 model AgencyProfile {
   id             String @id @default(uuid())
   organizationId String @unique
@@ -77,9 +77,9 @@ model AgencyProfile {
   @@index([isAcceptingNew])
 }
 
-// ======================================================
+//      ==
 // AGENCY ENGAGEMENT — hire requests from brands OR influencers
-// ======================================================
+//      ==
 model AgencyEngagement {
   id String @id @default(uuid())
 

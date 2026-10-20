@@ -18,9 +18,9 @@ import { RoleProvider, useRole } from "../lib/role";
 import { CartProvider } from "../lib/cart";
 import { AppShell } from "../components/app-shell";
 
-// ======================================================
+//      ==
 // Public paths — no auth required, no shell
-// ======================================================
+//      ==
 const PUBLIC_PATHS = [
   "/",
   "/login",

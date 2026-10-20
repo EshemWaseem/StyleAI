@@ -4,9 +4,7 @@
 @import "./styles/responsive.css";
 @custom-variant dark (&:is(.dark *));
 
-/* ======================================================
-   Theme tokens
-   ====================================================== */
+
 
 @theme inline {
   --font-sans:    "Work Sans", ui-sans-serif, system-ui, sans-serif;
@@ -65,9 +63,9 @@
                  0 18px 40px -22px oklch(0.2 0.01 60 / 0.28);
 }
 
-/* ======================================================
+/*      ==
    Color palette — dark (default)
-   ====================================================== */
+        == */
 
 :root {
   --radius: 0.5rem;
@@ -114,9 +112,9 @@
   --sidebar-ring:               oklch(0.57  0.085 145);
 }
 
-/* ======================================================
+/*      ==
    Color palette — .dark override
-   ====================================================== */
+        == */
 
 .dark {
   --background:        oklch(0.129 0.042 264.695);
@@ -155,9 +153,9 @@
   --sidebar-ring:               oklch(0.551 0.027 264.364);
 }
 
-/* ======================================================
+/*      ==
    Base layer
-   ====================================================== */
+        == */
 
 @layer base {
   * { border-color: var(--color-border); }
@@ -173,9 +171,9 @@
   button, a { outline-offset: 3px; }
 }
 
-/* ======================================================
+/*      ==
    Page transition
-   ====================================================== */
+        == */
 
 @media (prefers-reduced-motion: no-preference) {
   .page-enter {
@@ -188,9 +186,9 @@
   to   { opacity: 1; }
 }
 
-/* ======================================================
+/*      ==
    Select styling
-   ====================================================== */
+        == */
 
 select {
   color:            var(--color-foreground);
@@ -206,9 +204,9 @@ select option:hover {
   color:            var(--color-accent-foreground);
 }
 
-/* ======================================================
+/*      ==
    PhoneInput
-   ====================================================== */
+        == */
 
 .PhoneInput {
   display:          flex !important;
@@ -298,9 +296,9 @@ select option:hover {
   border-width: 0 1.5px 1.5px 0 !important;
 }
 
-/* ======================================================
+/*      ==
    Scrollbar styling
-   ====================================================== */
+        == */
 
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -336,9 +334,9 @@ select option:hover {
   background-color: color-mix(in oklch, var(--color-accent) 85%, transparent);
 }
 
-/* ======================================================
+/*      ==
    UI Panel / Overlay system
-   ====================================================== */
+        == */
 
 .ui-overlay {
   position:         fixed;
@@ -403,9 +401,9 @@ select option:hover {
   padding:         1rem 1.5rem;
 }
 
-/* ======================================================
+/*      ==
    UI Cards / Empty / Error
-   ====================================================== */
+        == */
 
 .ui-card {
   border-radius:    var(--radius-xl);
@@ -431,9 +429,9 @@ select option:hover {
   color:            var(--color-destructive);
 }
 
-/* ======================================================
+/*      ==
    Page layout
-   ====================================================== */
+        == */
 
 .ui-page-content {
   margin-left:  auto;
@@ -479,9 +477,9 @@ select option:hover {
   min-height:     0;
 }
 
-/* ======================================================
+/*      ==
    Chat shell
-   ====================================================== */
+        == */
 
 .ui-chat-shell {
   display:          grid;
@@ -515,9 +513,9 @@ select option:hover {
   }
 }
 
-/* ======================================================
+/*      ==
    Hover-reveal scrollbar
-   ====================================================== */
+        == */
 
 .hover-scroll {
   scrollbar-width: thin;
@@ -549,9 +547,9 @@ select option:hover {
   background-clip:  padding-box;
 }
 
-/* ======================================================
+/*      ==
    No-scrollbar utility
-   ====================================================== */
+        == */
 
 .no-scrollbar {
   scrollbar-width:   none;

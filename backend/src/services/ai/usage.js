@@ -1,7 +1,7 @@
 // services/ai/usage.js
-// ======================================================
+//      ==
 // Log AI calls + aggregate usage for dashboard.
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { estimateCost, estimateTokens } = require('./pricing');

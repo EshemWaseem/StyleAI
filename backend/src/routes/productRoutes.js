@@ -3,15 +3,15 @@ const { authenticate, requirePermission } = require('../middleware/auth');
 const { handleUpload } = require('../middleware/upload');
 const ctrl = require('../controllers/productController');
 
-// ======================================================
+//      ==
 // PUBLIC — before authenticate
-// ======================================================
+//      ==
 router.get('/public', ctrl.listPublic);
 router.get('/public/brands', ctrl.listPublicBrands);
 
-// ======================================================
+//      ==
 // AUTH required
-// ======================================================
+//      ==
 router.use(authenticate);
 
 // Read

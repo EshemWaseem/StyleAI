@@ -1,7 +1,7 @@
 # ai-services/Dockerfile
-# ======================================================
+#      ==
 # FastAPI AI service — production
-# ======================================================
+#      ==
 FROM python:3.11-slim
 
 WORKDIR /app

@@ -128,7 +128,7 @@ export function PricingGrid({
 
   return (
     <div className="space-y-5">
-      {/* ============ Currency + min budget + bundles ============ */}
+      {/*    Currency + min budget + bundles    */}
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
           <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -172,7 +172,7 @@ export function PricingGrid({
         </div>
       </div>
 
-      {/* ============ Platform grid ============ */}
+      {/*    Platform grid    */}
       <div className="rounded-lg border border-border">
         {visibleCatalog.map((p) => {
           const open = !!openPlatforms[p.key];
@@ -233,7 +233,7 @@ export function PricingGrid({
         })}
       </div>
 
-      {/* ============ Status + save ============ */}
+      {/*    Status + save    */}
       {error && (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}

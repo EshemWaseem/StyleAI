@@ -5,9 +5,9 @@ const agency = require('../services/agency');
 
 router.use(authenticate);
 
-// ======================================================
+//      ==
 // AGENCY PROFILE
-// ======================================================
+//      ==
 router.get('/me/profile', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
   try {
     const profile = await agency.getMyProfile(req.user);
@@ -22,9 +22,9 @@ router.patch('/me/profile', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res,
   } catch (err) { next(err); }
 });
 
-// ======================================================
+//      ==
 // AGENCY DIRECTORY
-// ======================================================
+//      ==
 router.get(
   '/browse',
   authorize('BRAND_OWNER', 'BRAND_TEAM_MEMBER', 'INFLUENCER', 'AGENCY', 'SUPER_ADMIN'),
@@ -40,9 +40,9 @@ router.get(
   }
 );
 
-// ======================================================
+//      ==
 // CLIENTS (existing)
-// ======================================================
+//      ==
 router.get('/clients', async (req, res, next) => {
   try {
     const clients = await agency.listAgencyClients(req.user);
@@ -50,9 +50,9 @@ router.get('/clients', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ======================================================
+//      ==
 // SERVICE TYPE CATALOG
-// ======================================================
+//      ==
 router.get('/service-types', (req, res) => {
   res.json({
     all: agency.VALID_SERVICE_TYPES,
@@ -61,9 +61,9 @@ router.get('/service-types', (req, res) => {
   });
 });
 
-// ======================================================
+//      ==
 // ENGAGEMENTS — HIRE FLOW
-// ======================================================
+//      ==
 
 // Agency inbox — received requests
 router.get('/engagements/inbox', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {

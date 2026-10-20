@@ -1,7 +1,7 @@
 // storefront.prisma
-// ======================================================
+//      ==
 // Admin-controlled public storefront
-// ======================================================
+//      ==
 
 enum StorefrontSectionType {
   MANUAL

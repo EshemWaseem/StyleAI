@@ -1,9 +1,9 @@
 # app/services/platform_content_service.py
-# ======================================================
+#      ==
 # Per-platform content generation via Ollama text model
 # Falls back across prompt retries if JSON invalid
 # Sprint 26: brand_context flows through build_prompt()
-# ======================================================
+#      ==
 
 import json
 import logging

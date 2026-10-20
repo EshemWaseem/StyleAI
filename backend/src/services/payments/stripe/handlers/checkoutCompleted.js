@@ -18,9 +18,9 @@ async function handle(session) {
   const organizationId = session.metadata?.organizationId || null;
   const userId = session.metadata?.userId || null;
 
-  // =====================================================
+  //      =
   // WALLET TOP-UP
-  // =====================================================
+  //      =
   if (
     session.mode === 'payment' &&
     session.metadata?.context === 'WALLET_TOPUP'
@@ -35,9 +35,9 @@ async function handle(session) {
     return;
   }
 
-  // =====================================================
+  //      =
   // SUBSCRIPTION
-  // =====================================================
+  //      =
   if (session.mode === 'subscription') {
     const planName = session.metadata.planName;
     const role = session.metadata.role || 'BRAND';
@@ -219,9 +219,9 @@ async function handle(session) {
     }
   }
 
-  // =====================================================
+  //      =
   // ONE-OFF (order payment)
-  // =====================================================
+  //      =
   if (session.mode === 'payment' && session.metadata?.context !== 'WALLET_TOPUP') {
     const orderId = session.metadata?.orderId;
     if (!orderId) return;
@@ -237,9 +237,9 @@ async function handle(session) {
   }
 }
 
-// =====================================================
+//      =
 // WALLET TOP-UP (unchanged)
-// =====================================================
+//      =
 async function handleWalletTopUp(session) {
   const meta = session.metadata || {};
   const { walletOwnerType, walletOwnerId, userId } = meta;

@@ -1,9 +1,9 @@
 // services/queue/workers.js
-// ======================================================
+//      ==
 // Register BullMQ workers.
 // Start: after queues initialized.
 // Stop: during graceful shutdown.
-// ======================================================
+//      ==
 const { Worker } = require('bullmq');
 const { getConnection, QUEUE_ENABLED } = require('./connection');
 const { processWebhookRetry } = require('./jobs/webhookRetry');

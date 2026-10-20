@@ -1,7 +1,7 @@
 # app/services/embedding_service.py
-# ======================================================
+#      ==
 # Text embeddings via Gemini (gemini-embedding-001, 768 dims)
-# ======================================================
+#      ==
 
 import logging
 import time

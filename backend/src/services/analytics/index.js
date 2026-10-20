@@ -1,7 +1,7 @@
 // services/analytics/index.js
-// ======================================================
+//      ==
 // Barrel — public surface of the analytics domain
-// ======================================================
+//      ==
 
 const { getPlatformAnalytics } = require('./platform');
 const { getBrandAnalytics } = require('./brand');

@@ -1,7 +1,7 @@
 // lib/billing/format.ts
-// ======================================================
+//      ==
 // Currency + plan formatting helpers
-// ======================================================
+//      ==
 
 // Approx FX — matches backend .env USD_PKR_RATE
 const USD_PKR = 278;

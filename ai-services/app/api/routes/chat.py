@@ -1,7 +1,7 @@
 # app/api/routes/chat.py
-# ======================================================
+#      ==
 # POST /api/v1/chat/text — raw text completion (no JSON)
-# ======================================================
+#      ==
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException
@@ -83,9 +83,9 @@ async def chat_text(req: TextRequest):
 
 
 # # app/api/routes/chat.py
-# # ======================================================
+# #      ==
 # # POST /api/v1/chat/text — raw text completion (no JSON)
-# # ======================================================
+# #      ==
 
 # import logging
 # from fastapi import APIRouter, Depends, HTTPException

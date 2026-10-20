@@ -1,7 +1,7 @@
 // organization.prisma
-// ======================================================
+//      ==
 // ORGANIZATION + TEAM (legacy)
-// ======================================================
+//      ==
 
 model Organization {
   id       String  @id @default(uuid())

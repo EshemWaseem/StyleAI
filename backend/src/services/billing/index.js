@@ -1,7 +1,7 @@
 // services/billing/index.js
-// ======================================================
+//      ==
 // Billing service — role-aware, trial-aware
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
@@ -20,9 +20,9 @@ const {
 const { getBillingRole, getSubscriptionIdentity } = require('./roles');
 const usage = require('./usage');
 
-// ------------------------------------------------------
+//       
 // Get my billing (role-aware)
-// ------------------------------------------------------
+//       
 async function getMyBilling(user) {
   const role = getBillingRole(user);
   if (!role) {
@@ -68,9 +68,9 @@ async function getMyBilling(user) {
   };
 }
 
-// ------------------------------------------------------
+//       
 // List plans for a role
-// ------------------------------------------------------
+//       
 function listPlans(role) {
   if (!role) {
     // Return all roles' plans
@@ -83,9 +83,9 @@ function listPlans(role) {
   return listPlansForRole(role);
 }
 
-// ------------------------------------------------------
+//       
 // Cancel (set cancelAtPeriodEnd)
-// ------------------------------------------------------
+//       
 async function cancelSubscription(user) {
   const role = getBillingRole(user);
   if (!role) throw httpError('Admin has no subscription', 400, 'NO_BILLING');
@@ -141,9 +141,9 @@ async function resumeSubscription(user) {
   return shapeSubscription(updated);
 }
 
-// ------------------------------------------------------
+//       
 // Get subscription for a user (used by middleware)
-// ------------------------------------------------------
+//       
 async function getSubscriptionForUser(user) {
   const role = getBillingRole(user);
   if (!role) return { role: null, subscription: null, plan: null };

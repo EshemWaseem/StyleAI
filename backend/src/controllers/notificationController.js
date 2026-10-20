@@ -51,9 +51,9 @@ async function stream(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // PREFERENCES (email opt-out)
-// ======================================================
+//      ==
 async function getPreferences(req, res, next) {
   try {
     const preferences = await prefs.getPreferences(req.user.id);
@@ -68,9 +68,9 @@ async function updatePreferences(req, res, next) {
   } catch (e) { next(e); }
 }
 
-// ======================================================
+//      ==
 // UNSUBSCRIBE (public — token-based, no auth)
-// ======================================================
+//      ==
 async function unsubscribe(req, res) {
   const { token, category } = req.query;
 

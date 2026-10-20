@@ -1,9 +1,9 @@
 # app/prompts/matching_prompts.py
-# ======================================================
+#      ==
 # Prompts for product → influencer matching
 # Kept deliberately SHORT — qwen2.5:7b performs better
 # with fewer instructions and a real example.
-# ======================================================
+#      ==
 
 import json
 

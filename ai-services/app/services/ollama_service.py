@@ -1,8 +1,8 @@
 # ollama_service.py
-# ======================================================
+#      ==
 # LEGACY SHIM
 # All logic moved to llm_service.py (Groq + Gemini + Ollama).
-# ======================================================
+#      ==
 from app.services.llm_service import llm_service as ollama_service
 
 __all__ = ["ollama_service"]
@@ -67,9 +67,9 @@ __all__ = ["ollama_service"]
 #             await self._client.aclose()
 #             self._client = None
 
-#     # ==================================================
+#     #    ==========
 #     # JSON MODE — returns parsed dict
-#     # ==================================================
+#     #    ==========
 #     async def generate_json(
 #         self,
 #         prompt: str,
@@ -135,9 +135,9 @@ __all__ = ["ollama_service"]
 #             logger.error("Non-JSON from Ollama: %s", raw[:300])
 #             raise ValueError(f"Invalid JSON from Ollama: {e}") from e
 
-#     # ==================================================
+#     #    ==========
 #     # TEXT MODE — raw string (used by /api/v1/chat/text)
-#     # ==================================================
+#     #    ==========
 #     async def generate_text(
 #         self,
 #         prompt: str,

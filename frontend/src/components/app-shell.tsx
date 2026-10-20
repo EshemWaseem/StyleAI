@@ -8,7 +8,7 @@ import {
   Inbox, LayoutDashboard, LogOut, Megaphone, MessageCircle, Package,
   Palette, PanelLeftClose, PanelLeftOpen, Search, Settings,
   Shapes, ShieldCheck, Sliders, Sparkles, Star, Target, TrendingUp,
-  UsersRound, Video, Wallet,
+  UsersRound, Video, Wallet, User
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -24,15 +24,16 @@ import { connectSocket, disconnectSocket } from "@/lib/websocket/client";
 import { cn } from "@/lib/utils";
 import { useRole, type RoleName } from "@/lib/role";
 import { billingApi } from "@/lib/billing";
+import { influencersApi } from "@/lib/influencers"; // ✅ NEW
 import {
   isTrialExpiredSync,
   markTrialExpired,
   clearTrialExpired,
 } from "@/lib/api";
 
-// ======================================================
+//      ==
 // TYPES
-// ======================================================
+//      ==
 type NavItem = {
   to: string;
   label: string;
@@ -44,9 +45,9 @@ type NavGroup = {
   items: NavItem[];
 };
 
-// ======================================================
+//      ==
 // ADMIN NAV
-// ======================================================
+//      ==
 const ADMIN_NAV: NavGroup[] = [
   {
     group: "Platform",
@@ -57,7 +58,7 @@ const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/influencers", label: "Influencers", icon: Sparkles },
       { to: "/admin/agencies", label: "Agencies", icon: Briefcase },
       { to: "/admin/products", label: "Products", icon: Shapes },
-      { to: "/admin/storefront", label: "Storefront", icon: Star }, /* ✅ NEW */
+      { to: "/admin/storefront", label: "Storefront", icon: Star },
       { to: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
     ],
   },
@@ -82,9 +83,9 @@ const ADMIN_NAV: NavGroup[] = [
   { group: "Account", items: [{ to: "/settings", label: "My Account", icon: Settings }] },
 ];
 
-// ======================================================
+//      ==
 // BRAND NAV
-// ======================================================
+//      ==
 const BRAND_NAV: NavGroup[] = [
   {
     group: "Workspace",
@@ -141,10 +142,10 @@ const BRAND_NAV: NavGroup[] = [
   },
 ];
 
-// ======================================================
-// INFLUENCER NAV
-// ======================================================
-const INFLUENCER_NAV: NavGroup[] = [
+//      ==
+// INFLUENCER NAV (Dynamic)
+//      ==
+const getInfluencerNav = (slug?: string): NavGroup[] => [
   {
     group: "Workspace",
     items: [
@@ -164,7 +165,8 @@ const INFLUENCER_NAV: NavGroup[] = [
   {
     group: "My profile",
     items: [
-      { to: "/influencers", label: "Public profile", icon: UsersRound },
+      // ✅ FIXED: Dynamic link to own public profile
+      ...(slug ? [{ to: `/influencers/${slug}`, label: "Public profile", icon: User }] : []),
       { to: "/influencer/pricing", label: "My pricing", icon: BadgeDollarSign },
       { to: "/influencer/offers", label: "My listings", icon: Package },
     ],
@@ -189,9 +191,9 @@ const INFLUENCER_NAV: NavGroup[] = [
   },
 ];
 
-// ======================================================
+//      ==
 // AGENCY NAV
-// ======================================================
+//      ==
 const AGENCY_NAV: NavGroup[] = [
   {
     group: "Workspace",
@@ -228,9 +230,9 @@ const AGENCY_NAV: NavGroup[] = [
   },
 ];
 
-// ======================================================
+//      ==
 // Sidebar Nav
-// ======================================================
+//      ==
 function SidebarNav({
   collapsed, onNavigate,
 }: {
@@ -240,6 +242,7 @@ function SidebarNav({
   const { user } = useRole();
   const userRoles = (user?.roles ?? []) as RoleName[];
   const chatUnread = useChatUnread();
+  const [mySlug, setMySlug] = useState<string | undefined>(undefined);
 
   const isSuperAdmin = userRoles.includes("SUPER_ADMIN");
   const isAgency = userRoles.includes("AGENCY");
@@ -247,12 +250,21 @@ function SidebarNav({
   const isBrandTeamMember = userRoles.includes("BRAND_TEAM_MEMBER");
   const isInfluencer = userRoles.includes("INFLUENCER");
 
+  // ✅ Fetch influencer's own slug dynamically
+  useEffect(() => {
+    if (isInfluencer) {
+      influencersApi.getMe()
+        .then((res) => setMySlug(res.influencer?.slug))
+        .catch(() => {});
+    }
+  }, [isInfluencer]);
+
   let navToRender: NavGroup[] = [];
   if (isSuperAdmin) navToRender = ADMIN_NAV;
   else if (isAgency) navToRender = AGENCY_NAV;
   else if (isBrandOwner) navToRender = BRAND_NAV;
   else if (isBrandTeamMember) navToRender = BRAND_NAV;
-  else if (isInfluencer) navToRender = INFLUENCER_NAV;
+  else if (isInfluencer) navToRender = getInfluencerNav(mySlug); // ✅ Dynamic call
   else navToRender = BRAND_NAV;
 
   return (
@@ -270,7 +282,7 @@ function SidebarNav({
               return (
                 <li key={`${group.group}-${item.to}`}>
                   <Link
-                    to={item.to as "/dashboard"}
+                    to={item.to as any}
                     onClick={onNavigate}
                     title={item.label}
                     className={cn(
@@ -304,9 +316,9 @@ function SidebarNav({
   );
 }
 
-// ======================================================
+//      ==
 // AGENCY BRAND SWITCHER
-// ======================================================
+//      ==
 function AgencyBrandSwitcher() {
   const { isAgency, clients, activeBrandId, setActiveBrand } = useAgency();
   if (!isAgency) return null;
@@ -344,9 +356,9 @@ function AgencyBrandSwitcher() {
   );
 }
 
-// ======================================================
+//      ==
 // AGENCY ACTING-AS BANNER
-// ======================================================
+//      ==
 function AgencyActingBanner() {
   const { isAgency, activeBrandId, activeBrandName, setActiveBrand } = useAgency();
   if (!isAgency || !activeBrandId) return null;
@@ -374,9 +386,9 @@ function AgencyActingBanner() {
   );
 }
 
-// ======================================================
+//      ==
 // BRANDMARK
-// ======================================================
+//      ==
 function Brandmark({ collapsed }: { collapsed?: boolean }) {
   return (
     <Link to="/dashboard" className="flex items-center gap-2.5" aria-label="StyleAI workspace">
@@ -392,9 +404,9 @@ function Brandmark({ collapsed }: { collapsed?: boolean }) {
   );
 }
 
-// ======================================================
+//      ==
 // ASSISTANT
-// ======================================================
+//      ==
 type PromptSet = { placeholder: string; suggestions: string[] };
 
 const BRAND_PROMPTS: PromptSet = {
@@ -474,9 +486,9 @@ function Assistant() {
   );
 }
 
-// ======================================================
+//      ==
 // STANDALONE MODE HELPER — synchronous decision
-// ======================================================
+//      ==
 function computeStandalone(pathname: string, isAdmin: boolean): boolean {
   if (isAdmin) return false;
   if (pathname === "/trial-expired") return true;
@@ -486,9 +498,9 @@ function computeStandalone(pathname: string, isAdmin: boolean): boolean {
   return false;
 }
 
-// ======================================================
+//      ==
 // APP SHELL
-// ======================================================
+//      ==
 export function AppShell({
   children, breadcrumb = [],
 }: {
@@ -568,13 +580,12 @@ function AppShellInner({
     logout();
   }
 
-  // ======================================================
+  //      ==
   // STANDALONE RENDER — minimal top bar, no sidebar
-  // ======================================================
+  //      ==
   if (standalone) {
     return (
       <TooltipProvider delayDuration={300}>
-        {/* ✅ data-app-shell → enables viewport-lock CSS for app pages only */}
         <div
           data-app-shell
           className="flex h-[100dvh] flex-col overflow-hidden bg-background text-foreground"
@@ -601,12 +612,11 @@ function AppShellInner({
     );
   }
 
-  // ======================================================
+  //      ==
   // NORMAL RENDER — full sidebar + navbar
-  // ======================================================
+  //      ==
   return (
     <TooltipProvider delayDuration={300}>
-      {/* ✅ data-app-shell → enables viewport-lock CSS for app pages only */}
       <div
         data-app-shell
         className="h-[100dvh] overflow-hidden bg-background text-foreground"

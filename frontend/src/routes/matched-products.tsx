@@ -44,7 +44,7 @@ function MatchedProductsPage() {
   const [minScore, setMinScore] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
 
-  // ---------- Auth guard ----------
+  //  - Auth guard  -
   useEffect(() => {
     if (authLoading || !user) return;
     if (user.pendingApproval) {
@@ -52,7 +52,7 @@ function MatchedProductsPage() {
     }
   }, [authLoading, user, navigate]);
 
-  // ---------- Load profile once ----------
+  //  - Load profile once  -
   useEffect(() => {
     if (authLoading || !user || user.pendingApproval) return;
 
@@ -65,7 +65,7 @@ function MatchedProductsPage() {
       });
   }, [authLoading, user]);
 
-  // ---------- AI matching (re-runs on minScore change) ----------
+  //  - AI matching (re-runs on minScore change)  -
   useEffect(() => {
     if (authLoading || !user || user.pendingApproval) return;
     if (!profile) return;
@@ -83,12 +83,12 @@ function MatchedProductsPage() {
       });
   }, [authLoading, user, profile, minScore]);
 
-  // ---------- Extract product list from matchData ----------
+  //  - Extract product list from matchData  -
   const matchedProducts = useMemo(() => {
     return matchData?.matches ?? [];
   }, [matchData]);
 
-  // ---------- Apply search + category + brand filters ----------
+  //  - Apply search + category + brand filters  -
   const filtered = useMemo(() => {
     let list = matchedProducts;
 
@@ -112,7 +112,7 @@ function MatchedProductsPage() {
     return list;
   }, [matchedProducts, search, categoryFilter, brandFilter]);
 
-  // ---------- Unique categories & brands for filter dropdowns ----------
+  //  - Unique categories & brands for filter dropdowns  -
   const availableCategories = useMemo(() => {
     const set = new Set<string>();
     matchedProducts.forEach((m) => m.product.category && set.add(m.product.category));
@@ -125,7 +125,7 @@ function MatchedProductsPage() {
     return Array.from(map.entries()).map(([slug, name]) => ({ slug, name }));
   }, [matchedProducts]);
 
-  // ---------- Loading ----------
+  //  - Loading  -
   if (authLoading || loading) {
     return (
       <>
@@ -183,7 +183,7 @@ function MatchedProductsPage() {
         </div>
       ) : (
         <>
-          {/* ---------- AI status banner ---------- */}
+          {/*  - AI status banner  - */}
           {matchData && (
             <div className="mt-6 rounded-lg border border-border bg-card px-4 py-3">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
@@ -207,7 +207,7 @@ function MatchedProductsPage() {
             </div>
           )}
 
-          {/* ---------- Search + filters ---------- */}
+          {/*  - Search + filters  - */}
           <div className="mt-6 flex flex-wrap items-center gap-2">
             <div className="flex w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm sm:w-96">
               <Search className="size-4 text-muted-foreground" />
@@ -295,7 +295,7 @@ function MatchedProductsPage() {
             </div>
           )}
 
-          {/* ---------- Grid or empty state ---------- */}
+          {/*  - Grid or empty state  - */}
           {filtered.length === 0 ? (
             <div className="mt-8">
               <EmptyState

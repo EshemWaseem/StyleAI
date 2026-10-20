@@ -1,9 +1,9 @@
 // controllers/healthController.js
-// ======================================================
+//      ==
 // Health + readiness probes.
 // GET /api/health          → liveness  (process alive)
 // GET /api/health/ready    → readiness (DB, Redis, AI, Email)
-// ======================================================
+//      ==
 const prisma = require('../config/prisma');
 
 async function liveness(req, res) {

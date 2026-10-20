@@ -24,10 +24,10 @@ function MatchingPage() {
   const [matching, setMatching] = useState(false);
   const [error, setError] = useState("");
 
-  // ---------- Slider value: instant (smooth UI) ----------
+  //  - Slider value: instant (smooth UI)  -
   const [minScore, setMinScore] = useState(0);
 
-  // ---------- Applied value: debounced (triggers API) ----------
+  //  - Applied value: debounced (triggers API)  -
   const [appliedMinScore, setAppliedMinScore] = useState(0);
 
   // Load products once
@@ -101,7 +101,7 @@ function MatchingPage() {
           </div>
         ) : (
           <>
-            {/* ============ FILTERS (always visible — no flicker) ============ */}
+            {/*    FILTERS (always visible — no flicker)    */}
             <Panel className="mt-6 p-4">
               <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
                 <div>
@@ -149,7 +149,7 @@ function MatchingPage() {
               </div>
             )}
 
-            {/* ============ RESULT AREA (content never unmounts mid-fetch) ============ */}
+            {/*    RESULT AREA (content never unmounts mid-fetch)    */}
             <div className="relative mt-6">
               {/* Subtle inline loader — does NOT hide the results */}
               {matching && (

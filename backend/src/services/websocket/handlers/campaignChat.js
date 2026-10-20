@@ -1,10 +1,10 @@
 // services/websocket/handlers/campaignChat.js
-// ======================================================
+//      ==
 // Campaign chat events:
 //   - campaign:fetch   → load messages
 //   - campaign:join    → enter live room for a campaign
 //   - campaign:leave   → exit live room
-// ======================================================
+//      ==
 
 const prisma = require('../../../config/prisma');
 const { checkRate } = require('../rateLimit');
@@ -13,9 +13,9 @@ const { assertCanViewCampaign } = require('../../campaigns/helpers');
 function registerCampaignChatHandlers(io, socket) {
   const { userId, roles, organizationId } = socket.data;
 
-  // ------------------------------------------------------
+  //       
   // FETCH — pull recent messages
-  // ------------------------------------------------------
+  //       
   socket.on('campaign:fetch', async ({ campaignId, limit = 200 }, ack) => {
     try {
       if (!checkRate(socket.id, 'campaign:fetch', 60, 10_000)) {
@@ -58,9 +58,9 @@ function registerCampaignChatHandlers(io, socket) {
     }
   });
 
-  // ------------------------------------------------------
+  //       
   // JOIN — enter live room for this campaign
-  // ------------------------------------------------------
+  //       
   socket.on('campaign:join', async ({ campaignId }, ack) => {
     try {
       if (!checkRate(socket.id, 'campaign:join', 30, 10_000)) {
@@ -89,9 +89,9 @@ function registerCampaignChatHandlers(io, socket) {
     }
   });
 
-  // ------------------------------------------------------
+  //       
   // LEAVE — exit live room
-  // ------------------------------------------------------
+  //       
   socket.on('campaign:leave', ({ campaignId } = {}) => {
     if (!campaignId) return;
     const room = `campaign:${campaignId}`;

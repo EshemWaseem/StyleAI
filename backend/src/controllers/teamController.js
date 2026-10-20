@@ -1,8 +1,8 @@
 const teamService = require('../services/teamService');
 
-// ======================================================
+//      ==
 // GET /api/teams  → list teams (scoped to user's org)
-// ======================================================
+//      ==
 async function list(req, res, next) {
   try {
     const teams = await teamService.listTeams(req.user);
@@ -12,9 +12,9 @@ async function list(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // GET /api/teams/:teamId  → get one team (with members)
-// ======================================================
+//      ==
 async function getOne(req, res, next) {
   try {
     const team = await teamService.getTeam(req.user, req.params.teamId);
@@ -24,10 +24,10 @@ async function getOne(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // POST /api/teams  → create team
 // Body: { name, description? }
-// ======================================================
+//      ==
 async function create(req, res, next) {
   try {
     const team = await teamService.createTeam(req.user, req.body);
@@ -37,9 +37,9 @@ async function create(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // PATCH /api/teams/:teamId  → update team
-// ======================================================
+//      ==
 async function update(req, res, next) {
   try {
     const team = await teamService.updateTeam(
@@ -53,9 +53,9 @@ async function update(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // DELETE /api/teams/:teamId  → delete team
-// ======================================================
+//      ==
 async function remove(req, res, next) {
   try {
     const result = await teamService.deleteTeam(req.user, req.params.teamId);
@@ -65,10 +65,10 @@ async function remove(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // POST /api/teams/:teamId/members  → add member
 // Body: { userId }
-// ======================================================
+//      ==
 async function addMember(req, res, next) {
   try {
     const { userId } = req.body;
@@ -86,9 +86,9 @@ async function addMember(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // DELETE /api/teams/:teamId/members/:userId  → remove member
-// ======================================================
+//      ==
 async function removeMember(req, res, next) {
   try {
     const result = await teamService.removeMember(
@@ -102,9 +102,9 @@ async function removeMember(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // GET /api/teams/:teamId/available-users  → users not yet in team
-// ======================================================
+//      ==
 async function listAvailableUsers(req, res, next) {
   try {
     const users = await teamService.listAvailableUsers(

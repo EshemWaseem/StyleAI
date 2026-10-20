@@ -1,7 +1,7 @@
 // services/billing/plans.js
-// ======================================================
+//      ==
 // Plan catalog — role-aware SaaS plans
-// ======================================================
+//      ==
 
 // Helper to reduce repetition
 function pickStripe(envPrefix) {
@@ -12,9 +12,9 @@ function pickStripe(envPrefix) {
 }
 
 const PLANS = {
-  // ====================================================
+  //      
   // BRAND plans
-  // ====================================================
+  //      
   BRAND: {
     trial: {
       name: 'trial',
@@ -170,9 +170,9 @@ const PLANS = {
     },
   },
 
-  // ====================================================
+  //      
   // AGENCY plans
-  // ====================================================
+  //      
   AGENCY: {
     trial: {
       name: 'trial',
@@ -323,9 +323,9 @@ const PLANS = {
     },
   },
 
-  // ====================================================
+  //      
   // INFLUENCER plans
-  // ====================================================
+  //      
   INFLUENCER: {
     trial: {
       name: 'trial',
@@ -441,9 +441,9 @@ const PLANS = {
   },
 };
 
-// ------------------------------------------------------
+//       
 // Lookup helpers
-// ------------------------------------------------------
+//       
 function getPlan(role, name) {
   const rolePlans = PLANS[role];
   if (!rolePlans) return null;

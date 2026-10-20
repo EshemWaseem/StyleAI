@@ -1,14 +1,35 @@
 // lib/influencers/types.ts
-// ======================================================
-// Influencer types — includes rating + order count
-// ======================================================
-
 export type InfluencerPlatform =
   | "INSTAGRAM" | "TIKTOK" | "YOUTUBE" | "FACEBOOK" | "PINTEREST"
   | "LINKEDIN" | "SNAPCHAT" | "TWITTER" | "THREADS" | "OTHER";
 
 export type InfluencerStatus = "ACTIVE" | "PAUSED" | "ARCHIVED";
 export type InfluencerAvailability = "AVAILABLE" | "BOOKED" | "UNAVAILABLE";
+
+// NEW
+export type EngagementHealth = "EXCELLENT" | "GOOD" | "SUSPICIOUS" | "FAKE";
+
+export type SuspiciousFlag =
+  | "HIGH_FOLLOW_RATIO" | "ELEVATED_FOLLOW_RATIO"
+  | "VERY_LOW_ENGAGEMENT" | "LOW_ENGAGEMENT" | "BELOW_AVERAGE_ENGAGEMENT"
+  | "HIGH_ENGAGEMENT" | "NO_POSTS_AVAILABLE"
+  | "INACTIVE_90D" | "INACTIVE_30D"
+  | "NO_POST_TIMESTAMPS" | "LOW_POST_COUNT";
+
+export interface RecentPost {
+  id?: string | null;
+  shortCode?: string | null;
+  url?: string | null;
+  type?: string | null;
+  title?: string | null;
+  description?: string | null;
+  likesCount: number;
+  commentsCount: number;
+  videoViewCount: number;
+  sharesCount: number;
+  timestamp: string | null;
+  isVideo: boolean;
+}
 
 export interface InfluencerSocialAccount {
   id: string;
@@ -20,6 +41,23 @@ export interface InfluencerSocialAccount {
   followingCount: number;
   engagementRate: number;
   isPrimary: boolean;
+
+  // NEW: analytics
+  totalPosts: number;
+  totalLikes: number;
+  totalComments: number;
+  totalViews: number;
+  avgLikes: number;
+  avgComments: number;
+  avgViews: number;
+
+  authenticityScore: number | null;
+  engagementHealth: EngagementHealth | null;
+  suspiciousFlags: SuspiciousFlag[];
+
+  lastPostAt: string | null;
+  scrapedAt: string | null;
+  scrapeData: { recentPosts?: RecentPost[] } | null;
 }
 
 export interface InfluencerAudienceMetrics {
@@ -40,7 +78,6 @@ export interface Influencer {
   bio: string | null;
   avatarUrl: string | null;
 
-  // ✅ Rating + completed orders
   rating: number | null;
   totalOrders: number;
   completedCampaigns: number;
@@ -111,6 +148,20 @@ export interface InfluencerInput {
     followingCount?: number;
     engagementRate?: number;
     isPrimary?: boolean;
+    // NEW
+    totalPosts?: number;
+    totalLikes?: number;
+    totalComments?: number;
+    totalViews?: number;
+    avgLikes?: number;
+    avgComments?: number;
+    avgViews?: number;
+    authenticityScore?: number | null;
+    engagementHealth?: EngagementHealth | null;
+    suspiciousFlags?: SuspiciousFlag[];
+    lastPostAt?: string | null;
+    scrapedAt?: string | null;
+    scrapeData?: any;
   }>;
   audienceMetrics?: Partial<InfluencerAudienceMetrics>;
 }

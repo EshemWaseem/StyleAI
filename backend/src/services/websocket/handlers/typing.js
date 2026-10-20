@@ -1,7 +1,7 @@
 // services/websocket/handlers/typing.js
-// ======================================================
+//      ==
 // Typing indicators — ephemeral, no DB writes.
-// ======================================================
+//      ==
 
 const { checkRate } = require('../rateLimit');
 const { emitToUsers, resolveConversationUserIds, resolveCampaignUserIds } = require('../broadcast');

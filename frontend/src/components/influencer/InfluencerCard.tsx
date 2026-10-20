@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Bookmark, BookmarkCheck, Star } from "lucide-react";
+import { Bookmark, BookmarkCheck, Star, ShieldCheck, AlertTriangle } from "lucide-react";
 import {
-  formatFollowers,
+  formatNumber,
   formatEngagement,
   type Influencer,
+  type EngagementHealth,
 } from "@/lib/influencers";
 
 interface Props {
@@ -12,19 +13,30 @@ interface Props {
   onToggleSave: (inf: Influencer) => void;
 }
 
-export function InfluencerCard({
-  influencer: inf,
-  canSave,
-  onToggleSave,
-}: Props) {
+function worstHealth(inf: Influencer): EngagementHealth | null {
+  const order: EngagementHealth[] = ["FAKE", "SUSPICIOUS", "GOOD", "EXCELLENT"];
+  for (const h of order) {
+    if (inf.socialAccounts.some((s) => s.engagementHealth === h)) return h;
+  }
+  return null;
+}
+
+const HEALTH_BADGE: Record<EngagementHealth, string> = {
+  EXCELLENT: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  GOOD: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  SUSPICIOUS: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  FAKE: "bg-destructive/15 text-destructive",
+};
+
+export function InfluencerCard({ influencer: inf, canSave, onToggleSave }: Props) {
+  const health = worstHealth(inf);
+  const authenticity = inf.socialAccounts
+    .map((s) => s.authenticityScore)
+    .filter((s): s is number => s != null)[0];
+
   return (
-    // <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lift">
-      <article className="ui-card group flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
-      <Link
-        to="/influencers/$slug"
-        params={{ slug: inf.slug }}
-        className="block"
-      >
+    <article className="ui-card group flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
+      <Link to="/influencers/$slug" params={{ slug: inf.slug }} className="block">
         <div className="relative aspect-square overflow-hidden bg-muted/30">
           {inf.avatarUrl ? (
             <img
@@ -41,6 +53,12 @@ export function InfluencerCard({
           {!inf.profileCompleted && (
             <span className="absolute left-2 top-2 rounded-full bg-amber-500/90 px-2 py-0.5 text-[10px] font-medium text-white">
               Incomplete
+            </span>
+          )}
+          {health && (health === "FAKE" || health === "SUSPICIOUS") && (
+            <span className={`absolute right-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${HEALTH_BADGE[health]}`}>
+              <AlertTriangle className="size-3" />
+              {health === "FAKE" ? "Fake followers" : "Suspicious"}
             </span>
           )}
         </div>
@@ -81,7 +99,6 @@ export function InfluencerCard({
           )}
         </div>
 
-        {/* ✅ NEW: Rating + orders */}
         <div className="flex items-center gap-2 text-xs">
           {inf.rating != null ? (
             <>
@@ -90,12 +107,18 @@ export function InfluencerCard({
                 {inf.rating.toFixed(1)}
               </span>
               <span className="text-muted-foreground">
-                {inf.totalOrders} {inf.totalOrders === 1 ? "order" : "orders"}
+                {formatNumber(inf.totalOrders)} {inf.totalOrders === 1 ? "order" : "orders"}
               </span>
             </>
           ) : (
             <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
               New
+            </span>
+          )}
+          {authenticity != null && (health === "EXCELLENT" || health === "GOOD") && (
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${HEALTH_BADGE[health]}`}>
+              <ShieldCheck className="size-3" />
+              {authenticity}/100
             </span>
           )}
         </div>
@@ -104,7 +127,7 @@ export function InfluencerCard({
           <div>
             <dt className="text-muted-foreground">Followers</dt>
             <dd className="font-medium tabular-nums">
-              {formatFollowers(inf.followerCount)}
+              {formatNumber(inf.followerCount)}
             </dd>
           </div>
           <div>

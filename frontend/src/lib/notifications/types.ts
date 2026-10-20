@@ -33,9 +33,9 @@ export interface NotificationListResponse {
   offset: number;
 }
 
-// ======================================================
+//      ==
 // Preferences
-// ======================================================
+//      ==
 export interface NotificationPreference {
   emailTrial: boolean;
   emailOffers: boolean;

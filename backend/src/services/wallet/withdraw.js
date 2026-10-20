@@ -1,11 +1,11 @@
 // services/wallet/withdraw.js
-// ======================================================
+//      ==
 // Influencer requests withdrawal → PENDING row
 // Admin approves → COMPLETED + balance debit + notify owner
 // Admin rejects  → FAILED (balance untouched) + notify owner
 //
 // ✅ NEW: email notifications (admin on request, user on review).
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
@@ -17,9 +17,9 @@ const {
   shapeTransaction,
 } = require('./helpers');
 
-// ------------------------------------------------------
+//       
 // Resolve wallet owner's userId (user OR influencer)
-// ------------------------------------------------------
+//       
 async function resolveWalletOwnerUserId(wallet) {
   if (!wallet) return null;
   if (wallet.userId) return wallet.userId;
@@ -33,9 +33,9 @@ async function resolveWalletOwnerUserId(wallet) {
   return null;
 }
 
-// ------------------------------------------------------
+//       
 // Resolve display name of wallet owner
-// ------------------------------------------------------
+//       
 async function resolveOwnerDisplayName(wallet) {
   if (wallet.userId) {
     const u = await prisma.user.findUnique({
@@ -54,9 +54,9 @@ async function resolveOwnerDisplayName(wallet) {
   return 'User';
 }
 
-// ======================================================
+//      ==
 // REQUEST — influencer/owner asks for withdrawal
-// ======================================================
+//      ==
 async function requestWithdrawal(user, payload = {}) {
   const { amount, method, destination, note } = payload;
 
@@ -153,9 +153,9 @@ async function requestWithdrawal(user, payload = {}) {
   return shapeTransaction(txn);
 }
 
-// ======================================================
+//      ==
 // REVIEW — admin approves or rejects
-// ======================================================
+//      ==
 async function reviewWithdrawal(adminUser, txnId, payload = {}) {
   const { decision, adminNote } = payload;
   if (!['approve', 'reject'].includes(decision)) {
@@ -174,7 +174,7 @@ async function reviewWithdrawal(adminUser, txnId, payload = {}) {
 
   const ownerUserId = await resolveWalletOwnerUserId(txn.wallet);
 
-  // ---------- REJECT ----------
+  //  - REJECT  -
   if (decision === 'reject') {
     const updated = await prisma.walletTransaction.update({
       where: { id: txnId },
@@ -224,7 +224,7 @@ async function reviewWithdrawal(adminUser, txnId, payload = {}) {
     return shapeTransaction(updated);
   }
 
-  // ---------- APPROVE ----------
+  //  - APPROVE  -
   const amount = Math.abs(Number(txn.amount));
   if (Number(txn.wallet.balanceCache) < amount) {
     throw httpError('Insufficient balance at approval time', 400, 'INSUFFICIENT_BALANCE');
@@ -286,9 +286,9 @@ async function reviewWithdrawal(adminUser, txnId, payload = {}) {
   return shapeTransaction(result);
 }
 
-// ======================================================
+//      ==
 // LIST — admin view of all withdrawals
-// ======================================================
+//      ==
 async function listWithdrawals(adminUser, query = {}) {
   const { limit, offset } = parsePagination(query);
 
@@ -345,11 +345,11 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 
 // 02-10
 // // services/wallet/withdraw.js
-// // ======================================================
+// //      ==
 // // Influencer requests withdrawal → PENDING row
 // // Admin approves → COMPLETED + balance debit + notify owner
 // // Admin rejects  → FAILED (balance untouched) + notify owner
-// // ======================================================
+// //      ==
 
 // const prisma = require('../../config/prisma');
 // const { httpError } = require('../influencer/helpers');
@@ -361,9 +361,9 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 //   shapeTransaction,
 // } = require('./helpers');
 
-// // ------------------------------------------------------
+// //       
 // // Resolve wallet owner's userId (user OR influencer)
-// // ------------------------------------------------------
+// //       
 // async function resolveWalletOwnerUserId(wallet) {
 //   if (!wallet) return null;
 //   if (wallet.userId) return wallet.userId;
@@ -377,9 +377,9 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 //   return null;
 // }
 
-// // ======================================================
+// //      ==
 // // REQUEST — influencer/owner asks for withdrawal
-// // ======================================================
+// //      ==
 // async function requestWithdrawal(user, payload = {}) {
 //   const { amount, method, destination, note } = payload;
 
@@ -466,9 +466,9 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 //   return shapeTransaction(txn);
 // }
 
-// // ======================================================
+// //      ==
 // // REVIEW — admin approves or rejects
-// // ======================================================
+// //      ==
 // async function reviewWithdrawal(adminUser, txnId, payload = {}) {
 //   const { decision, adminNote } = payload;
 //   if (!['approve', 'reject'].includes(decision)) {
@@ -487,7 +487,7 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 
 //   const ownerUserId = await resolveWalletOwnerUserId(txn.wallet);
 
-//   // ---------- REJECT ----------
+//   //  - REJECT  -
 //   if (decision === 'reject') {
 //     const updated = await prisma.walletTransaction.update({
 //       where: { id: txnId },
@@ -528,7 +528,7 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 //     return shapeTransaction(updated);
 //   }
 
-//   // ---------- APPROVE ----------
+//   //  - APPROVE  -
 //   const amount = Math.abs(Number(txn.amount));
 //   if (Number(txn.wallet.balanceCache) < amount) {
 //     throw httpError('Insufficient balance at approval time', 400, 'INSUFFICIENT_BALANCE');
@@ -583,9 +583,9 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 //   return shapeTransaction(result);
 // }
 
-// // ======================================================
+// //      ==
 // // LIST — admin view of all withdrawals
-// // ======================================================
+// //      ==
 // async function listWithdrawals(adminUser, query = {}) {
 //   const { limit, offset } = parsePagination(query);
 

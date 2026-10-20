@@ -1,9 +1,9 @@
 # app/prompts/platform_content_prompts.py
-# ======================================================
+#      ==
 # Prompts for per-platform content generation
 # Kept short + one concrete example per platform (qwen-friendly)
 # Sprint 26: brand_context inject block.
-# ======================================================
+#      ==
 
 _BASE_RULES = """Rules:
 - Return ONLY valid JSON. No markdown fences, no prose.

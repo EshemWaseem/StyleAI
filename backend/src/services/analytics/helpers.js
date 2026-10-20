@@ -1,7 +1,7 @@
 // services/analytics/helpers.js
-// ======================================================
+//      ==
 // Shared helpers for analytics domain
-// ======================================================
+//      ==
 
 /**
  * Sum multiple campaign metrics into a single rollup.

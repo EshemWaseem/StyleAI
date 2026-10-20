@@ -29,9 +29,9 @@ export interface AuthUser {
   name: string;
   email: string;
   organizationId: string | null;
-  phone: string | null;         // ✅ NEW
-  country: string | null;       // ✅ NEW
-  countryCode: string | null;   // ✅ NEW
+  phone: string | null;
+  country: string | null;
+  countryCode: string | null;
   roles: RoleName[];
   permissions: string[];
 
@@ -92,9 +92,9 @@ export function getDashboardPath(roles: RoleName[]): string {
   return "/dashboard";
 }
 
-// ======================================================
+//      ==
 // JWT EXPIRY CHECK
-// ======================================================
+//      ==
 const EXPIRY_BUFFER_MS = 5_000;
 
 function isTokenExpired(token: string): boolean {
@@ -111,9 +111,9 @@ function isTokenExpired(token: string): boolean {
   }
 }
 
-// ======================================================
+//      ==
 // CONTEXT
-// ======================================================
+//      ==
 interface RegisterPayload {
   name: string;
   email: string;
@@ -130,6 +130,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<AuthUser>;
   register: (payload: RegisterPayload) => Promise<AuthUser>;
   logout: () => void;
+  logoutAll: () => Promise<{ message: string }>;
   hasRole: (...roles: RoleName[]) => boolean;
   hasPermission: (...perms: string[]) => boolean;
 }
@@ -140,6 +141,7 @@ const AuthContext = createContext<AuthContextValue>({
   login: async () => ({}) as AuthUser,
   register: async () => ({}) as AuthUser,
   logout: () => {},
+  logoutAll: async () => ({ message: "" }),
   hasRole: () => false,
   hasPermission: () => false,
 });
@@ -153,7 +155,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ---------- Initial load ----------
+  //  - Initial load  -
   useEffect(() => {
     if (typeof window === "undefined") {
       setLoading(false);
@@ -178,7 +180,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // ---------- Auto logout on token expiry ----------
+  //  - Auto logout on token expiry  -
   useEffect(() => {
     if (!user) return;
 
@@ -238,6 +240,20 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") window.location.href = "/login";
   }, []);
 
+  // NEW (D3): sign out of all other devices
+  // Backend increments tokenVersion → all other JWTs revoked.
+  // This device gets a fresh token and stays signed in.
+  const logoutAll = useCallback(async () => {
+    const res = await http.post<{ token: string; message: string }>(
+      "/api/auth/logout-all"
+    );
+    // Swap the current device's token
+    if (res.token) {
+      localStorage.setItem("token", res.token);
+    }
+    return { message: res.message };
+  }, []);
+
   const hasRole = useCallback(
     (...roles: RoleName[]) =>
       !!user && user.roles.some((r) => roles.includes(r)),
@@ -252,7 +268,16 @@ export function RoleProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, hasRole, hasPermission }}
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        logoutAll,
+        hasRole,
+        hasPermission,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,9 +1,9 @@
 // services/payments/stripe/checkout.js
-// ======================================================
+//      ==
 // Stripe checkout — subscription + one-off (wallet top-up, orders)
 // Handles both organization-tied (BRAND/AGENCY) and
 // user-tied (INFLUENCER) customers.
-// ======================================================
+//      ==
 
 const stripe = require('./client');
 const customer = require('./customer');
@@ -11,7 +11,7 @@ const { pkrToUsd } = require('../shared/currency');
 
 const STRIPE_CURRENCY = 'usd';
 
-// ---------- Helpers ----------
+//  - Helpers  -
 function normalizeAmountAndCurrency(plan, cycle) {
   const rawAmount = cycle === 'YEARLY' ? plan.priceYearly : plan.priceMonthly;
   if (rawAmount == null || rawAmount <= 0) {
@@ -41,9 +41,9 @@ function appendSessionId(url) {
   return `${base}${sep}session_id={CHECKOUT_SESSION_ID}`;
 }
 
-// ------------------------------------------------------
+//       
 // Resolve Stripe customer for either org or user
-// ------------------------------------------------------
+//       
 async function resolveCustomerId({ organization, user }) {
   if (organization && organization.id) {
     return customer.ensure(organization);
@@ -56,9 +56,9 @@ async function resolveCustomerId({ organization, user }) {
   );
 }
 
-// ------------------------------------------------------
+//       
 // Subscription checkout
-// ------------------------------------------------------
+//       
 async function subscriptionCheckout({
   organization,
   user,
@@ -122,9 +122,9 @@ async function subscriptionCheckout({
   };
 }
 
-// ------------------------------------------------------
+//       
 // One-off checkout (wallet top-up, orders)
-// ------------------------------------------------------
+//       
 async function oneOffCheckout({
   organization,
   user,

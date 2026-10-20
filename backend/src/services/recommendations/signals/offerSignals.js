@@ -1,7 +1,7 @@
 // services/recommendations/signals/offerSignals.js
-// ======================================================
+//      ==
 // Offer signals — enriched, dynamic confidence
-// ======================================================
+//      ==
 
 const { computeConfidence } = require('../confidence');
 

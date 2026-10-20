@@ -2,9 +2,9 @@ const crypto = require('crypto');
 const prisma = require('../config/prisma');
 const { ensureDefaultRoles } = require('./brandTeamRoleService');
 
-// ======================================================
+//      ==
 // HELPERS
-// ======================================================
+//      ==
 
 function generateToken() {
   return crypto.randomBytes(32).toString('hex');
@@ -62,9 +62,9 @@ function shape(i, opts = {}) {
   return result;
 }
 
-// ======================================================
+//      ==
 // CREATE INVITATION
-// ======================================================
+//      ==
 
 async function createInvitation(user, { email, message, teamRoleId }) {
   await requireOwner(user);
@@ -154,9 +154,9 @@ async function createInvitation(user, { email, message, teamRoleId }) {
   return shape(invite, { includeToken: true });
 }
 
-// ======================================================
+//      ==
 // LIST SENT — owner's invitations
-// ======================================================
+//      ==
 
 async function listSent(user) {
   await requireOwner(user);
@@ -173,9 +173,9 @@ async function listSent(user) {
   return invites.map((i) => shape(i));
 }
 
-// ======================================================
+//      ==
 // LIST RECEIVED — invitations to current user's email
-// ======================================================
+//      ==
 
 async function listReceived(user) {
   // Auto-expire any past-due invitations for this email
@@ -206,9 +206,9 @@ async function listReceived(user) {
   return invites.map((i) => shape(i, { includeToken: true }));
 }
 
-// ======================================================
+//      ==
 // GET BY TOKEN (public)
-// ======================================================
+//      ==
 
 async function getByToken(token) {
   const invite = await prisma.brandInvitation.findUnique({
@@ -237,9 +237,9 @@ async function getByToken(token) {
   return shape(invite);
 }
 
-// ======================================================
+//      ==
 // ACCEPT INVITATION
-// ======================================================
+//      ==
 
 async function accept(user, token) {
   const invite = await prisma.brandInvitation.findUnique({
@@ -382,9 +382,9 @@ async function accept(user, token) {
   return { id: result.id, status: result.status };
 }
 
-// ======================================================
+//      ==
 // DECLINE
-// ======================================================
+//      ==
 
 async function decline(user, token) {
   const invite = await prisma.brandInvitation.findUnique({
@@ -412,9 +412,9 @@ async function decline(user, token) {
   return { id: invite.id };
 }
 
-// ======================================================
+//      ==
 // CANCEL (owner)
-// ======================================================
+//      ==
 
 async function cancel(user, inviteId) {
   await requireOwner(user);
@@ -438,9 +438,9 @@ async function cancel(user, inviteId) {
   return { id: inviteId };
 }
 
-// ======================================================
+//      ==
 // REDEEM BY CODE/LINK — teammate pastes link or token
-// ======================================================
+//      ==
 
 async function redeemByToken(user, input) {
   if (!input || !input.trim()) {

@@ -1,8 +1,8 @@
 const prisma = require('../config/prisma');
 
-// ======================================================
+//      ==
 // POST /api/orders  → checkout (cart → order)
-// ======================================================
+//      ==
 async function createOrder(req, res, next) {
   try {
     const cart = await prisma.cart.findUnique({
@@ -95,9 +95,9 @@ async function createOrder(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // GET /api/orders  → list my orders (most recent first)
-// ======================================================
+//      ==
 async function listOrders(req, res, next) {
   try {
     const orders = await prisma.order.findMany({
@@ -131,9 +131,9 @@ async function listOrders(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // GET /api/orders/:id  → single order (only if mine)
-// ======================================================
+//      ==
 async function getOrder(req, res, next) {
   try {
     const order = await prisma.order.findUnique({

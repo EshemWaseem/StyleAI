@@ -1,7 +1,7 @@
 // services/analytics/agency.js
-// ======================================================
+//      ==
 // Agency analytics — across all client brands
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { sumCampaignTotals, rollupBy, shapeRecentCampaigns } = require('./helpers');

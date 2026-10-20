@@ -1,8 +1,8 @@
 const prisma = require('../config/prisma');
 
-// ======================================================
+//      ==
 // TENANT HELPERS (same pattern as brandService)
-// ======================================================
+//      ==
 function tenantWhere(user) {
   if (user.roles.includes('SUPER_ADMIN')) return {};
   if (!user.organizationId) return { organizationId: '__none__' };
@@ -27,9 +27,9 @@ function assertHasOrg(user) {
   }
 }
 
-// ======================================================
+//      ==
 // LIST
-// ======================================================
+//      ==
 async function listTeams(user) {
   const teams = await prisma.team.findMany({
     where: tenantWhere(user),
@@ -51,9 +51,9 @@ async function listTeams(user) {
   }));
 }
 
-// ======================================================
+//      ==
 // GET ONE (with members)
-// ======================================================
+//      ==
 async function getTeam(user, teamId) {
   const team = await prisma.team.findUnique({
     where: { id: teamId },
@@ -99,9 +99,9 @@ async function getTeam(user, teamId) {
   };
 }
 
-// ======================================================
+//      ==
 // CREATE
-// ======================================================
+//      ==
 async function createTeam(user, data) {
   assertHasOrg(user);
 
@@ -128,9 +128,9 @@ async function createTeam(user, data) {
   });
 }
 
-// ======================================================
+//      ==
 // UPDATE
-// ======================================================
+//      ==
 async function updateTeam(user, teamId, data) {
   const existing = await prisma.team.findUnique({ where: { id: teamId } });
   if (!existing) {
@@ -153,9 +153,9 @@ async function updateTeam(user, teamId, data) {
   });
 }
 
-// ======================================================
+//      ==
 // DELETE
-// ======================================================
+//      ==
 async function deleteTeam(user, teamId) {
   const existing = await prisma.team.findUnique({ where: { id: teamId } });
   if (!existing) {
@@ -169,9 +169,9 @@ async function deleteTeam(user, teamId) {
   return { id: teamId };
 }
 
-// ======================================================
+//      ==
 // MEMBERS
-// ======================================================
+//      ==
 async function addMember(user, teamId, userId) {
   const team = await prisma.team.findUnique({ where: { id: teamId } });
   if (!team) {

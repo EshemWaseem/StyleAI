@@ -1,9 +1,9 @@
 # app/api/routes/product_angles.py
-# ======================================================
+#      ==
 # POST /api/v1/product/angles
 # Multipart: image + optional "keys" (comma-separated)
 # Returns: { success: true, data: { variants: [...], meta: {...} } }
-# ======================================================
+#      ==
 
 import base64
 import logging

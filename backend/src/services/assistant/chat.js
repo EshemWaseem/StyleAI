@@ -1,7 +1,7 @@
 // services/assistant/chat.js
-// ======================================================
+//      ==
 // Main assistant chat — orchestrates RAG + memory + LLM + persistence
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
@@ -10,9 +10,9 @@ const { searchDocs } = require('./ragSearch');
 const { buildPrompt, getRecentMessages } = require('./promptBuilder');
 const { callChatText } = require('./aiClient');
 
-// ------------------------------------------------------
+//       
 // Sanitizer — fixes common small-model glitches
-// ------------------------------------------------------
+//       
 function sanitizeReply(text) {
   if (!text) return '';
   let out = text;

@@ -1,6 +1,6 @@
 import { swalError, swalConfirm } from "@/lib/swal";
 // routes/billing.tsx
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   AlertCircle, Loader2, CreditCard, Check, Sparkles,
@@ -18,6 +18,7 @@ import {
   type PaymentProvider,
 } from "@/lib/payments";
 import { clearTrialExpired } from "@/lib/api";
+import { useRole, getDashboardPath } from "@/lib/role";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/billing")({
@@ -26,6 +27,9 @@ export const Route = createFileRoute("/billing")({
 });
 
 function BillingPage() {
+  const navigate = useNavigate();
+  const { user } = useRole();
+
   const [data, setData] = useState<BillingMeResponse | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,32 +75,65 @@ function BillingPage() {
     }
   }
 
-  // ------------------------------------------------------
+  //       
   // Initial load — handles Stripe return + trial flag cleanup
-  // ------------------------------------------------------
+  // NEW: On success, auto-redirects to role-appropriate dashboard
+  //       
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
     const status = params.get("status");
 
     (async () => {
-      if (status === "success" && sessionId) {
+      //      ==
+      // PAYMENT SUCCESS → verify → brief toast → redirect
+      //      ==
+      if (status === "success") {
         // Verify the session directly with Stripe (fallback if webhook failed)
-        try {
-          await paymentsApi.verifySession(sessionId);
-        } catch (e) {
-          console.warn("[billing] verify-session failed:", e);
+        if (sessionId) {
+          try {
+            await paymentsApi.verifySession(sessionId);
+          } catch (e) {
+            console.warn("[billing] verify-session failed:", e);
+          }
         }
+
         // Clear trial flag so app exits standalone mode
         clearTrialExpired();
-        setOk("Payment successful — your plan is now active.");
-      } else if (status === "success") {
-        clearTrialExpired();
-        setOk("Payment successful — your plan is now active.");
-      } else if (status === "cancel") {
+
+        // Refresh billing state so if user navigates back it's up-to-date
+        await load();
+
+        // Show brief success message, then auto-redirect
+        setOk("Payment successful — redirecting to your dashboard…");
+
+        // Role-appropriate destination
+        //   SUPER_ADMIN  → /admin
+        //   AGENCY       → /agency
+        //   BRAND_OWNER  → /dashboard
+        //   INFLUENCER   → /dashboard
+        //   SHOPPER      → /
+        const targetPath = user?.roles?.length
+          ? getDashboardPath(user.roles)
+          : "/dashboard";
+
+        // Small delay so user sees the success state briefly (~0.8s)
+        setTimeout(() => {
+          navigate({ to: targetPath, replace: true });
+        }, 800);
+        return;
+      }
+
+      //      ==
+      // PAYMENT CANCELLED
+      //      ==
+      if (status === "cancel") {
         setError("Payment was cancelled.");
       }
 
+      //      ==
+      // NORMAL LOAD (no status params)
+      //      ==
       await load();
 
       // Clean URL so refreshing doesn't re-trigger

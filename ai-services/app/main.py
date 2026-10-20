@@ -33,9 +33,9 @@ from app.api.routes import chat as chat_routes
 from app.services.ollama_service import ollama_service
 
 
-# ======================================================
+#      ==
 # LOGGING
-# ======================================================
+#      ==
 logging.basicConfig(
     level=logging.DEBUG if settings.DEBUG else logging.INFO,
     format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
@@ -49,9 +49,9 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 logger = logging.getLogger("styleai")
 
 
-# ======================================================
+#      ==
 # WARMUP STATE
-# ======================================================
+#      ==
 WARMUP_STATE = {
     "text_model": "pending",     # pending | warming | ready | failed | skipped
     "vision_model": "pending",
@@ -126,9 +126,9 @@ async def _warmup_all() -> None:
         await asyncio.gather(*tasks, return_exceptions=True)
 
 
-# ======================================================
+#      ==
 # LIFESPAN
-# ======================================================
+#      ==
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
@@ -165,9 +165,9 @@ async def lifespan(app: FastAPI):
     logger.info("Shutdown complete.")
 
 
-# ======================================================
+#      ==
 # APP
-# ======================================================
+#      ==
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,

@@ -1,10 +1,10 @@
 # app/prompts/content_prompts.py
-# ======================================================
+#      ==
 # Prompts for product content generation
 # Kept SHORT — qwen2.5:7b performs better with fewer rules
 # + one real example.
 # Sprint 26: brand_context optional block.
-# ======================================================
+#      ==
 
 CONTENT_GENERATION_PROMPT = """You are an e-commerce copywriter for fashion products.
 {brand_block}

@@ -1,7 +1,7 @@
 // config/payment_service/index.js
-// ======================================================
+//      ==
 // Payment service config — single entry point
-// ======================================================
+//      ==
 
 const shared    = require('./shared');
 const stripe    = require('./stripe');

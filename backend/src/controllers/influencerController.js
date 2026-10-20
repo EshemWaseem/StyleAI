@@ -3,17 +3,17 @@ const multer = require('multer');
 const service = require('../services/influencer');
 const { uploadBufferToCloudinary } = require('../config/cloudinary');
 
-// ======================================================
+//      ==
 // AVATAR UPLOAD MIDDLEWARE
-// ======================================================
+//      ==
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-// ======================================================
+//      ==
 // CONTROLLERS
-// ======================================================
+//      ==
 async function list(req, res, next) {
   try {
     const result = await service.listInfluencers(req.user, req.query);

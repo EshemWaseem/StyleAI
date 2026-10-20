@@ -1,8 +1,8 @@
 // services/knowledge/queryExpander.js
-// ======================================================
+//      ==
 // Expand a query into 2 alternate phrasings via LLM.
 // Cached for 10 minutes. Falls back to [original] on failure.
-// ======================================================
+//      ==
 
 const { llmText } = require('./llmClient');
 

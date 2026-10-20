@@ -1,8 +1,8 @@
 // services/knowledge/brandContext.js
-// ======================================================
+//      ==
 // Brand context retrieval for AI prompt injection.
 // Caches per (orgId, queryHash) for 5 min.
-// ======================================================
+//      ==
 
 const { search } = require('./search');
 

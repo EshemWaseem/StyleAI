@@ -1,9 +1,9 @@
 // services/knowledge/chunker.js
-// ======================================================
+//      ==
 // Paragraph-aware, sentence-aligned chunker.
 // Target: 400-500 chars per chunk.
 // Normalizes weird whitespace (from PDFs etc).
-// ======================================================
+//      ==
 
 const TARGET_CHARS = 450;
 const MAX_CHARS = 700;

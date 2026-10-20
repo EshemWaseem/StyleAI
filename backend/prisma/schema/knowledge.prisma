@@ -1,7 +1,7 @@
 // knowledge.prisma
-// ======================================================
+//      ==
 // Knowledge Base — brand documents + vector chunks (pgvector)
-// ======================================================
+//      ==
 
 model Document {
   id             String   @id @default(uuid())

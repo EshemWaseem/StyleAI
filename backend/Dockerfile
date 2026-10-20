@@ -1,7 +1,7 @@
 # backend/Dockerfile
-# ======================================================
+#      ==
 # Node.js backend — production
-# ======================================================
+#      ==
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -17,9 +17,9 @@ RUN npx prisma generate
 # Copy source
 COPY . .
 
-# ======================================================
+#      ==
 # Runtime stage
-# ======================================================
+#      ==
 FROM node:20-alpine
 
 WORKDIR /app

@@ -1,7 +1,7 @@
 // services/websocket/sanitize.js
-// ======================================================
+//      ==
 // Server-side message sanitization — strip all HTML/script.
-// ======================================================
+//      ==
 
 const MAX_BODY = 2000;
 

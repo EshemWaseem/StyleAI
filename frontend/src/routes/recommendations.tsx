@@ -104,9 +104,9 @@ function Recommendations() {
   );
 }
 
-// ======================================================
+//      ==
 // RECOMMENDATION CARD — accent-green themed
-// ======================================================
+//      ==
 function RecommendationCard({ rec }: { rec: Recommendation }) {
   // Urgency tier — maps to theme colors
   const tier =

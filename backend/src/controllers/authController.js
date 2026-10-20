@@ -24,9 +24,9 @@ const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const RESEND_COOLDOWN_MS = 60 * 1000; // 60s between resend requests
 
-// ======================================================
+//      ==
 // Helpers
-// ======================================================
+//      ==
 function hashToken(raw) {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
@@ -55,9 +55,30 @@ async function sendVerificationEmail(userId, email, name, token) {
   }
 }
 
-// ======================================================
+// NEW (D2): log every login attempt. Never throws.
+async function logLoginAttempt({ userId, email, success, reason, req }) {
+  try {
+    await prisma.loginAttempt.create({
+      data: {
+        userId: userId || null,
+        email,
+        success,
+        reason: reason || null,
+        ip: req.ip || null,
+        userAgent:
+          typeof req.headers['user-agent'] === 'string'
+            ? req.headers['user-agent'].slice(0, 500)
+            : null,
+      },
+    });
+  } catch (e) {
+    console.error('[auth.logLoginAttempt] failed:', e.message);
+  }
+}
+
+//      ==
 // POST /api/auth/register
-// ======================================================
+//      ==
 async function register(req, res, next) {
   try {
     const {
@@ -69,6 +90,9 @@ async function register(req, res, next) {
       phone,
       country,
       countryCode,
+      brandId,
+      brandRoleId,
+      requestMessage,
     } = req.body;
 
     if (!name || !email || !password) {
@@ -115,9 +139,20 @@ async function register(req, res, next) {
         .json({ message: 'Organization name is required for this role.' });
     }
 
+    if (roleName === 'BRAND_TEAM_MEMBER') {
+      if (!brandId || !brandRoleId) {
+        return res.status(400).json({
+          message: 'Brand and role are required for team member signup.',
+        });
+      }
+      const brand = await prisma.brand.findUnique({ where: { id: brandId } });
+      if (!brand) {
+        return res.status(400).json({ message: 'Invalid brand selected.' });
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Email verification token (hash stored, raw sent to user)
     const rawVerifyToken = crypto.randomBytes(32).toString('hex');
     const verifyTokenHash = hashToken(rawVerifyToken);
 
@@ -150,7 +185,6 @@ async function register(req, res, next) {
           countryCode: countryCode
             ? String(countryCode).trim().toUpperCase()
             : null,
-          // NEW: require email verification for new signups
           emailVerified: false,
           emailVerifyToken: verifyTokenHash,
           emailVerifyExpires: new Date(Date.now() + VERIFY_TOKEN_TTL_MS),
@@ -162,13 +196,21 @@ async function register(req, res, next) {
         data: { userId: user.id, roleId: roleRecord.id },
       });
 
+      if (roleName === 'BRAND_TEAM_MEMBER') {
+        await tx.brandJoinRequest.create({
+          data: {
+            userId: user.id,
+            brandId,
+            requestedRoleId: brandRoleId,
+            message: requestMessage?.trim() || null,
+            status: 'PENDING',
+          },
+        });
+      }
+
       return user;
     });
 
-    // Fire-and-forget — never blocks response
-    sendToUser(result.id, 'welcome', { role: roleName }).catch((e) =>
-      console.error('[auth.welcome email] failed:', e.message)
-    );
     sendVerificationEmail(
       result.id,
       result.email,
@@ -176,7 +218,6 @@ async function register(req, res, next) {
       rawVerifyToken
     );
 
-    // Team member — pending approval (no token; verification still required at login)
     if (ROLES_PENDING_APPROVAL.includes(roleName)) {
       return res.status(201).json({
         message:
@@ -197,7 +238,6 @@ async function register(req, res, next) {
       });
     }
 
-    // Normal flow — no token until email verified
     return res.status(201).json({
       message:
         'Account created. Please check your email to verify your account before signing in.',
@@ -218,9 +258,9 @@ async function register(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // POST /api/auth/login
-// ======================================================
+//      ==
 async function login(req, res, next) {
   try {
     const { email, password } = req.body;
@@ -248,19 +288,36 @@ async function login(req, res, next) {
       },
     });
 
+    //  - Unknown user / inactive  -
     if (!user || !user.isActive) {
+      await logLoginAttempt({
+        userId: user?.id,
+        email: normalizedEmail,
+        success: false,
+        reason: 'INVALID_CREDENTIALS',
+        req,
+      });
       return res.status(401).json({
         message: 'Invalid email or password.',
         code: 'INVALID_CREDENTIALS',
       });
     }
 
-    // Lockout check
+    //  - Lockout  -
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       const retryAfterSec = Math.ceil(
         (user.lockedUntil.getTime() - Date.now()) / 1000
       );
       res.set('Retry-After', String(retryAfterSec));
+
+      await logLoginAttempt({
+        userId: user.id,
+        email: normalizedEmail,
+        success: false,
+        reason: 'ACCOUNT_LOCKED',
+        req,
+      });
+
       return res.status(423).json({
         message: `Account temporarily locked due to multiple failed attempts. Try again in ${Math.ceil(
           retryAfterSec / 60
@@ -272,7 +329,7 @@ async function login(req, res, next) {
 
     const valid = await bcrypt.compare(password, user.password);
 
-    // ---------- Wrong password ----------
+    //  - Wrong password  -
     if (!valid) {
       const attempts = (user.failedLoginAttempts || 0) + 1;
       const shouldLock = attempts >= MAX_FAILED_ATTEMPTS;
@@ -280,20 +337,19 @@ async function login(req, res, next) {
         ? new Date(Date.now() + LOCK_DURATION_MS)
         : null;
 
-      prisma.user
-        .update({
+      try {
+        await prisma.user.update({
           where: { id: user.id },
           data: {
             failedLoginAttempts: attempts,
             lastFailedLoginAt: new Date(),
             lockedUntil: lockUntil,
           },
-        })
-        .catch((e) =>
-          console.error('[auth.login] failed-attempt update error:', e.message)
-        );
+        });
+      } catch (e) {
+        console.error('[auth.login] failed-attempt update error:', e.message);
+      }
 
-      // D4: send lockout email (fire-and-forget, non-blocking)
       if (shouldLock) {
         sendToUser(user.id, 'accountLocked', {
           lockedUntilMinutes: LOCK_DURATION_MS / 60000,
@@ -303,6 +359,14 @@ async function login(req, res, next) {
           console.error('[auth.login lockout email] failed:', e.message)
         );
       }
+
+      await logLoginAttempt({
+        userId: user.id,
+        email: normalizedEmail,
+        success: false,
+        reason: 'INVALID_CREDENTIALS',
+        req,
+      });
 
       const remaining = Math.max(0, MAX_FAILED_ATTEMPTS - attempts);
 
@@ -315,7 +379,7 @@ async function login(req, res, next) {
       });
     }
 
-    // ---------- Password OK — reset counters ----------
+    //  - Password OK — reset counters  -
     prisma.user
       .update({
         where: { id: user.id },
@@ -330,14 +394,21 @@ async function login(req, res, next) {
         console.error('[auth.login] metadata update error:', e.message)
       );
 
-    // ---------- NEW: Require verified email ----------
+    //  - Unverified  -
     if (user.emailVerified === false) {
-      // Mask email so we can display it (still proves ownership via password)
       const [local, domain] = user.email.split('@');
       const masked =
         local.length <= 2
           ? `${local[0]}*@${domain}`
           : `${local.slice(0, 2)}***@${domain}`;
+
+      await logLoginAttempt({
+        userId: user.id,
+        email: normalizedEmail,
+        success: false,
+        reason: 'EMAIL_NOT_VERIFIED',
+        req,
+      });
 
       return res.status(403).json({
         message:
@@ -347,12 +418,20 @@ async function login(req, res, next) {
       });
     }
 
-    // ---------- Pending team member ----------
+    //  - Pending team member  -
     const roles = user.userRoles.map((ur) => ur.role.name);
     const isPendingTeamMember =
       roles.includes('BRAND_TEAM_MEMBER') && !user.organizationId;
 
     if (isPendingTeamMember) {
+      await logLoginAttempt({
+        userId: user.id,
+        email: normalizedEmail,
+        success: false,
+        reason: 'PENDING_APPROVAL',
+        req,
+      });
+
       return res.status(403).json({
         message:
           "Your account is still waiting for the brand owner's approval. You'll be able to sign in once it's approved.",
@@ -360,6 +439,7 @@ async function login(req, res, next) {
       });
     }
 
+    //  - Success  -
     const permissions = Array.from(
       new Set(
         user.userRoles.flatMap((ur) =>
@@ -368,7 +448,19 @@ async function login(req, res, next) {
       )
     );
 
-    const token = signToken({ userId: user.id });
+    // NEW (D3): include tokenVersion in JWT
+    const token = signToken({
+      userId: user.id,
+      tokenVersion: user.tokenVersion,
+    });
+
+    await logLoginAttempt({
+      userId: user.id,
+      email: normalizedEmail,
+      success: true,
+      reason: 'SUCCESS',
+      req,
+    });
 
     res.json({
       message: 'Logged in',
@@ -388,9 +480,9 @@ async function login(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // POST /api/auth/forgot-password
-// ======================================================
+//      ==
 async function forgotPassword(req, res, next) {
   try {
     const { email } = req.body;
@@ -448,9 +540,9 @@ async function forgotPassword(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // POST /api/auth/reset-password
-// ======================================================
+//      ==
 async function resetPassword(req, res, next) {
   try {
     const { token, password } = req.body;
@@ -519,9 +611,9 @@ async function resetPassword(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // POST /api/auth/change-password (authenticated)
-// ======================================================
+//      ==
 async function changePassword(req, res, next) {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -606,9 +698,9 @@ async function changePassword(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // POST /api/auth/verify-email
-// ======================================================
+//      ==
 async function verifyEmail(req, res, next) {
   try {
     const { token } = req.body;
@@ -623,37 +715,57 @@ async function verifyEmail(req, res, next) {
     const tokenHash = hashToken(token);
 
     const user = await prisma.user.findFirst({
-      where: {
-        emailVerifyToken: tokenHash,
-        emailVerifyExpires: { gt: new Date() },
-      },
+      where: { emailVerifyToken: tokenHash },
       select: { id: true, email: true, isActive: true, emailVerified: true },
     });
 
     if (!user) {
       return res.status(400).json({
         message:
-          'This verification link is invalid or has expired. Please request a new one.',
+          "This verification link is invalid or has already been used. If you've already verified, try signing in. Otherwise, request a new link.",
+        code: 'INVALID_VERIFY_TOKEN',
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(400).json({
+        message: 'This account is not active. Please contact support.',
         code: 'INVALID_VERIFY_TOKEN',
       });
     }
 
     if (user.emailVerified === true) {
-      // Idempotent — already verified
       return res.json({
         message: 'Your email is already verified. You can sign in now.',
         code: 'ALREADY_VERIFIED',
       });
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
+    const updated = await prisma.user.updateMany({
+      where: {
+        id: user.id,
+        emailVerifyToken: tokenHash,
+        emailVerifyExpires: { gt: new Date() },
+        emailVerified: false,
+      },
       data: {
         emailVerified: true,
         emailVerifyToken: null,
         emailVerifyExpires: null,
       },
     });
+
+    if (updated.count === 0) {
+      return res.status(400).json({
+        message:
+          'This verification link has expired. Please request a new one.',
+        code: 'INVALID_VERIFY_TOKEN',
+      });
+    }
+
+    sendToUser(user.id, 'welcome', {}).catch((e) =>
+      console.error('[auth.verifyEmail welcome] failed:', e.message)
+    );
 
     return res.json({
       message: 'Email verified. You can now sign in.',
@@ -664,9 +776,9 @@ async function verifyEmail(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // POST /api/auth/verify-email/resend
-// ======================================================
+//      ==
 async function resendVerification(req, res, next) {
   try {
     const { email } = req.body;
@@ -694,12 +806,10 @@ async function resendVerification(req, res, next) {
       },
     });
 
-    // Non-existent / already verified / inactive → silent 200
     if (!user || !user.isActive || user.emailVerified === true) {
       return res.json(GENERIC_OK);
     }
 
-    // Cooldown — prevent email spam
     if (
       user.emailVerifySentAt &&
       Date.now() - new Date(user.emailVerifySentAt).getTime() < RESEND_COOLDOWN_MS
@@ -727,9 +837,83 @@ async function resendVerification(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
+// NEW (D3): POST /api/auth/logout-all
+// Increments tokenVersion → all older JWTs invalidated.
+// Current device gets a fresh token and stays signed in.
+//      ==
+async function logoutAll(req, res, next) {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: 'Please sign in to continue.',
+        code: 'NOT_AUTHENTICATED',
+      });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { tokenVersion: { increment: 1 } },
+      select: { id: true, tokenVersion: true },
+    });
+
+    // Reissue a token for THIS device so the user stays signed in here
+    const newToken = signToken({
+      userId: updated.id,
+      tokenVersion: updated.tokenVersion,
+    });
+
+    return res.json({
+      message:
+        'Signed out of all other devices. You remain signed in on this one.',
+      code: 'LOGOUT_ALL_SUCCESS',
+      token: newToken,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+//      ==
+// NEW (D2): GET /api/auth/login-history
+// Last 10 attempts for the current user.
+//      ==
+async function loginHistory(req, res, next) {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: 'Please sign in to continue.',
+        code: 'NOT_AUTHENTICATED',
+      });
+    }
+
+    const attempts = await prisma.loginAttempt.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        success: true,
+        reason: true,
+        ip: true,
+        userAgent: true,
+        createdAt: true,
+      },
+    });
+
+    return res.json({ attempts });
+  } catch (err) {
+    next(err);
+  }
+}
+
+//      ==
 // GET /api/auth/me
-// ======================================================
+//      ==
 async function me(req, res) {
   res.json({
     user: {
@@ -754,5 +938,7 @@ module.exports = {
   changePassword,
   verifyEmail,
   resendVerification,
+  logoutAll, // NEW
+  loginHistory, // NEW
   me,
 };

@@ -1,8 +1,8 @@
 // services/assistant/promptBuilder.js
-// ======================================================
+//      ==
 // Build the full LLM prompt: system + RAG + memory + user
 // Better citations — numbered + source + docType.
-// ======================================================
+//      ==
 
 const MAX_HISTORY = 10;
 

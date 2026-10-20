@@ -1,7 +1,7 @@
 // services/notifications/list.js
-// ======================================================
+//      ==
 // Read side — list + count
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { parsePagination } = require('../admin/helpers');

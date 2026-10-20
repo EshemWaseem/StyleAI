@@ -1,8 +1,8 @@
 import { http } from "./api";
 
-// ======================================================
+//      ==
 // TYPES
-// ======================================================
+//      ==
 
 export interface BrandTeamRole {
   id: string;
@@ -68,9 +68,9 @@ export type DirectAddResult =
   | { type: "ADDED"; message: string; member: BrandTeamMember }
   | { type: "INVITED"; message: string; invitation: any };
 
-// ======================================================
+//      ==
 // ROLES API
-// ======================================================
+//      ==
 
 export const brandTeamRolesApi = {
   list: (brandId?: string) =>
@@ -99,9 +99,9 @@ export const brandTeamRolesApi = {
     ),
 };
 
-// ======================================================
+//      ==
 // MEMBERS API
-// ======================================================
+//      ==
 
 export const brandTeamMembersApi = {
   list: (brandId?: string) =>
@@ -138,25 +138,25 @@ export const brandTeamMembersApi = {
     ),
 };
 
-// ======================================================
+//      ==
 // ME
-// ======================================================
+//      ==
 
 export const brandTeamMeApi = {
   get: () => http.get<{ membership: MyMembership | null }>("/api/brand-team/me"),
 };
 
-// ======================================================
+//      ==
 // PERMISSION CATALOG
-// ======================================================
+//      ==
 
 export const brandTeamPermissionsApi = {
   catalog: () => http.get<PermissionCatalog>("/api/brand-team/permissions"),
 };
 
-// ======================================================
+//      ==
 // CONVENIENCE
-// ======================================================
+//      ==
 
 export const brandTeamApi = {
   // Roles
@@ -181,9 +181,9 @@ export const brandTeamApi = {
   permissionCatalog: brandTeamPermissionsApi.catalog,
 };
 
-// ======================================================
+//      ==
 // COLOR HELPERS
-// ======================================================
+//      ==
 
 export const ROLE_COLOR_CLASSES: Record<
   string,

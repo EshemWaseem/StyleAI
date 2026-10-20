@@ -1,16 +1,16 @@
 # app/schemas/matching.py
-# ======================================================
+#      ==
 # Pydantic schemas for product → influencer matching
-# ======================================================
+#      ==
 
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 
-# ------------------------------------------------------
+#       
 # INPUT — influencer brief sent from Node.js
-# ------------------------------------------------------
+#       
 class InfluencerBrief(BaseModel):
     id: str
     display_name: str
@@ -29,9 +29,9 @@ class InfluencerBrief(BaseModel):
     lifestyle_score: Optional[float] = None
 
 
-# ------------------------------------------------------
+#       
 # INPUT — product brief sent from Node.js
-# ------------------------------------------------------
+#       
 class ProductBrief(BaseModel):
     id: str
     name: str
@@ -46,17 +46,17 @@ class ProductBrief(BaseModel):
     brand_name: Optional[str] = None
 
 
-# ------------------------------------------------------
+#       
 # REQUEST
-# ------------------------------------------------------
+#       
 class MatchRequest(BaseModel):
     product: ProductBrief
     candidates: List[InfluencerBrief] = Field(..., min_length=1, max_length=50)
 
 
-# ------------------------------------------------------
+#       
 # OUTPUT — one scored influencer
-# ------------------------------------------------------
+#       
 class MatchResultItem(BaseModel):
     influencer_id: str
 
@@ -77,9 +77,9 @@ class MatchResultItem(BaseModel):
     verdict: str = ""
 
 
-# ------------------------------------------------------
+#       
 # RESPONSE — full payload back to Node.js
-# ------------------------------------------------------
+#       
 class MatchResponse(BaseModel):
     results: List[MatchResultItem]
 

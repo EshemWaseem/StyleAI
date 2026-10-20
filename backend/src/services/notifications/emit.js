@@ -1,5 +1,5 @@
 // services/notifications/emit.js
-// ======================================================
+//      ==
 // Write side — everything that CREATES notifications.
 // Publishes to in-process bus → SSE subscribers.
 // All emit functions are non-throwing.
@@ -7,7 +7,7 @@
 // ✅ NEW: optional email dispatch via `emailTemplate` +
 //    `emailData` fields in the notifyUser payload.
 //    Backwards compatible — existing callers unchanged.
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const bus = require('./eventBus');
@@ -103,13 +103,13 @@ module.exports = { emitNotification, notifyUser, notifyAdmins };
 
 
 
-//  02-10-2026   ----------------  5:01pm
+//  02-10-2026     --  5:01pm
 // // services/notifications/emit.js
-// // ======================================================
+// //      ==
 // // Write side — everything that CREATES notifications.
 // // Publishes to in-process bus → SSE subscribers.
 // // All emit functions are non-throwing.
-// // ======================================================
+// //      ==
 
 // const prisma = require('../../config/prisma');
 // const bus = require('./eventBus');

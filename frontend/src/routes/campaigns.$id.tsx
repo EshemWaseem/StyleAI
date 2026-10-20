@@ -33,9 +33,9 @@ export const Route = createFileRoute("/campaigns/$id")({
 
 type Tab = "overview" | "deliverables" | "messages" | "analytics";
 
-// ======================================================
+//      ==
 // FILE HELPERS
-// ======================================================
+//      ==
 type FileLike =
   | string
   | { url?: string; name?: string; type?: string; mimeType?: string; size?: number }
@@ -117,9 +117,9 @@ function FileGrid({ files }: { files: FileLike[] }) {
   );
 }
 
-// ======================================================
+//      ==
 // MAIN PAGE
-// ======================================================
+//      ==
 function CampaignDetailPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -167,9 +167,9 @@ function CampaignDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user?.id]);
 
-  // ======================================================
+  //      ==
   // ✅ Chat unread — WS-driven, guarded by user
-  // ======================================================
+  //      ==
   useEffect(() => {
     // ❌ No user → skip entirely (prevents 401 spam after logout)
     if (!user) return;
@@ -542,9 +542,9 @@ function CampaignDetailPage() {
   );
 }
 
-// ======================================================
+//      ==
 // STEP CARD
-// ======================================================
+//      ==
 function StepCard({
   icon: Icon, label, status, detail,
 }: {
@@ -581,9 +581,9 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ======================================================
+//      ==
 // OVERVIEW TAB
-// ======================================================
+//      ==
 function OverviewTab({
   campaign, canEdit, onUpdate,
 }: { campaign: Campaign; canEdit: boolean; onUpdate: () => void }) {
@@ -768,9 +768,9 @@ function OverviewTab({
   );
 }
 
-// ======================================================
+//      ==
 // DELIVERABLES TAB
-// ======================================================
+//      ==
 function DeliverablesTab({
   campaign, user, isBrandSide, isAgencySide, isInfluencerSide, isAdmin, onUpdate,
 }: {
@@ -869,9 +869,9 @@ function DeliverablesTab({
   );
 }
 
-// ======================================================
+//      ==
 // DELIVERABLE CARD — compact horizontal pipeline
-// ======================================================
+//      ==
 function DeliverableCard({
   d, isBrandSide, isAgencySide, isInfluencerSide, isAdmin,
   onRawUpload, onFinalUpload, onPublish, onMetrics, onReject, onUpdate,
@@ -1155,9 +1155,9 @@ function DeliverableCard({
   );
 }
 
-// ======================================================
+//      ==
 // STEP PILL
-// ======================================================
+//      ==
 function StepPill({
   n,
   label,
@@ -1213,9 +1213,9 @@ function StepPill({
   );
 }
 
-// ======================================================
+//      ==
 // ANALYTICS TAB
-// ======================================================
+//      ==
 function AnalyticsTabPlaceholder({ campaign }: { campaign: Campaign }) {
   return (
     <Panel className="py-16 text-center">

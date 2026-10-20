@@ -1,10 +1,10 @@
 // services/assistant/ragSearch.js
-// ======================================================
+//      ==
 // RAG — find relevant brand chunks for the assistant.
 // Delegates to the full hybrid search pipeline (vector + keyword + RRF + rerank).
 // Also applies a final similarity floor + document diversity here, so the
 // assistant gets clean, relevant context.
-// ======================================================
+//      ==
 
 const knowledge = require('../knowledge');
 

@@ -1,8 +1,8 @@
 // services/ai/pricing.js
-// ======================================================
+//      ==
 // Known model pricing — USD per 1K tokens (or per call)
 // Used to estimate cost when providers don't return it.
-// ======================================================
+//      ==
 
 const PRICING = {
   // ---- Ollama (local, free) ----

@@ -18,10 +18,10 @@ router.use(authenticate);
 // Roles that can browse creators (brand side + agency)
 const BROWSE_ROLES = ['SUPER_ADMIN', 'BRAND_OWNER', 'AGENCY', 'BRAND_TEAM_MEMBER'];
 
-// ------------------------------------------------------
+//       
 // Rate limiter for Apify scrape — protects credits
 // 10 verifications per user per hour
-// ------------------------------------------------------
+//       
 const scrapeLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
@@ -38,7 +38,7 @@ const scrapeLimiter = rateLimit({
   },
 });
 
-// ----- Avatar upload -----
+//   Avatar upload  
 router.post(
   '/upload-avatar',
   requirePermission('influencer.create'),
@@ -46,16 +46,19 @@ router.post(
   ctrl.uploadAvatar
 );
 
-// ----- Scrape social profile (Apify) — rate limited -----
+//   Scrape social profile (Apify) — rate limited  
+// ✅ FIX: Allowed BRAND_OWNER and BRAND_TEAM_MEMBER to use this route
 router.post(
   '/scrape-social',
   scrapeLimiter,
-  authorize('INFLUENCER', 'SUPER_ADMIN'),
-  requirePermission('influencer.create'),
+  requirePermissionOrRole({
+    permissions: ['influencer.create'],
+    roles: ['INFLUENCER', 'BRAND_OWNER', 'BRAND_TEAM_MEMBER', 'SUPER_ADMIN']
+  }),
   ctrl.scrapeProfile
 );
 
-// ----- List (discover) — allow roles OR permission -----
+//   List (discover) — allow roles OR permission  
 router.get(
   '/',
   requirePermissionOrRole({
@@ -65,10 +68,10 @@ router.get(
   ctrl.list
 );
 
-// ----- My profile (influencer-only) -----
+//   My profile (influencer-only)  
 router.get('/me', requirePermission('influencer.read'), ctrl.getMe);
 
-// ----- Pricing -----
+//   Pricing  
 router.get(
   '/:influencerId/pricing',
   requirePermissionOrRole({
@@ -83,7 +86,7 @@ router.patch(
   pricingCtrl.updatePricing
 );
 
-// ----- Create -----
+//   Create  
 router.post(
   '/',
   authorize('INFLUENCER', 'SUPER_ADMIN'),
@@ -91,7 +94,7 @@ router.post(
   ctrl.create
 );
 
-// ----- Detail -----
+//   Detail  
 router.get(
   '/:idOrSlug',
   requirePermissionOrRole({
@@ -101,13 +104,13 @@ router.get(
   ctrl.getOne
 );
 
-// ----- Update -----
+//  Update 
 router.patch('/:influencerId', requirePermission('influencer.update'), ctrl.update);
 
-// ----- Archive -----
+// Archive 
 router.delete('/:influencerId', requirePermission('influencer.delete'), ctrl.remove);
 
-// ----- Save / unsave -----
+
 router.post(
   '/:influencerId/save',
   requirePermissionOrRole({

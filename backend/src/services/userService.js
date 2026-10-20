@@ -2,9 +2,9 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../config/prisma');
 
-// ======================================================
+//      ==
 // UPDATE OWN PROFILE
-// ======================================================
+//      ==
 async function updateOwnProfile(userId, data = {}) {
   const updateData = {};
 
@@ -78,9 +78,9 @@ async function updateOwnProfile(userId, data = {}) {
   });
 }
 
-// ======================================================
+//      ==
 // CHANGE OWN PASSWORD
-// ======================================================
+//      ==
 async function changeOwnPassword(userId, currentPassword, newPassword) {
   if (!currentPassword || !newPassword) {
     const err = new Error('Current and new password are required');

@@ -156,9 +156,9 @@ function PendingPage() {
           </p>
         </div>
 
-        {/* ====================================================== */}
+        {/*      == */}
         {/* RECEIVED INVITATIONS */}
-        {/* ====================================================== */}
+        {/*      == */}
         {!loadingInvites && receivedInvites.length > 0 && (
           <div className="mt-8">
             <h2 className="mb-3 text-sm font-medium">
@@ -230,9 +230,9 @@ function PendingPage() {
           </div>
         )}
 
-        {/* ====================================================== */}
+        {/*      == */}
         {/* REDEEM BY LINK */}
-        {/* ====================================================== */}
+        {/*      == */}
         <div className="mt-8 rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-2">
             <Link2 className="size-4 text-muted-foreground" />
@@ -274,9 +274,9 @@ function PendingPage() {
           </form>
         </div>
 
-        {/* ====================================================== */}
+        {/*      == */}
         {/* PENDING REQUEST INFO */}
-        {/* ====================================================== */}
+        {/*      == */}
         {user.pendingRequest && (
           <div className="mt-8 rounded-xl border border-border bg-card p-5 text-left">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

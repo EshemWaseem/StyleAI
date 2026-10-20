@@ -1,12 +1,12 @@
 // controllers/brandController.js
 const brandService = require('../services/brandService');
 
-// ======================================================
+//      ==
 // Effective user — when an agency sends X-Acting-Brand,
 // downstream services must operate against the CLIENT
 // brand's organization, not the agency's own org.
 // If no acting brand → returns req.user unchanged (zero impact).
-// ======================================================
+//      ==
 function effectiveUser(req) {
   if (req.actingBrandId && req.actingOrganizationId) {
     return {

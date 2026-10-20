@@ -789,9 +789,9 @@ function Storefront() {
   );
 }
 
-// ======================================================
+//      ==
 // BRANDING HERO
-// ======================================================
+//      ==
 function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
   return (
     <section className="relative overflow-hidden border-b border-border">
@@ -848,9 +848,9 @@ function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
   );
 }
 
-// ======================================================
+//      ==
 // ABOUT
-// ======================================================
+//      ==
 function AboutSection() {
   const items = [
     {
@@ -909,9 +909,9 @@ function AboutSection() {
   );
 }
 
-// ======================================================
+//      ==
 // COMING SOON
-// ======================================================
+//      ==
 function ComingSoon() {
   return (
     <div className="mt-10 rounded-xl border border-dashed border-border bg-card/30 px-6 py-14 text-center sm:mt-12 sm:py-16">
@@ -929,9 +929,9 @@ function ComingSoon() {
   );
 }
 
-// ======================================================
+//      ==
 // HERO CAROUSEL
-// ======================================================
+//      ==
 function HeroCarousel({
   slides,
   onScrollToShop,
@@ -1048,9 +1048,9 @@ function HeroCarousel({
   );
 }
 
-// ======================================================
+//      ==
 // HELPERS
-// ======================================================
+//      ==
 function ChipButton({
   active,
   onClick,

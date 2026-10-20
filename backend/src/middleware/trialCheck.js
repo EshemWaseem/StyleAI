@@ -1,10 +1,10 @@
 // middleware/trialCheck.js
-// ======================================================
+//      ==
 // Trial enforcement middleware
 // - Blocks brands/agencies with expired trials
 // - Allows influencers on free tier (with limited features)
 // - SUPER_ADMIN bypasses everything
-// ======================================================
+//      ==
 
 const svc = require('../services/billing');
 const { computeEffectiveState } = require('../services/billing/helpers');

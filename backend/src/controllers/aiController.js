@@ -6,9 +6,9 @@ const { cloudinary } = require('../config/cloudinary');
 const { getBrandContext, buildQuery } = require('../services/knowledge');
 const { trackUsage } = require('../services/ai');
 
-// ------------------------------------------------------
+//       
 // Best-effort brand context fetch — never throws.
-// ------------------------------------------------------
+//       
 async function fetchContext(user, query) {
   try {
     const ctx = await getBrandContext(user, query, { limit: 4, minSimilarity: 0.5 });
@@ -19,10 +19,10 @@ async function fetchContext(user, query) {
   }
 }
 
-// ------------------------------------------------------
+//       
 // Wrap an AI call with usage tracking.
 // meta: { modelName, provider, taskType, inputText? }
-// ------------------------------------------------------
+//       
 async function tracked(req, meta, fn) {
   const t0 = Date.now();
   try {

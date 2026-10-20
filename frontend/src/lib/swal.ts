@@ -1,8 +1,8 @@
 // src/lib/swal.ts
-// ======================================================
+//      ==
 // Themed SweetAlert2 — uses CSS vars from style.css
 // No separate CSS file needed — everything inline.
-// ======================================================
+//      ==
 import Swal from "sweetalert2";
 import type { SweetAlertOptions, SweetAlertResult } from "sweetalert2";
 

@@ -10,30 +10,30 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # ---------- Server ----------
+    #  - Server  -
     APP_NAME: str = "StyleAI AI Service"
     APP_VERSION: str = "0.4.0"
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     DEBUG: bool = False
 
-    # ---------- Security ----------
+    #  - Security  -
     INTERNAL_KEY: str = "dev-internal-key-change-me"
 
-    # ---------- Limits ----------
+    #  - Limits  -
     AI_REQUEST_TIMEOUT: int = 900
     MAX_IMAGE_SIZE_MB: int = 5
 
-    # ---------- Image enhancement ----------
+    #  - Image enhancement  -
     ENHANCE_OUTPUT_DIR: str = "storage/enhanced"
     ENHANCE_OUTPUT_SIZE: int = 1024
 
-    # ==================================================
+    #    ==========
     # TEXT / LLM PROVIDER — groq | gemini | ollama
-    # ==================================================
+    #    ==========
     LLM_PROVIDER: str = "groq"
 
-    # ---------- Groq (text + optional vision) ----------
+    #  - Groq (text + optional vision)  -
     GROQ_API_KEY: str = ""
     # ✅ Real Groq models (verified 2025)
     GROQ_TEXT_MODEL: str = "llama-3.3-70b-versatile"
@@ -41,12 +41,12 @@ class Settings(BaseSettings):
     GROQ_VISION_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
     GROQ_FALLBACK_MODELS: str = "llama-3.2-11b-vision-preview"
 
-    # ==================================================
+    #    ==========
     # VISION PROVIDER — gemini | groq | ollama
-    # ==================================================
+    #    ==========
     VISION_PROVIDER: str = "gemini"
 
-    # ---------- Gemini (vision + embeddings + text) ----------
+    #  - Gemini (vision + embeddings + text)  -
     GEMINI_API_KEY: str = ""
     GEMINI_TEXT_MODEL: str = "gemini-flash-latest"
     GEMINI_VISION_MODEL: str = "gemini-flash-latest"
@@ -55,19 +55,19 @@ class Settings(BaseSettings):
     GEMINI_IMAGE_FALLBACK_MODELS: str = "gemini-2.0-flash-exp-image-generation"
     GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
 
-    # ==================================================
+    #    ==========
     # OLLAMA (legacy — used only if LLM_PROVIDER=ollama)
-    # ==================================================
+    #    ==========
     OLLAMA_URL: str = "http://host.docker.internal:11434"
     OLLAMA_TEXT_MODEL: str = "qwen2.5:7b"
     OLLAMA_VISION_MODEL: str = "qwen2.5:7b"
 
-    # ==================================================
+    #    ==========
     # IMAGE GENERATION — hf | gemini
-    # ==================================================
+    #    ==========
     IMAGE_PROVIDER: str = "hf"
 
-    # ---------- Hugging Face ----------
+    #  - Hugging Face  -
     HF_API_TOKEN: str = ""
     HF_IMAGE_MODEL: str = "black-forest-labs/FLUX.1-Kontext-dev"
     HF_IMAGE_TIMEOUT: int = 120
@@ -79,9 +79,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # ==================================================
+    #    ==========
     # RESOLVERS
-    # ==================================================
+    #    ==========
     @property
     def text_model(self) -> str:
         provider = (self.LLM_PROVIDER or "groq").lower()
@@ -100,9 +100,9 @@ class Settings(BaseSettings):
             return self.GROQ_VISION_MODEL or "meta-llama/llama-4-scout-17b-16e-instruct"
         return self.OLLAMA_VISION_MODEL
 
-    # ==================================================
+    #    ==========
     # FALLBACK LISTS
-    # ==================================================
+    #    ==========
     @property
     def gemini_fallbacks(self) -> List[str]:
         return [m.strip() for m in self.GEMINI_FALLBACK_MODELS.split(",") if m.strip()]
@@ -142,42 +142,42 @@ settings = Settings()
 
 
 # class Settings(BaseSettings):
-#     # ---------- Server ----------
+#     #  - Server  -
 #     APP_NAME: str = "StyleAI AI Service"
 #     APP_VERSION: str = "0.4.0"
 #     HOST: str = "0.0.0.0"
 #     PORT: int = 8000
 #     DEBUG: bool = False
 
-#     # ---------- Security ----------
+#     #  - Security  -
 #     INTERNAL_KEY: str = "dev-internal-key-change-me"
 
-#     # ---------- Limits ----------
+#     #  - Limits  -
 #     AI_REQUEST_TIMEOUT: int = 900
 #     MAX_IMAGE_SIZE_MB: int = 5
 
-#     # ---------- Image enhancement ----------
+#     #  - Image enhancement  -
 #     ENHANCE_OUTPUT_DIR: str = "storage/enhanced"
 #     ENHANCE_OUTPUT_SIZE: int = 1024
 
-#     # ==================================================
+#     #    ==========
 #     # TEXT / LLM PROVIDER — groq | gemini | ollama
-#     # ==================================================
+#     #    ==========
 #     LLM_PROVIDER: str = "groq"
 
-#     # ---------- Groq (text + optional vision) ----------
+#     #  - Groq (text + optional vision)  -
 #     GROQ_API_KEY: str = ""
 #     GROQ_TEXT_MODEL: str = "openai/gpt-oss-120b"
 #     GROQ_TEXT_FALLBACK_MODELS: str = "openai/gpt-oss-20b"
 #     GROQ_VISION_MODEL: str = "qwen/qwen3.8-27b"
 #     GROQ_FALLBACK_MODELS: str = "openai/gpt-oss-20b"
 
-#     # ==================================================
+#     #    ==========
 #     # VISION PROVIDER — gemini | groq | ollama
-#     # ==================================================
+#     #    ==========
 #     VISION_PROVIDER: str = "gemini"
 
-#     # ---------- Gemini (vision + embeddings + text) ----------
+#     #  - Gemini (vision + embeddings + text)  -
 #     GEMINI_API_KEY: str = ""
 #     GEMINI_TEXT_MODEL: str = "gemini-flash-latest"
 #     GEMINI_VISION_MODEL: str = "gemini-flash-latest"
@@ -186,19 +186,19 @@ settings = Settings()
 #     GEMINI_IMAGE_FALLBACK_MODELS: str = "gemini-2.0-flash-exp-image-generation"
 #     GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
 
-#     # ==================================================
+#     #    ==========
 #     # OLLAMA (legacy — used only if LLM_PROVIDER=ollama)
-#     # ==================================================
+#     #    ==========
 #     OLLAMA_URL: str = "http://host.docker.internal:11434"
 #     OLLAMA_TEXT_MODEL: str = "qwen2.5:7b"
 #     OLLAMA_VISION_MODEL: str = "qwen2.5:7b"
 
-#     # ==================================================
+#     #    ==========
 #     # IMAGE GENERATION — hf | gemini
-#     # ==================================================
+#     #    ==========
 #     IMAGE_PROVIDER: str = "hf"
 
-#     # ---------- Hugging Face ----------
+#     #  - Hugging Face  -
 #     HF_API_TOKEN: str = ""
 #     HF_IMAGE_MODEL: str = "black-forest-labs/FLUX.1-Kontext-dev"
 #     HF_IMAGE_TIMEOUT: int = 120
@@ -210,9 +210,9 @@ settings = Settings()
 #         extra="ignore",
 #     )
 
-#     # ==================================================
+#     #    ==========
 #     # RESOLVERS — pick correct model for the active provider
-#     # ==================================================
+#     #    ==========
 #     @property
 #     def text_model(self) -> str:
 #         provider = (self.LLM_PROVIDER or "groq").lower()
@@ -231,9 +231,9 @@ settings = Settings()
 #             return self.GROQ_VISION_MODEL or "qwen/qwen3.8-27b"
 #         return self.OLLAMA_VISION_MODEL
 
-#     # ==================================================
+#     #    ==========
 #     # FALLBACK LISTS
-#     # ==================================================
+#     #    ==========
 #     @property
 #     def gemini_fallbacks(self) -> List[str]:
 #         return [m.strip() for m in self.GEMINI_FALLBACK_MODELS.split(",") if m.strip()]

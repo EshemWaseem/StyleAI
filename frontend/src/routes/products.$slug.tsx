@@ -31,9 +31,9 @@ function ProductDetail() {
   const [error, setError] = useState("");
   const [showEdit, setShowEdit] = useState(false);
 
-  // ======================================================
+  //      ==
   // PERMISSIONS
-  // ======================================================
+  //      ==
   const canFullEdit = !!user?.permissions.includes("product.update");
   const canInventoryEdit = !!user?.permissions.includes("inventory.manage");
   const canDelete = !!user?.permissions.includes("product.delete");

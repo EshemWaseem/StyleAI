@@ -1,8 +1,8 @@
 // services/queue/jobs/webhookRetry.js
-// ======================================================
+//      ==
 // Retry a failed Stripe webhook event.
 // Payload: { eventId, eventType, object }
-// ======================================================
+//      ==
 const handlers = require('../../payments/stripe/handlers');
 
 async function processWebhookRetry(job) {

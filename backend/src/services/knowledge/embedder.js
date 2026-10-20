@@ -1,7 +1,7 @@
 // services/knowledge/embedder.js
-// ======================================================
+//      ==
 // Node → FastAPI embeddings client
-// ======================================================
+//      ==
 
 const { httpError } = require('../influencer/helpers');
 

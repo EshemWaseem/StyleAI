@@ -15,6 +15,9 @@ import {
   Bell,
   Loader2,
   ShieldAlert,
+  LogOut,
+  Monitor,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,15 +50,14 @@ export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
-// ======================================================
+//      ==
 // ROLE HELPERS
-// ======================================================
+//      ==
 const OWNER_ROLES = ["SUPER_ADMIN", "BRAND_OWNER", "AGENCY"];
 
 function isInfluencerOnly(roles: string[] = []) {
   return (
-    roles.includes("INFLUENCER") &&
-    !roles.some((r) => OWNER_ROLES.includes(r))
+    roles.includes("INFLUENCER") && !roles.some((r) => OWNER_ROLES.includes(r))
   );
 }
 function isBrandUser(roles: string[] = []) {
@@ -65,17 +67,84 @@ function isAdmin(roles: string[] = []) {
   return roles.includes("SUPER_ADMIN");
 }
 
-// ======================================================
+//      ==
+// LOGIN ATTEMPT HELPERS
+//      ==
+interface LoginAttemptRow {
+  id: string;
+  success: boolean;
+  reason: string | null;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+
+function parseUserAgent(ua: string | null): string {
+  if (!ua) return "Unknown device";
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /Chrome\//.test(ua) && !/Edg\//.test(ua)
+    ? "Chrome"
+    : /Firefox\//.test(ua)
+    ? "Firefox"
+    : /Safari\//.test(ua) && !/Chrome\//.test(ua)
+    ? "Safari"
+    : "Browser";
+  const os = /Windows/.test(ua)
+    ? "Windows"
+    : /Mac OS X/.test(ua)
+    ? "macOS"
+    : /iPhone/.test(ua)
+    ? "iPhone"
+    : /Android/.test(ua)
+    ? "Android"
+    : /Linux/.test(ua)
+    ? "Linux"
+    : "Unknown";
+  return `${browser} · ${os}`;
+}
+
+function formatRelative(dateStr: string): string {
+  const date = new Date(dateStr);
+  const diffMs = Date.now() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? "" : "s"} ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay} day${diffDay === 1 ? "" : "s"} ago`;
+  return date.toLocaleDateString();
+}
+
+function reasonLabel(reason: string | null, success: boolean): string {
+  if (success) return "Signed in";
+  switch (reason) {
+    case "INVALID_CREDENTIALS":
+      return "Wrong password";
+    case "ACCOUNT_LOCKED":
+      return "Locked attempt";
+    case "EMAIL_NOT_VERIFIED":
+      return "Email not verified";
+    case "PENDING_APPROVAL":
+      return "Pending approval";
+    default:
+      return "Failed";
+  }
+}
+
+//      ==
 // SETTINGS PAGE
-// ======================================================
+//      ==
 function SettingsPage() {
-  const { user, loading: authLoading } = useRole();
+  const { user, loading: authLoading, logoutAll } = useRole();
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<Influencer | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ---------- Account form ----------
+  //  - Account form  -
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [geo, setGeo] = useState<CountryPhoneFieldsValue>({
@@ -90,7 +159,7 @@ function SettingsPage() {
     text: string;
   } | null>(null);
 
-  // ---------- Password form ----------
+  //  - Password form  -
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -100,7 +169,19 @@ function SettingsPage() {
     text: string;
   } | null>(null);
 
-  // ---------- Notification preferences ----------
+  //  - Logout all  -
+  const [loggingOutAll, setLoggingOutAll] = useState(false);
+  const [logoutAllMsg, setLogoutAllMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
+
+  //  - Login history  -
+  const [loginHistory, setLoginHistory] = useState<LoginAttemptRow[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  //  - Notification preferences  -
   const [prefs, setPrefs] = useState<NotificationPreference | null>(null);
   const [prefsLoading, setPrefsLoading] = useState(true);
   const [prefsSaving, setPrefsSaving] = useState(false);
@@ -109,13 +190,13 @@ function SettingsPage() {
     text: string;
   } | null>(null);
 
-  // ---------- Auth guard ----------
+  //  - Auth guard  -
   useEffect(() => {
     if (authLoading || !user) return;
     if (user.pendingApproval) navigate({ to: "/pending" });
   }, [authLoading, user, navigate]);
 
-  // ---------- Seed account form ----------
+  //  - Seed account form  -
   useEffect(() => {
     if (!user) return;
     setName(user.name ?? "");
@@ -131,7 +212,7 @@ function SettingsPage() {
     });
   }, [user]);
 
-  // ---------- Load influencer profile ----------
+  //  - Load influencer profile  -
   useEffect(() => {
     if (authLoading || !user || user.pendingApproval) return;
     if (!isInfluencerOnly(user.roles ?? [])) {
@@ -145,7 +226,7 @@ function SettingsPage() {
       .finally(() => setLoading(false));
   }, [authLoading, user]);
 
-  // ---------- Load preferences ----------
+  //  - Load preferences  -
   useEffect(() => {
     if (authLoading || !user) return;
     notificationsApi
@@ -155,7 +236,21 @@ function SettingsPage() {
       .finally(() => setPrefsLoading(false));
   }, [authLoading, user]);
 
-  // ---------- Save account ----------
+  //  - Load login history  -
+  useEffect(() => {
+    if (authLoading || !user) return;
+    setHistoryLoading(true);
+    setHistoryError(null);
+    http
+      .get<{ attempts: LoginAttemptRow[] }>("/api/auth/login-history")
+      .then((res) => setLoginHistory(res.attempts || []))
+      .catch((err) =>
+        setHistoryError(err?.message || "Could not load login history")
+      )
+      .finally(() => setHistoryLoading(false));
+  }, [authLoading, user]);
+
+  //  - Save account  -
   async function handleSaveAccount(e: React.FormEvent) {
     e.preventDefault();
     setAccountMsg(null);
@@ -217,7 +312,7 @@ function SettingsPage() {
     }
   }
 
-  // ---------- Change password (NEW) ----------
+  //  - Change password  -
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setPasswordMsg(null);
@@ -280,14 +375,45 @@ function SettingsPage() {
     }
   }
 
-  // ---------- Toggle a single preference ----------
+  //  - Logout all devices  -
+  async function handleLogoutAll() {
+    if (loggingOutAll) return;
+    const ok = window.confirm(
+      "Sign out of all other devices?\n\nYou'll stay signed in on this device. All other browsers and phones will need to sign in again."
+    );
+    if (!ok) return;
+
+    setLogoutAllMsg(null);
+    setLoggingOutAll(true);
+    try {
+      await logoutAll();
+      setLogoutAllMsg({
+        type: "ok",
+        text: "Signed out of all other devices. This device stays signed in.",
+      });
+      // Refresh login history (current row still shows previous entries)
+      http
+        .get<{ attempts: LoginAttemptRow[] }>("/api/auth/login-history")
+        .then((res) => setLoginHistory(res.attempts || []))
+        .catch(() => {});
+    } catch (err: any) {
+      setLogoutAllMsg({
+        type: "err",
+        text: err?.message || "Could not sign out other devices.",
+      });
+    } finally {
+      setLoggingOutAll(false);
+    }
+  }
+
+  //  - Toggle a single preference  -
   function togglePref(key: keyof UpdatePreferenceInput) {
     if (!prefs) return;
     setPrefs({ ...prefs, [key]: !prefs[key] });
     setPrefsMsg(null);
   }
 
-  // ---------- Save preferences ----------
+  //  - Save preferences  -
   async function handleSavePrefs() {
     if (!prefs) return;
     setPrefsMsg(null);
@@ -335,9 +461,9 @@ function SettingsPage() {
         description="Your account credentials, security, and role-specific shortcuts."
       />
 
-      {/* ======================================================
+      {/*      ==
           1. ACCOUNT
-      ====================================================== */}
+           == */}
       <Panel className="mt-8">
         <SectionTitle
           title="Account"
@@ -419,13 +545,13 @@ function SettingsPage() {
         </form>
       </Panel>
 
-      {/* ======================================================
-          2. SECURITY — Password Change (UPGRADED)
-      ====================================================== */}
+      {/*      ==
+          2. SECURITY — Password Change + Session Mgmt
+           == */}
       <Panel className="mt-6">
         <SectionTitle
           title="Security"
-          description="Change your login password."
+          description="Change your password and manage active sessions."
           action={<Lock className="size-4 text-muted-foreground" />}
         />
         <form onSubmit={handleChangePassword} className="space-y-5">
@@ -467,17 +593,15 @@ function SettingsPage() {
               minLength={6}
             />
             {passwordsMismatch && (
-              <p className="text-xs text-destructive">
-                Passwords do not match.
-              </p>
+              <p className="text-xs text-destructive">Passwords do not match.</p>
             )}
           </div>
 
           <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
             <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
             <span>
-              You will remain signed in on this device. Other devices will
-              need to sign in again with the new password.
+              You will remain signed in on this device. Other devices will need
+              to sign in again with the new password.
             </span>
           </div>
 
@@ -515,25 +639,148 @@ function SettingsPage() {
           </div>
         </form>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        {/*  - Session management  - */}
+        <div className="mt-6 space-y-3">
+          <div className="rounded-lg border border-border bg-muted/5 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <LogOut className="mt-0.5 size-4 text-destructive" />
+                <div>
+                  <p className="text-sm font-medium">Sign out of all devices</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Revokes every other session (phones, laptops, tablets) but
+                    keeps you signed in here. Use this if you think your
+                    password was compromised.
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleLogoutAll}
+                disabled={loggingOutAll}
+                className="shrink-0 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                {loggingOutAll ? (
+                  <>
+                    <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                    Signing out…
+                  </>
+                ) : (
+                  "Sign out all"
+                )}
+              </Button>
+            </div>
+            {logoutAllMsg && (
+              <div
+                className={
+                  logoutAllMsg.type === "ok"
+                    ? "mt-3 flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-500"
+                    : "mt-3 flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                }
+              >
+                {logoutAllMsg.type === "ok" ? (
+                  <CheckCircle2 className="size-3.5 shrink-0" />
+                ) : (
+                  <AlertCircle className="size-3.5 shrink-0" />
+                )}
+                <span>{logoutAllMsg.text}</span>
+              </div>
+            )}
+          </div>
+
           <div className="rounded-lg border border-dashed border-border bg-muted/5 p-4 opacity-60">
             <p className="text-xs font-medium">Two-factor authentication</p>
             <p className="mt-1 text-[11px] text-muted-foreground">
               Coming soon — extra security for logins.
             </p>
           </div>
-          <div className="rounded-lg border border-dashed border-border bg-muted/5 p-4 opacity-60">
-            <p className="text-xs font-medium">Active sessions</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Coming soon — view and revoke devices.
-            </p>
-          </div>
         </div>
       </Panel>
 
-      {/* ======================================================
-          3. NOTIFICATIONS
-      ====================================================== */}
+      {/*      ==
+          3. LOGIN HISTORY (D2)
+           == */}
+      <Panel className="mt-6">
+        <SectionTitle
+          title="Login history"
+          description="Your last 10 sign-in attempts. Contact support if you see anything you don't recognize."
+          action={<Clock className="size-4 text-muted-foreground" />}
+        />
+
+        {historyLoading ? (
+          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> Loading history…
+          </div>
+        ) : historyError ? (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {historyError}
+          </div>
+        ) : loginHistory.length === 0 ? (
+          <p className="py-4 text-sm text-muted-foreground">
+            No login attempts yet.
+          </p>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-border">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-muted/30">
+                <tr>
+                  <th className="px-3 py-2 font-medium text-muted-foreground">
+                    When
+                  </th>
+                  <th className="px-3 py-2 font-medium text-muted-foreground">
+                    Device
+                  </th>
+                  <th className="px-3 py-2 font-medium text-muted-foreground">
+                    IP
+                  </th>
+                  <th className="px-3 py-2 font-medium text-muted-foreground">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {loginHistory.map((row) => (
+                  <tr key={row.id} className="border-t border-border">
+                    <td className="px-3 py-2 text-muted-foreground">
+                      <span title={new Date(row.createdAt).toLocaleString()}>
+                        {formatRelative(row.createdAt)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Monitor className="size-3 text-muted-foreground" />
+                        {parseUserAgent(row.userAgent)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                      {row.ip || "—"}
+                    </td>
+                    <td className="px-3 py-2">
+                      {row.success ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="size-3" />
+                          {reasonLabel(row.reason, true)}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
+                          <AlertCircle className="size-3" />
+                          {reasonLabel(row.reason, false)}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
+      {/*      ==
+          4. NOTIFICATIONS
+           == */}
       <Panel className="mt-6">
         <SectionTitle
           title="Notifications"
@@ -621,9 +868,9 @@ function SettingsPage() {
         )}
       </Panel>
 
-      {/* ======================================================
-          4. ROLE SHORTCUTS
-      ====================================================== */}
+      {/*      ==
+          5. ROLE SHORTCUTS
+           == */}
       {influencerMode && (
         <Panel className="mt-6">
           <SectionTitle
@@ -771,9 +1018,9 @@ function SettingsPage() {
         </Panel>
       )}
 
-      {/* ======================================================
-          5. DATA & TRUST
-      ====================================================== */}
+      {/*      ==
+          6. DATA & TRUST
+           == */}
       <Panel className="mt-6">
         <SectionTitle
           title="Data & trust"
@@ -811,9 +1058,9 @@ function SettingsPage() {
   );
 }
 
-// ======================================================
+//      ==
 // Toggle row helper
-// ======================================================
+//      ==
 function ToggleRow({
   label,
   description,

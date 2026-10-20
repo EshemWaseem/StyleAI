@@ -1,5 +1,5 @@
 // frontend/src/lib/api.ts
-// ======================================================
+//      ==
 // Central API client.
 // - Auto-attaches JWT
 // - 401 → logout (except on /login or auth endpoints)
@@ -7,7 +7,7 @@
 // - 423 → account locked: preserves retryAfter + code
 // - 429 → rate limit: preserves retryAfter + code
 // - Sanitizes infra errors
-// ======================================================
+//      ==
 
 const BASE_URL =
   (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
@@ -32,9 +32,9 @@ const FRIENDLY_FALLBACKS: Record<number, string> = {
   504: "Request timed out. Please try again.",
 };
 
-// ======================================================
+//      ==
 // Trial signal (sessionStorage — synchronous across routes)
-// ======================================================
+//      ==
 export function markTrialExpired() {
   if (typeof window !== "undefined") {
     sessionStorage.setItem("trialExpired", "1");
@@ -96,9 +96,9 @@ function redirectToTrialExpired(upgradeUrl?: string) {
   window.location.href = target;
 }
 
-// ------------------------------------------------------
+//       
 // Error shape thrown by api()
-// ------------------------------------------------------
+//       
 export interface ApiError extends Error {
   status: number;
   code?: string;

@@ -1,8 +1,8 @@
 // services/wallet/adminStats.js
-// ======================================================
+//      ==
 // Admin analytics over wallets + transactions
 // Platform currency: PKR (all revenue normalized to PKR)
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 

@@ -150,9 +150,9 @@ export const productsApi = {
     http.delete<{ message: string; id: string }>(`/api/products/${id}`),
 };
 
-// ======================================================
+//      ==
 // PUBLIC
-// ======================================================
+//      ==
 
 const PUBLIC_BASE =
   (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
@@ -187,9 +187,9 @@ export const publicProductsApi = {
   },
 };
 
-// ======================================================
+//      ==
 // STOREFRONT (admin-controlled public sections)
-// ======================================================
+//      ==
 
 export interface StorefrontHeroSlide {
   id: string;

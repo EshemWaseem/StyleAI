@@ -1,8 +1,8 @@
 // direct_chat.prisma
-// ======================================================
+//      ==
 // DIRECT CHAT — any two parties (org <-> org, org <-> influencer)
 // Supports: Brand↔Influencer, Brand↔Agency, Agency↔Influencer
-// ======================================================
+//      ==
 
 model Conversation {
   id String @id @default(uuid())

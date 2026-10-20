@@ -64,10 +64,11 @@ function VerifyEmailPage() {
         if (cancelled) return;
         const code = err?.code;
         if (code === "INVALID_VERIFY_TOKEN") {
+          // R2 FIX: friendlier copy — could be expired OR already used
           setState({
             kind: "error",
             message:
-              "This verification link is invalid or has expired. Request a new one below.",
+              "This link may have already been used, or it has expired. If you've already verified, try signing in. Otherwise, request a new link below.",
           });
         } else if (code === "ALREADY_VERIFIED") {
           setState({ kind: "success" });

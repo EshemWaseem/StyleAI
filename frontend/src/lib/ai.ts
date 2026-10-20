@@ -98,9 +98,9 @@ export const aiApi = {
 
 
 
-// ======================================================
+//      ==
 // AI PRODUCT ANGLES
-// ======================================================
+//      ==
 export interface AngleVariant {
   key: string;
   label: string;
@@ -120,9 +120,9 @@ export interface AngleGenerationMeta {
 }
 
 
-// ======================================================
+//      ==
 // PLATFORM CONTENT
-// ======================================================
+//      ==
 export type Platform = "instagram" | "tiktok" | "youtube" | "blog";
 
 export interface PlatformContentRequest {
@@ -154,9 +154,9 @@ export interface PlatformContentResponse {
 
 
 
-// ======================================================
+//      ==
 // AI PHOTOGRAPHY
-// ======================================================
+//      ==
 export type SceneMode =
   | "studio" | "luxury" | "lifestyle" | "outdoor" | "street"
   | "minimal" | "editorial" | "ecommerce" | "social";

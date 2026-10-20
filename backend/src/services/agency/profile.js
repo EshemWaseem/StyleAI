@@ -1,7 +1,7 @@
 // services/agency/profile.js
-// ======================================================
+//      ==
 // Agency profile — service categories + rate cards
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');

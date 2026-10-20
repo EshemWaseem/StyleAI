@@ -1,8 +1,8 @@
 // services/notifications/sse.js
-// ======================================================
+//      ==
 // Server-Sent Events connection registry.
 // One Set<res> per userId. Publishes bus events to connected clients.
-// ======================================================
+//      ==
 
 const bus = require('./eventBus');
 const { shapeNotification } = require('./helpers');

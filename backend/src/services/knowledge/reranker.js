@@ -1,9 +1,9 @@
 // services/knowledge/reranker.js
-// ======================================================
+//      ==
 // LLM-based reranking of candidate chunks.
 // Takes top-N candidates, asks LLM to pick the best K.
 // Falls back to input order on failure.
-// ======================================================
+//      ==
 
 const { llmText } = require('./llmClient');
 

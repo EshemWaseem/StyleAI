@@ -1,8 +1,8 @@
 // services/recommendations/signals/tips.js
-// ======================================================
+//      ==
 // Real-data-driven tips (no fake generic suggestions)
 // Each tip requires actual state to fire.
-// ======================================================
+//      ==
 
 /**
  * Offer pending influencer decision for too long

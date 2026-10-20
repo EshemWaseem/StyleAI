@@ -1,13 +1,13 @@
 // services/payments/stripe/customer.js
-// ======================================================
+//      ==
 // Stripe customer management for orgs AND individual users.
-// ======================================================
+//      ==
 const prisma = require('../../../config/prisma');
 const stripe = require('./client');
 
-// ------------------------------------------------------
+//       
 // Organization customer (brand/agency)
-// ------------------------------------------------------
+//       
 async function ensure(organization) {
   const sub = await prisma.subscription.findUnique({
     where: { organizationId: organization.id },
@@ -37,9 +37,9 @@ async function ensure(organization) {
   return customer.id;
 }
 
-// ------------------------------------------------------
+//       
 // User customer (influencer/shopper — wallet top-ups etc.)
-// ------------------------------------------------------
+//       
 async function ensureForUser(user) {
   if (!user?.id) throw new Error('ensureForUser: user.id required');
 

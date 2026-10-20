@@ -1,7 +1,7 @@
 // services/matching/index.js
-// ======================================================
+//      ==
 // Barrel — public surface of the matching domain
-// ======================================================
+//      ==
 
 const { recommendForProduct, recommendProductsForMe } = require('./recommend');
 const scoring = require('./scoring');

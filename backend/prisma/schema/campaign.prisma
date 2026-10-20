@@ -1,7 +1,7 @@
 // campaign.prisma
-// ======================================================
+//      ==
 // CAMPAIGN — shipping flow + content iteration tracking
-// ======================================================
+//      ==
 
 model Campaign {
   id      String      @id @default(uuid())

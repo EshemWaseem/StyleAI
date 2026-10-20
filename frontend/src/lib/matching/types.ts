@@ -1,7 +1,7 @@
 // lib/matching/types.ts
-// ======================================================
+//      ==
 // Matching domain types — mirrors backend API shape
-// ======================================================
+//      ==
 
 export interface MatchReason {
   dimension: string;

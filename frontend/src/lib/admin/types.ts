@@ -58,9 +58,9 @@ export interface AdminUserDetail {
   updatedAt: string;
 }
 
-// ======================================================
+//      ==
 // AI — Model Management (SRS §48-49)
-// ======================================================
+//      ==
 
 export type AIModelStatus = "PRODUCTION" | "STAGING" | "DEPRECATED" | "DISABLED";
 export type AITaskType = "text" | "vision" | "embedding" | "image" | "ranking";

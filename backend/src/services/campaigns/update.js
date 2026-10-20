@@ -1,7 +1,7 @@
 // services/campaigns/update.js
-// ======================================================
+//      ==
 // Brand updates brief, hashtags, mentions, dueDate, status
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');

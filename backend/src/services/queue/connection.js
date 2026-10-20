@@ -1,8 +1,8 @@
 // services/queue/connection.js
-// ======================================================
+//      ==
 // Shared ioredis connection for BullMQ.
 // Lazy init — returns null if disabled or Redis unreachable.
-// ======================================================
+//      ==
 const IORedis = require('ioredis');
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';

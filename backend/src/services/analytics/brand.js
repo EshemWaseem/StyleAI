@@ -1,8 +1,8 @@
 // services/analytics/brand.js
-// ======================================================
+//      ==
 // Brand analytics — single organization's campaigns
 // Returns business metrics (spend/campaigns) + performance (reach/revenue)
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { sumCampaignTotals, rollupBy, shapeRecentCampaigns } = require('./helpers');

@@ -1,9 +1,9 @@
 // src/config/redis.js
-// ======================================================
+//      ==
 // Reuses the SAME Redis connection as the queue service.
 // Falls back to a dedicated connection if queue is disabled
 // or the shared connection is invalid.
-// ======================================================
+//      ==
 const Redis = require('ioredis');
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
@@ -11,9 +11,9 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 let redis = null;
 let source = 'unknown';
 
-// ------------------------------------------------------
+//       
 // 1. Try reusing the queue connection
-// ------------------------------------------------------
+//       
 try {
   const queue = require('../services/queue');
   const { QUEUE_ENABLED, getConnection } = queue || {};
@@ -45,9 +45,9 @@ try {
   );
 }
 
-// ------------------------------------------------------
+//       
 // 2. Fallback — dedicated connection
-// ------------------------------------------------------
+//       
 if (!redis) {
   redis = new Redis(REDIS_URL, {
     maxRetriesPerRequest: null,
@@ -75,9 +75,9 @@ if (!redis) {
   console.log('[rate-limit-redis] created dedicated connection');
 }
 
-// ------------------------------------------------------
+//       
 // 3. Metadata for debugging
-// ------------------------------------------------------
+//       
 redis.__source = source;
 redis.__isDedicated = source === 'dedicated';
 

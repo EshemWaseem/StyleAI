@@ -397,9 +397,9 @@ export function OfferBuilder({
   );
 }
 
-// ======================================================
+//      ==
 // Helpers
-// ======================================================
+//      ==
 function Row({
   label, value, muted, bold,
 }: { label: string; value: string; muted?: boolean; bold?: boolean }) {

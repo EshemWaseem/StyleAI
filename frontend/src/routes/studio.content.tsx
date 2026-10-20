@@ -225,9 +225,9 @@ function ContentStudio() {
   );
 }
 
-// ======================================================
+//      ==
 // Field card — copy button per field
-// ======================================================
+//      ==
 function FieldCard({ fieldKey, value }: { fieldKey: string; value: any }) {
   const [copied, setCopied] = useState(false);
 

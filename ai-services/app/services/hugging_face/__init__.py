@@ -1,7 +1,7 @@
 # app/services/hugging_face/__init__.py
-# ======================================================
+#      ==
 # Hugging Face services — free image generation
-# ======================================================
+#      ==
 
 from app.services.hugging_face.hf_image import (
     HFImageService,

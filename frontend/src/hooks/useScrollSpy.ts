@@ -1,8 +1,8 @@
 // hooks/useScrollSpy.ts
-// ======================================================
+//      ==
 // Tracks which section is currently in view based on scroll.
 // Returns the id of the active section.
-// ======================================================
+//      ==
 import { useEffect, useState } from "react";
 
 export function useScrollSpy(

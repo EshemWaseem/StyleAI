@@ -1,26 +1,21 @@
-// frontend/src/routes/dashboard.tsx
-import { Briefcase, Camera } from "lucide-react";
+import { Briefcase, Camera, Pencil, ExternalLink } from "lucide-react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { influencersApi, type Influencer } from "@/lib/influencers";
 import {
   ArrowRight,
   BadgeDollarSign,
-  Building2,
   CheckCircle2,
   Clock3,
   FileCheck2,
   Info,
-  Layers3,
   Loader2,
-  Megaphone,
   Plus,
   Send,
   ShieldCheck,
   Sparkles,
   Store,
   UsersRound,
-  WandSparkles,
 } from "lucide-react";
 import {
   Area,
@@ -34,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PageHeader, Panel, SectionTitle, StatusPill } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { useRole, roleLabels, type RoleName } from "@/lib/role";
+import { useRole, type RoleName } from "@/lib/role";
 import {
   analyticsApi,
   type BrandAnalytics,
@@ -53,6 +48,7 @@ import {
   type ProductPlacement,
 } from "@/lib/storefront";
 import { cn } from "@/lib/utils";
+import { InfluencerFormModal } from "@/components/influencer/InfluencerFormModal";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -344,58 +340,6 @@ function TrendPanel({
   );
 }
 
-function Risk({ label, meta, level }: { label: string; meta: string; level: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-md border border-border p-3">
-      <ShieldCheck className="size-4 text-accent" />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">{meta}</p>
-      </div>
-      <StatusPill status={level} />
-    </div>
-  );
-}
-
-function Task({
-  icon: Icon,
-  title,
-  meta,
-  status,
-}: {
-  icon: typeof Clock3;
-  title: string;
-  meta: string;
-  status: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 py-3">
-      <span className="grid size-9 shrink-0 place-items-center rounded-md bg-brand-soft text-accent">
-        <Icon className="size-4" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{title}</p>
-        <p className="truncate text-xs text-muted-foreground">{meta}</p>
-      </div>
-      <StatusPill status={status} />
-    </div>
-  );
-}
-
-function Update({ name, action, time }: { name: string; action: string; time: string }) {
-  return (
-    <div className="flex gap-3">
-      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-soft text-xs text-accent">
-        {name.slice(0, 1)}
-      </span>
-      <p className="min-w-0 flex-1 leading-5">
-        <strong className="font-medium">{name}</strong> {action}
-        <span className="block text-xs text-muted-foreground">{time} ago</span>
-      </p>
-    </div>
-  );
-}
-
 function AdminWorkspace() {
   return null;
 }
@@ -405,13 +349,21 @@ function InfluencerWorkspace() {
   const [matchedProducts, setMatchedProducts] = useState<PublicProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  async function loadProfile() {
+    try {
+      const res = await influencersApi.getMe();
+      setProfile(res.influencer);
+    } catch {
+      setProfile(null);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    influencersApi
-      .getMe()
-      .then((res) => setProfile(res.influencer))
-      .catch(() => setProfile(null))
-      .finally(() => setLoading(false));
+    loadProfile();
   }, []);
 
   useEffect(() => {
@@ -478,14 +430,48 @@ function InfluencerWorkspace() {
                 discover you.
               </p>
             </div>
-            <Button asChild size="sm">
-              <Link to="/influencers/$slug" params={{ slug: profile.slug }}>
-                Setup profile
-              </Link>
+            <Button size="sm" onClick={() => setShowEditModal(true)}>
+              Setup profile
             </Button>
           </div>
         </div>
       )}
+
+      <Panel className="mt-6">
+        <SectionTitle
+          title="Your public profile"
+          description="This is what brands and agencies see when they visit your profile."
+          action={
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowEditModal(true)}>
+                <Pencil className="mr-1.5 size-3.5" /> Edit
+              </Button>
+              <Button asChild size="sm">
+                <Link to="/influencers/$slug" params={{ slug: profile.slug }}>
+                  <ExternalLink className="mr-1.5 size-3.5" /> View
+                </Link>
+              </Button>
+            </div>
+          }
+        />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          {profile.avatarUrl ? (
+            <img src={profile.avatarUrl} alt={profile.displayName} className="size-16 rounded-full object-cover" />
+          ) : (
+            <div className="grid size-16 shrink-0 place-items-center rounded-full bg-muted text-xl font-medium text-muted-foreground">
+              {profile.displayName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <h3 className="font-display text-lg font-medium">{profile.displayName}</h3>
+            <p className="text-sm text-muted-foreground">@{profile.username} · {profile.country || "No location"}</p>
+            <div className="mt-2 flex gap-4 text-xs">
+              <span><strong className="text-foreground">{profile.followerCount.toLocaleString()}</strong> followers</span>
+              <span><strong className="text-foreground">{(profile.engagementRate * 100).toFixed(2)}%</strong> engagement</span>
+            </div>
+          </div>
+        </div>
+      </Panel>
 
       <section className="mt-6">
         <div className="rounded-xl border border-border bg-gradient-to-r from-purple-500/5 via-transparent to-transparent p-5">
@@ -657,7 +643,7 @@ function InfluencerWorkspace() {
 
         <Panel className="xl:col-span-2">
           <SectionTitle
-            title="Your profile"
+            title="Your profile stats"
             description="Live data from your creator profile."
           />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -700,6 +686,18 @@ function InfluencerWorkspace() {
           </div>
         </Panel>
       </div>
+
+      {showEditModal && (
+        <InfluencerFormModal
+          mode="edit"
+          influencer={profile}
+          onClose={() => setShowEditModal(false)}
+          onSaved={(updated) => {
+            setProfile(updated);
+            setShowEditModal(false);
+          }}
+        />
+      )}
     </>
   );
 }
@@ -788,7 +786,6 @@ function BrandWorkspace({
       })
       .catch(() => setMatchedInfluencers([]))
       .finally(() => setInfluencersLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products, loading]);
 
   const trendSeries = analytics
@@ -1037,9 +1034,6 @@ function BrandWorkspace({
   );
 }
 
-// ======================================================
-// STOREFRONT APPLICATION CARD
-// ======================================================
 function StorefrontApplicationCard() {
   const [status, setStatus] = useState<MyStorefrontStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1159,7 +1153,6 @@ function StorefrontApplicationCard() {
     );
   }
 
-  // DECLINED
   return (
     <>
       <section className="mt-2">
@@ -1197,9 +1190,6 @@ function StorefrontApplicationCard() {
   );
 }
 
-// ======================================================
-// APPLY MODAL — pick products + placement per product
-// ======================================================
 const PLACEMENT_OPTIONS: Array<{
   value: ProductPlacement;
   label: string;
@@ -1526,7 +1516,7 @@ function Dashboard() {
 
   if (loading || !user || !redirectChecked) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <p className="text-sm text-muted-foreground">Loading workspace…</p>
       </div>
     );
@@ -1537,61 +1527,63 @@ function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <PageHeader
-        eyebrow={copy.eyebrow}
-        title={copy.title}
-        description={copy.description}
-        actions={
-          workspace === "admin" ? (
-            <Button>
-              <ShieldCheck />
-              Run health check
-            </Button>
-          ) : workspace === "influencer" ? (
-            <Button asChild>
-              <Link to="/wallet">
-                <BadgeDollarSign />
-                View earnings
-              </Link>
-            </Button>
-          ) : workspace === "member" ? (
-            <Button>
-              <Plus />
-              New draft
-            </Button>
-          ) : (
-            <Button asChild>
-              <Link to="/matching">
-                <Sparkles />
-                Create with AI
-              </Link>
-            </Button>
-          )
-        }
-      />
-
-      {workspace !== "influencer" && (
-        <StatStrip role={workspace} analytics={brandAnalytics} />
-      )}
-
-      {workspace === "influencer" && (
-        <StatStrip
-          role="influencer"
-          influencerAnalytics={influencerAnalytics}
+      <div className="w-full max-w-full flex flex-col gap-6 pb-12">
+        <PageHeader
+          eyebrow={copy.eyebrow}
+          title={copy.title}
+          description={copy.description}
+          actions={
+            workspace === "admin" ? (
+              <Button>
+                <ShieldCheck />
+                Run health check
+              </Button>
+            ) : workspace === "influencer" ? (
+              <Button asChild>
+                <Link to="/wallet">
+                  <BadgeDollarSign />
+                  View earnings
+                </Link>
+              </Button>
+            ) : workspace === "member" ? (
+              <Button>
+                <Plus />
+                New draft
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link to="/matching">
+                  <Sparkles />
+                  Create with AI
+                </Link>
+              </Button>
+            )
+          }
         />
-      )}
 
-      {workspace === "admin" && <AdminWorkspace />}
-      {workspace === "influencer" && <InfluencerWorkspace />}
-      {workspace === "owner" && (
-        <BrandWorkspace
-          products={realProducts}
-          loading={productsLoading}
-          analytics={brandAnalytics}
-        />
-      )}
-      {workspace === "agency" && <AgencyWorkspace />}
-      {workspace === "member" && <MemberWorkspace />}
+        {workspace !== "influencer" && (
+          <StatStrip role={workspace} analytics={brandAnalytics} />
+        )}
+
+        {workspace === "influencer" && (
+          <StatStrip
+            role="influencer"
+            influencerAnalytics={influencerAnalytics}
+          />
+        )}
+
+        {workspace === "admin" && <AdminWorkspace />}
+        {workspace === "influencer" && <InfluencerWorkspace />}
+        {workspace === "owner" && (
+          <BrandWorkspace
+            products={realProducts}
+            loading={productsLoading}
+            analytics={brandAnalytics}
+          />
+        )}
+        {workspace === "agency" && <AgencyWorkspace />}
+        {workspace === "member" && <MemberWorkspace />}
+      </div>
     </ProtectedRoute>
   );
 }

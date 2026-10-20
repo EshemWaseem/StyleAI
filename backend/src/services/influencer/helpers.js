@@ -1,15 +1,9 @@
 // services/influencer/helpers.js
 const prisma = require('../../config/prisma');
 
-// ======================================================
-// CONSTANTS
-// ======================================================
 const INT4_MAX = 2_147_483_647;
 const INT4_MIN = -2_147_483_648;
 
-// ======================================================
-// SLUG
-// ======================================================
 function slugify(text) {
   return String(text)
     .toLowerCase()
@@ -18,15 +12,39 @@ function slugify(text) {
     .replace(/^-+|-+$/g, '');
 }
 
-// ======================================================
-// SHAPE — clean API response
-// ======================================================
-// Backward compatible:
-//   shapeInfluencer(i, savedSet)              ← old
-//   shapeInfluencer(i, { savedSet, rating, totalOrders })  ← new
-// ======================================================
+function shapeSocialAccount(s) {
+  if (!s) return null;
+
+  return {
+    id: s.id,
+    platform: s.platform,
+    platformCustom: s.platformCustom ?? null,
+    handle: s.handle,
+    profileUrl: s.profileUrl ?? null,
+    followerCount: s.followerCount ?? 0,
+    followingCount: s.followingCount ?? 0,
+    engagementRate: s.engagementRate ?? 0,
+    isPrimary: !!s.isPrimary,
+
+    totalPosts: s.totalPosts ?? 0,
+    totalLikes: s.totalLikes != null ? Number(s.totalLikes) : 0,
+    totalComments: s.totalComments != null ? Number(s.totalComments) : 0,
+    totalViews: s.totalViews != null ? Number(s.totalViews) : 0,
+    avgLikes: s.avgLikes ?? 0,
+    avgComments: s.avgComments ?? 0,
+    avgViews: s.avgViews ?? 0,
+
+    authenticityScore: s.authenticityScore ?? null,
+    engagementHealth: s.engagementHealth ?? null,
+    suspiciousFlags: Array.isArray(s.suspiciousFlags) ? s.suspiciousFlags : [],
+
+    lastPostAt: s.lastPostAt ?? null,
+    scrapedAt: s.scrapedAt ?? null,
+    scrapeData: s.scrapeData ?? null,
+  };
+}
+
 function shapeInfluencer(i, optsOrSavedSet = null) {
-  // Normalize input
   let savedSet = null;
   let rating = null;
   let totalOrders = 0;
@@ -39,6 +57,19 @@ function shapeInfluencer(i, optsOrSavedSet = null) {
     totalOrders = optsOrSavedSet.totalOrders ?? 0;
   }
 
+  // Calculate Profile Completeness (6 Key Fields)
+  let filledFields = 0;
+  const totalFields = 6;
+
+  if (i.displayName) filledFields++;
+  if (i.bio && i.bio.trim().length > 0) filledFields++;
+  if (i.avatarUrl) filledFields++;
+  if (i.categories && i.categories.length > 0) filledFields++;
+  if (i.socialAccounts && i.socialAccounts.length > 0) filledFields++;
+  if (i.pricePerPost != null || (i.pricingTiers && Object.keys(i.pricingTiers).length > 0)) filledFields++;
+
+  const profileCompleteness = Math.round((filledFields / totalFields) * 100);
+
   return {
     id: i.id,
     userId: i.userId,
@@ -48,7 +79,6 @@ function shapeInfluencer(i, optsOrSavedSet = null) {
     bio: i.bio,
     avatarUrl: i.avatarUrl,
 
-    // ✅ Rating + completed orders
     rating,
     totalOrders,
     completedCampaigns: totalOrders,
@@ -81,17 +111,12 @@ function shapeInfluencer(i, optsOrSavedSet = null) {
     beautyScore: i.beautyScore,
     lifestyleScore: i.lifestyleScore,
     profileCompleted: i.profileCompleted,
-    socialAccounts: (i.socialAccounts || []).map((s) => ({
-      id: s.id,
-      platform: s.platform,
-      platformCustom: s.platformCustom,
-      handle: s.handle,
-      profileUrl: s.profileUrl,
-      followerCount: s.followerCount,
-      followingCount: s.followingCount,
-      engagementRate: s.engagementRate,
-      isPrimary: s.isPrimary,
-    })),
+    profileCompleteness, // ✅ Dynamic completeness added
+
+    socialAccounts: Array.isArray(i.socialAccounts)
+      ? i.socialAccounts.map(shapeSocialAccount)
+      : [],
+
     audienceMetrics: i.audienceMetrics
       ? {
           ageDistribution: i.audienceMetrics.ageDistribution,
@@ -108,9 +133,6 @@ function shapeInfluencer(i, optsOrSavedSet = null) {
   };
 }
 
-// ======================================================
-// BASIC VALIDATORS
-// ======================================================
 function requireField(value, fieldName) {
   if (!value || !String(value).trim()) {
     const err = new Error(`${fieldName} is required`);
@@ -139,9 +161,6 @@ function cleanUsername(username) {
     .replace(/^@/, '');
 }
 
-// ======================================================
-// NUMERIC VALIDATORS
-// ======================================================
 function validateIntField(value, fieldName, min = 0) {
   if (value === undefined || value === null || value === '') return null;
 
@@ -200,9 +219,6 @@ function validatePriceField(value, fieldName, min = 0) {
   return Math.round(num * 100) / 100;
 }
 
-// ======================================================
-// SAVED INFLUENCERS
-// ======================================================
 async function getSavedSet(organizationId, influencerIds) {
   if (!organizationId || !influencerIds.length) return new Set();
 
@@ -214,22 +230,6 @@ async function getSavedSet(organizationId, influencerIds) {
   return new Set(rows.map((r) => r.influencerId));
 }
 
-// ======================================================
-// RATING + ORDERS
-// ======================================================
-/**
- * Compute rating + completed order count for a batch of influencers.
- * Returns Map<influencerId, { rating, totalOrders }>.
- *
- * Rating formula (simple tier based on completed campaigns):
- *   0 orders  → null
- *   1–2       → 4.0
- *   3–5       → 4.3
- *   6–10      → 4.6
- *   10+       → 4.8
- */
-
-
 async function getRatingMap(influencerIds) {
   const map = new Map();
   if (!influencerIds || influencerIds.length === 0) return map;
@@ -239,7 +239,6 @@ async function getRatingMap(influencerIds) {
   }
 
   try {
-    // ✅ FIX: Only COMPLETED (METRICS_ENTERED is a DeliverableStatus, not CampaignStatus)
     const grouped = await prisma.campaign.groupBy({
       by: ['influencerId'],
       where: {
@@ -267,9 +266,6 @@ async function getRatingMap(influencerIds) {
   return map;
 }
 
-// ======================================================
-// UNIQUE USERNAME / SLUG
-// ======================================================
 async function ensureUniqueUsername(username) {
   const existing = await prisma.influencer.findUnique({ where: { username } });
   if (existing) {
@@ -287,14 +283,12 @@ async function generateUniqueSlug(displayName, username) {
   return slug;
 }
 
-// ======================================================
-// EXPORTS
-// ======================================================
 module.exports = {
   INT4_MAX,
   INT4_MIN,
   slugify,
   shapeInfluencer,
+  shapeSocialAccount,
   requireField,
   httpError,
   cleanHandle,

@@ -142,7 +142,7 @@ function AgencyDashboard() {
         </div>
       ) : (
         <>
-          {/* ==================== SERVICE CATEGORIES ==================== */}
+          {/*   ======== SERVICE CATEGORIES   ======== */}
           {!hasServices ? (
             <Panel className="mt-8 border-dashed">
               <div className="flex flex-col items-center px-4 py-10 text-center">
@@ -217,7 +217,7 @@ function AgencyDashboard() {
             </section>
           )}
 
-          {/* ==================== STATS (only if clients) ==================== */}
+          {/*   ======== STATS (only if clients)   ======== */}
           {hasClients && (
             <>
               <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -319,7 +319,7 @@ function AgencyDashboard() {
             </>
           )}
 
-          {/* ==================== QUICK ACTIONS ==================== */}
+          {/*   ======== QUICK ACTIONS   ======== */}
           <section className="mt-10">
             <SectionTitle title="Quick actions" />
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -360,9 +360,9 @@ function AgencyDashboard() {
   );
 }
 
-// ======================================================
+//      ==
 // SERVICE ROW
-// ======================================================
+//      ==
 function ServiceRow({ type, offered }: { type: AgencyServiceType; offered: boolean }) {
   const Icon =
     type === "BRAND_WEBSITE" ? Globe :
@@ -387,9 +387,9 @@ function ServiceRow({ type, offered }: { type: AgencyServiceType; offered: boole
   );
 }
 
-// ======================================================
+//      ==
 // STAT CARD
-// ======================================================
+//      ==
 function StatCard({
   icon: Icon, label, value, note, accent,
 }: {
@@ -421,9 +421,9 @@ function StatCard({
   );
 }
 
-// ======================================================
+//      ==
 // BRAND ROW
-// ======================================================
+//      ==
 function BrandRow({
   brand, clientName, activeBrandId, onAct,
 }: {
@@ -464,9 +464,9 @@ function BrandRow({
   );
 }
 
-// ======================================================
+//      ==
 // QUICK ACTION
-// ======================================================
+//      ==
 function QuickAction({
   to, icon: Icon, title, description,
 }: {

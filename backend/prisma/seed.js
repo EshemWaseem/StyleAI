@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding database...');
 
-  // ============================
+  //  
   // 1. Create all 6 roles
-  // ============================
+  //  
   const roles = [
     { name: 'SUPER_ADMIN', description: 'Platform super admin' },
     { name: 'BRAND_OWNER', description: 'Owns an organization/brand' },
@@ -27,9 +27,9 @@ async function main() {
     console.log(`  Role: ${role.name}`);
   }
 
-  // ============================
+  //  
   // 2. Create permissions
-  // ============================
+  //  
   const permissions = [
     // User management
     { name: 'user.create' },
@@ -88,9 +88,9 @@ async function main() {
   }
   console.log(`  ${permissions.length} permissions created`);
 
-  // ============================
+  //  
   // 3. Assign permissions to roles
-  // ============================
+  //  
   const superAdminRole = await prisma.role.findUnique({ where: { name: 'SUPER_ADMIN' } });
   const brandOwnerRole = await prisma.role.findUnique({ where: { name: 'BRAND_OWNER' } });
   const teamMemberRole = await prisma.role.findUnique({ where: { name: 'BRAND_TEAM_MEMBER' } });
@@ -99,7 +99,7 @@ async function main() {
 
   const allPermissions = await prisma.permission.findMany();
 
-  // ---------- SUPER_ADMIN: everything ----------
+  //  - SUPER_ADMIN: everything  -
   for (const perm of allPermissions) {
     await prisma.rolePermission.upsert({
       where: {
@@ -111,8 +111,8 @@ async function main() {
   }
   console.log(`  SUPER_ADMIN: all permissions`);
 
-  // ---------- BRAND_OWNER: brand, product, team, billing, organization ----------
-    // ---------- BRAND_OWNER: brand, product, team, billing, organization, influencer ----------
+  //  - BRAND_OWNER: brand, product, team, billing, organization  -
+    //  - BRAND_OWNER: brand, product, team, billing, organization, influencer  -
   const ownerPermissions = allPermissions.filter((p) =>
     ['brand', 'product', 'team', 'billing', 'organization', 'influencer'].some((prefix) =>
       p.name.startsWith(prefix)
@@ -131,7 +131,7 @@ async function main() {
   console.log(`  BRAND_OWNER: ${ownerPermissions.length} permissions`);
 
 
-    // ---------- INFLUENCER role ----------
+    //  - INFLUENCER role  -
   const influencerRole = await prisma.role.findUnique({ where: { name: 'INFLUENCER' } });
   if (influencerRole) {
     const influencerPermissions = allPermissions.filter((p) =>
@@ -161,7 +161,7 @@ async function main() {
   }
   console.log(`  BRAND_TEAM_MEMBER: ${memberPermissions.length} permissions`);
 
-  // ---------- SHOPPER: browse, cart, order, profile ----------
+  //  - SHOPPER: browse, cart, order, profile  -
   const shopperPermissions = allPermissions.filter((p) =>
     ['product.browse', 'product.read', 'cart.manage', 'order.create', 'order.read', 'profile.update'].includes(p.name)
   );
@@ -176,7 +176,7 @@ async function main() {
   }
   console.log(`  SHOPPER: ${shopperPermissions.length} permissions`);
 
-  // ---------- AGENCY: full agency management  ← NEW BLOCK ----------
+  //  - AGENCY: full agency management  ← NEW BLOCK  -
   const agencyPermissions = allPermissions.filter((p) =>
   [
     'agency.read', 'agency.create', 'agency.update', 'agency.delete',
@@ -199,9 +199,9 @@ async function main() {
   }
   console.log(`  AGENCY: ${agencyPermissions.length} agency permissions`);
 
-  // ============================
+  //  
   // 4. Create SUPER_ADMIN user
-  // ============================
+  //  
   const hashedPassword = await bcrypt.hash('Admin@123', 10);
 
   const superAdmin = await prisma.user.upsert({

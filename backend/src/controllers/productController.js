@@ -1,8 +1,8 @@
 const productService = require('../services/productService');
 
-// ======================================================
+//      ==
 // PUBLIC
-// ======================================================
+//      ==
 
 async function listPublic(req, res, next) {
   try {
@@ -27,9 +27,9 @@ async function listPublicBrands(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // AUTH
-// ======================================================
+//      ==
 
 async function list(req, res, next) {
   try {
@@ -96,10 +96,10 @@ async function remove(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // PATCH /api/products/:productId/inventory
 // Restricted endpoint — only inventory column updated
-// ======================================================
+//      ==
 async function updateInventory(req, res, next) {
   try {
     const product = await productService.updateProductInventory(

@@ -69,9 +69,9 @@ def _clean_str_list(value: Any) -> list[str]:
 
 
 class ProductAnalyzer:
-    # ------------------------------------------------------------------
+    #        ---
     # Shared validation / normalization (also used by GeminiVision)
-    # ------------------------------------------------------------------
+    #        ---
     def _validate(self, raw: Any) -> ProductAnalysis:
         if not isinstance(raw, dict):
             raise ValueError("Model output is not a JSON object")
@@ -113,9 +113,9 @@ class ProductAnalyzer:
         except ValidationError as e:
             raise ValueError(f"Analysis failed schema validation: {e}") from e
 
-    # ------------------------------------------------------------------
+    #        ---
     # Local vision path (Ollama). Only used if VISION_PROVIDER != "gemini".
-    # ------------------------------------------------------------------
+    #        ---
     async def analyze(self, image_bytes: bytes) -> Tuple[ProductAnalysis, dict]:
         start = time.time()
         model = settings.OLLAMA_VISION_MODEL

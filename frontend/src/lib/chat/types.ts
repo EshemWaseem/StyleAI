@@ -1,8 +1,8 @@
 // lib/chat/types.ts
-// ======================================================
+//      ==
 // Chat types — supports ANY two-party conversations
 // (Brand↔Influencer, Brand↔Agency, Agency↔Influencer)
-// ======================================================
+//      ==
 
 export type PartyType = "INFLUENCER" | "ORG";
 

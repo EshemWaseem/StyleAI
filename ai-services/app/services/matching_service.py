@@ -1,9 +1,9 @@
 # app/services/matching_service.py
-# ======================================================
+#      ==
 # Matching inference — pure function, no DB, no side-effects
 # Uses Ollama text model via existing ollama_service.
 # Falls back to heuristic if LLM fails.
-# ======================================================
+#      ==
 
 import re
 import time
@@ -32,9 +32,9 @@ _VALID_SCORE_KEYS = {
 }
 
 
-# ------------------------------------------------------
+#       
 # Heuristic fallback (no AI)
-# ------------------------------------------------------
+#       
 def _heuristic_score(product: dict, candidate: dict) -> dict:
     pc = (product.get("category") or "").lower()
     inf_cats = [c.lower() for c in (candidate.get("categories") or [])]
@@ -98,9 +98,9 @@ def _heuristic_score(product: dict, candidate: dict) -> dict:
     }
 
 
-# ------------------------------------------------------
+#       
 # JSON sanitizer — qwen2.5:7b emits messy keys
-# ------------------------------------------------------
+#       
 def _sanitize_key(k: str) -> str:
     k = str(k).strip()
     # duplicate suffix: influencer_id_id → influencer_id
@@ -182,9 +182,9 @@ def _extract_results(raw: Any) -> List[dict]:
     return cleaned
 
 
-# ------------------------------------------------------
+#       
 # MAIN
-# ------------------------------------------------------
+#       
 async def match_influencers(req: MatchRequest) -> Dict[str, Any]:
     start = time.time()
 

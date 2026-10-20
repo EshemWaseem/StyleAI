@@ -109,13 +109,13 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* ======================================================
+/*      ==
    App Root Viewport Lock — SCOPED
-   ------------------------------------------------------
+         
    ✅ DEFAULT: normal document flow. Page scrolls.
    ✅ When app shell is mounted (dashboard etc.):
       lock viewport so internal containers scroll.
-   ====================================================== */
+        == */
 
 html,
 body {
@@ -150,9 +150,9 @@ body:has([data-app-shell]) > div:first-child {
   }
 }
 
-/* ======================================================
+/*      ==
    Sidebar Sheet — scoped to sidebar only
-   ====================================================== */
+        == */
 
 .sidebar-sheet-content {
   width:     268px !important;
@@ -170,9 +170,9 @@ body:has([data-app-shell]) > div:first-child {
   }
 }
 
-/* ======================================================
+/*      ==
    Modal / Dialog responsive helpers
-   ====================================================== */
+        == */
 
 @media (max-width: 640px) {
   .ui-panel {
@@ -209,15 +209,15 @@ a {
 
 
 
-/* ======================================================
+/*      ==
    GLOBAL CLICK / FOCUS FIXES
-   ------------------------------------------------------
+         
    Fixes common issues:
    - Body/html focus outline appearing on click
    - Mobile tap highlight flash
    - Text selection on empty click
    - Radix pointer-events lock leak
-   ====================================================== */
+        == */
 
 /* 1. Remove focus outline from document containers */
 html,

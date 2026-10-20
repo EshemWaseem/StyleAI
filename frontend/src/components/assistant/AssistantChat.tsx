@@ -169,7 +169,7 @@ export function AssistantChat({
         onClick={(e) => e.stopPropagation()}
         className="ui-panel ui-panel-xl !my-0 flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden"
       >
-        {/* ============ Header ============ */}
+        {/*    Header    */}
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <Sparkles className="size-4 text-accent" />
@@ -210,7 +210,7 @@ export function AssistantChat({
           </div>
         </div>
 
-        {/* ============ Body ============ */}
+        {/*    Body    */}
         <div className="flex min-h-0 flex-1">
           {/* Sidebar — always visible on desktop, toggle on mobile */}
           <div className={cn("hidden md:block", showSidebar && "block md:block")}>

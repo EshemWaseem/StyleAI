@@ -1,11 +1,20 @@
 // services/email/index.js
-// ======================================================
+//      ==
 // Email service — barrel + high-level helpers.
-// sendToUser enforces user notification preferences.
-// ======================================================
+// sendToUser enforces user notification preferences,
+// BUT critical security templates bypass preferences.
+//      ==
 const { sendMail } = require('./send');
 const templates = require('./templates');
 const { EMAIL_ENABLED, getTransporter } = require('./transporter');
+
+// NEW: security-critical templates MUST always send (never blocked by prefs)
+const CRITICAL_TEMPLATES = new Set([
+  'verifyEmail',
+  'passwordReset',
+  'passwordChanged',
+  'accountLocked',
+]);
 
 /**
  * Send a templated email by name.
@@ -22,7 +31,10 @@ async function sendEmail(templateName, { to, data = {}, replyTo, meta }) {
   // Inject unsubscribe link (placeholder-based) — no per-template change needed
   let finalHtml = html;
   if (finalHtml.includes('<!--UNSUBSCRIBE_LINK-->')) {
-    if (data.unsubscribeUrl) {
+    // Critical emails shouldn't have an unsubscribe link
+    if (CRITICAL_TEMPLATES.has(templateName)) {
+      finalHtml = finalHtml.replace('<!--UNSUBSCRIBE_LINK-->', '');
+    } else if (data.unsubscribeUrl) {
       finalHtml = finalHtml.replace(
         '<!--UNSUBSCRIBE_LINK-->',
         `<a href="${data.unsubscribeUrl}" style="color:#6b7280;text-decoration:underline;">Unsubscribe</a>`
@@ -38,6 +50,8 @@ async function sendEmail(templateName, { to, data = {}, replyTo, meta }) {
 /**
  * Notify a user by id (fetches email, checks preferences).
  * Silent-fail — never blocks a request.
+ *
+ * NEW: security-critical templates bypass preference checks.
  */
 async function sendToUser(userId, templateName, data = {}, opts = {}) {
   try {
@@ -50,9 +64,11 @@ async function sendToUser(userId, templateName, data = {}, opts = {}) {
     });
     if (!user?.email) return { ok: false, error: 'NO_EMAIL' };
 
-    // ---- Preference check ----
+    const isCritical = CRITICAL_TEMPLATES.has(templateName);
+
+    // ---- Preference check (skipped for critical emails) ----
     const category = prefs.categoryForTemplate(templateName);
-    if (category) {
+    if (category && !isCritical) {
       const allowed = await prefs.isEmailEnabled(userId, category);
       if (!allowed) {
         console.log(
@@ -62,15 +78,24 @@ async function sendToUser(userId, templateName, data = {}, opts = {}) {
       }
     }
 
-    // ---- Unsubscribe URL ----
-    const token = await prefs.getUnsubscribeToken(userId);
-    const apiBase =
-      process.env.API_BASE_URL ||
-      process.env.WEBHOOK_BASE_URL ||
-      'http://localhost:4000';
-    const unsubscribeUrl = token
-      ? `${apiBase}/api/notifications/unsubscribe?token=${token}&category=${category || 'ALL'}`
-      : null;
+    if (isCritical && category) {
+      console.log(
+        `[email] CRITICAL "${templateName}" → bypassing preferences (category=${category})`
+      );
+    }
+
+    // ---- Unsubscribe URL (only for non-critical) ----
+    let unsubscribeUrl = null;
+    if (!isCritical) {
+      const token = await prefs.getUnsubscribeToken(userId);
+      const apiBase =
+        process.env.API_BASE_URL ||
+        process.env.WEBHOOK_BASE_URL ||
+        'http://localhost:4000';
+      unsubscribeUrl = token
+        ? `${apiBase}/api/notifications/unsubscribe?token=${token}&category=${category || 'ALL'}`
+        : null;
+    }
 
     return await sendEmail(templateName, {
       to: user.email,

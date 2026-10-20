@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # scripts/deploy.sh
-# ======================================================
+#      ==
 # One-command deploy for StyleAI (production)
-# ======================================================
+#      ==
 
 set -euo pipefail
 

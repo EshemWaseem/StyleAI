@@ -41,18 +41,18 @@ export function useChatUnread() {
     }
   }
 
-  // ------------------------------------------------------
+  //       
   // Reset when signed out
-  // ------------------------------------------------------
+  //       
   useEffect(() => {
     if (user) return;
     fetchedRef.current = false;
     setTotal(0);
   }, [user]);
 
-  // ------------------------------------------------------
+  //       
   // Initial fetch — only when signed in
-  // ------------------------------------------------------
+  //       
   useEffect(() => {
     if (!user) return;
     if (fetchedRef.current) return;
@@ -60,9 +60,9 @@ export function useChatUnread() {
     refetch();
   }, [user?.id]);
 
-  // ------------------------------------------------------
+  //       
   // WS subscription — only when signed in
-  // ------------------------------------------------------
+  //       
   useEffect(() => {
     if (!user) return;
 

@@ -1,7 +1,7 @@
 # app/schemas/product_photography.py
-# ======================================================
+#      ==
 # Schemas for AI product photography (scene generation + QA)
-# ======================================================
+#      ==
 
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field

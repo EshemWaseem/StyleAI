@@ -1,31 +1,46 @@
-// 23-9-26 
-// 2:09
-
 import { http } from "../api";
 import type {
   Influencer,
   InfluencerFilters,
   InfluencerInput,
+  EngagementHealth,
+  SuspiciousFlag,
+  RecentPost,
 } from "./types";
-
 
 export interface ScrapeResult {
   found: boolean;
   reason?: string;
+  schemaVersion?: number;
+  scrapedAt?: string;
+  cacheHit?: "memory" | "db" | "miss";
   platform?: string;
   handle?: string;
   profileUrl?: string;
   displayName?: string;
   bio?: string;
   avatarUrl?: string;
+  isVerified?: boolean;
   followerCount?: number;
   followingCount?: number;
-  engagementRate?: number;
+  totalPosts?: number;
+  postsAnalyzed?: number;
+  totalLikes?: number;
+  totalComments?: number;
+  totalViews?: number;
+  totalShares?: number;
   avgLikes?: number;
   avgComments?: number;
-  isVerified?: boolean;
+  avgViews?: number;
+  avgShares?: number;
+  engagementRate?: number;
+  lastPostAt?: string | null;
+  authenticityScore?: number;
+  engagementHealth?: EngagementHealth;
+  suspiciousFlags?: SuspiciousFlag[];
+  expectedEngagementRate?: number;
+  recentPosts?: RecentPost[];
 }
-
 
 export const influencersApi = {
   list: (filters: InfluencerFilters = {}) => {
@@ -68,14 +83,7 @@ export const influencersApi = {
       {}
     ),
 
-//   unsave: (id: string) =>
-//     http.delete<{ saved: boolean; influencerId: string }>(
-//       `/api/influencers/${id}/save`
-//     ),
-// };
-
-
- unsave: (id: string) =>
+  unsave: (id: string) =>
     http.delete<{ saved: boolean; influencerId: string }>(
       `/api/influencers/${id}/save`
     ),
@@ -90,8 +98,8 @@ export const influencersApi = {
   },
 
   scrapeSocial: (platform: string, handle: string) =>
-  http.post<ScrapeResult>('/api/influencers/scrape-social', { platform, handle }),
-
-  
+    http.post<ScrapeResult>("/api/influencers/scrape-social", {
+      platform,
+      handle,
+    }),
 };
-

@@ -1,7 +1,7 @@
 // services/billing/helpers.js
-// ======================================================
+//      ==
 // Billing helpers — role-aware subscription management
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { getTrialPlanForRole, getDefaultPlanForRole } = require('./plans');

@@ -2,9 +2,9 @@
 const prisma = require('../config/prisma');
 const { ensureDefaultRoles } = require('./brandTeamRoleService');
 
-// ======================================================
+//      ==
 // TENANT HELPERS
-// ======================================================
+//      ==
 
 function tenantWhere(user) {
   if (user.roles.includes('SUPER_ADMIN')) return {};
@@ -30,9 +30,9 @@ function assertHasOrg(user) {
   }
 }
 
-// ======================================================
+//      ==
 // SLUG
-// ======================================================
+//      ==
 
 function slugify(text) {
   return text
@@ -42,9 +42,9 @@ function slugify(text) {
     .replace(/^-+|-+$/g, '');
 }
 
-// ======================================================
+//      ==
 // LIST
-// ======================================================
+//      ==
 
 async function listBrands(user, { search } = {}) {
   const where = { ...tenantWhere(user) };
@@ -85,9 +85,9 @@ async function listBrands(user, { search } = {}) {
   }));
 }
 
-// ======================================================
+//      ==
 // GET ONE
-// ======================================================
+//      ==
 
 async function getBrand(user, brandId) {
   const brand = await prisma.brand.findUnique({
@@ -113,9 +113,9 @@ async function getBrand(user, brandId) {
   };
 }
 
-// ======================================================
+//      ==
 // CREATE — one brand per org + auto default team roles
-// ======================================================
+//      ==
 
 async function createBrand(user, data) {
 
@@ -203,9 +203,9 @@ async function createBrand(user, data) {
   return brand;
 }
 
-// ======================================================
+//      ==
 // UPDATE
-// ======================================================
+//      ==
 
 async function updateBrand(user, brandId, data) {
   const existing = await prisma.brand.findUnique({ where: { id: brandId } });
@@ -256,9 +256,9 @@ async function updateBrand(user, brandId, data) {
   });
 }
 
-// ======================================================
+//      ==
 // DELETE
-// ======================================================
+//      ==
 
 async function deleteBrand(user, brandId) {
   const existing = await prisma.brand.findUnique({ where: { id: brandId } });
@@ -273,9 +273,9 @@ async function deleteBrand(user, brandId) {
   return { id: brandId };
 }
 
-// ======================================================
+//      ==
 // PUBLIC — all brands (for register teammate flow)
-// ======================================================
+//      ==
 
 async function listPublicBrandsAll() {
   const brands = await prisma.brand.findMany({
@@ -291,9 +291,9 @@ async function listPublicBrandsAll() {
   return brands;
 }
 
-// ======================================================
+//      ==
 // PUBLIC — brands that have at least one product (shopper filter)
-// ======================================================
+//      ==
 
 async function listPublicBrandsWithProducts() {
   const brands = await prisma.brand.findMany({
@@ -344,9 +344,9 @@ async function getPublicBrandRoles(brandId) {
 }
 
 
-// ======================================================
+//      ==
 // EXPORTS
-// ======================================================
+//      ==
 
 // module.exports = {
 //   listBrands,

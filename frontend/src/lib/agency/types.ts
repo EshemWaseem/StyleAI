@@ -64,9 +64,9 @@ export interface UpdateAgencyProfileInput {
   isAcceptingNew?: boolean;
 }
 
-// ======================================================
+//      ==
 // ENGAGEMENTS (Sprint C — Hire flow)
-// ======================================================
+//      ==
 export interface AgencyEngagement {
   id: string;
   agencyOrganizationId: string;
@@ -107,9 +107,9 @@ export interface CreateEngagementInput {
   notes?: string;
 }
 
-// ======================================================
+//      ==
 // LABELS
-// ======================================================
+//      ==
 export const AGENCY_SERVICE_LABELS: Record<AgencyServiceType, string> = {
   BRAND_SYSTEM_MANAGEMENT: "System management",
   BRAND_WEBSITE: "Website handling",

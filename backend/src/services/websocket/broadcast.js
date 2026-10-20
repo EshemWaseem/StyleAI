@@ -1,8 +1,8 @@
 // services/websocket/broadcast.js
-// ======================================================
+//      ==
 // Emit helpers — used by REST services to push real-time events.
 // Lazy-loads the Socket.IO server to avoid circular deps.
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 
@@ -41,9 +41,9 @@ function emitToCampaignRoom(campaignId, event, data) {
   io.to(`campaign:${campaignId}`).emit(event, data);
 }
 
-// ======================================================
+//      ==
 // Resolvers
-// ======================================================
+//      ==
 
 async function resolveConversationUserIds(conv) {
   const userIds = new Set();
@@ -140,9 +140,9 @@ async function resolveEngagementUserIds(engagement) {
   return Array.from(userIds);
 }
 
-// ======================================================
+//      ==
 // Chat broadcasts
-// ======================================================
+//      ==
 
 async function broadcastDirectMessage(conv, message, senderUserId) {
   const allUserIds = await resolveConversationUserIds(conv);
@@ -175,9 +175,9 @@ async function broadcastCampaignMessage(campaign, message, senderUserId) {
   emitToUsers(recipients, 'chat:new', payload);
 }
 
-// ======================================================
+//      ==
 // Offer broadcasts
-// ======================================================
+//      ==
 
 async function emitOfferCreated(offer) {
   if (!offer?.influencer?.userId) return;
@@ -206,9 +206,9 @@ async function emitOfferUpdated(offer, eventType = 'updated') {
   emitToUsers(userIds, 'offer:updated', payload);
 }
 
-// ======================================================
+//      ==
 // Engagement broadcasts
-// ======================================================
+//      ==
 
 async function emitEngagementCreated(engagement) {
   if (!engagement?.agencyOrganizationId) return;

@@ -1,7 +1,7 @@
 # app/schemas/image_angles.py
-# ======================================================
+#      ==
 # Schemas for AI product image angle generation
-# ======================================================
+#      ==
 
 from typing import List
 from pydantic import BaseModel, Field

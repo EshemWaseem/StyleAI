@@ -1,10 +1,10 @@
 // services/offers/influencerReview.js
-// ======================================================
+//      ==
 // PENDING → IN_PROGRESS | DECLINED
 // Only the target influencer can act.
 // Accept → release escrow (payout) + auto-create campaign.
 // Decline → refund brand's escrow.
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError, shapeOffer } = require('./helpers');

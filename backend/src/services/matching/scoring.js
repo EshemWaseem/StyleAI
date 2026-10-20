@@ -1,20 +1,20 @@
 // services/matching/scoring.js
-// ======================================================
+//      ==
 // Explainable scoring functions for product → influencer matching
 // Every score returns { value: 0-100, reasons: [] }
-// ======================================================
+//      ==
 
-// ------------------------------------------------------
+//       
 // Normalize category strings for comparison
-// ------------------------------------------------------
+//       
 function norm(s) {
   return String(s || "").trim().toLowerCase();
 }
 
-// ------------------------------------------------------
+//       
 // 1. CATEGORY MATCH (weight: 40)
 // Product category vs influencer categories
-// ------------------------------------------------------
+//       
 function scoreCategoryMatch(product, influencer) {
   const pc = norm(product.category);
   if (!pc) return { value: 40, reasons: ["No product category set — default weight"] };
@@ -63,10 +63,10 @@ function scoreCategoryMatch(product, influencer) {
   return { value: 10, reasons: [`No overlap with ${product.category}`] };
 }
 
-// ------------------------------------------------------
+//       
 // 2. NICHE SCORE MATCH (weight: 25)
 // Match product's luxury/style signals with influencer's AI scores
-// ------------------------------------------------------
+//       
 function scoreNicheMatch(product, influencer) {
   const reasons = [];
   const price = Number(product.price || 0);
@@ -119,9 +119,9 @@ function scoreNicheMatch(product, influencer) {
   return { value: Math.max(0, Math.min(100, score)), reasons };
 }
 
-// ------------------------------------------------------
+//       
 // 3. ENGAGEMENT (weight: 15)
-// ------------------------------------------------------
+//       
 function scoreEngagement(influencer) {
   const er = Number(influencer.engagementRate || 0);
   if (er <= 0) return { value: 30, reasons: ["No engagement data"] };
@@ -142,10 +142,10 @@ function scoreEngagement(influencer) {
   };
 }
 
-// ------------------------------------------------------
+//       
 // 4. AUDIENCE MATCH (weight: 10)
 // Product gender + age vs influencer audience composition
-// ------------------------------------------------------
+//       
 function scoreAudienceMatch(product, influencer) {
   const reasons = [];
   const metrics = influencer.audienceMetrics;
@@ -175,10 +175,10 @@ function scoreAudienceMatch(product, influencer) {
   return { value: Math.max(0, Math.min(100, score)), reasons: reasons.length ? reasons : ["Audience is neutral"] };
 }
 
-// ------------------------------------------------------
+//       
 // 5. PRICE ALIGNMENT (weight: 10)
 // Influencer's starting rate vs product price bracket
-// ------------------------------------------------------
+//       
 function scorePriceAlignment(product, influencer) {
   const productPrice = Number(product.price || 0);
   const infPrice = Number(influencer.pricePerPost || 0);
@@ -202,9 +202,9 @@ function scorePriceAlignment(product, influencer) {
   return { value: 25, reasons: ["Rate far exceeds product price"] };
 }
 
-// ------------------------------------------------------
+//       
 // Master scorer — runs all, computes weighted total
-// ------------------------------------------------------
+//       
 const DEFAULT_WEIGHTS = {
   category: 40,
   niche: 25,

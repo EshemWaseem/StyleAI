@@ -1,7 +1,7 @@
 // services/notifications/helpers.js
-// ======================================================
+//      ==
 // Shared utilities for notifications domain
-// ======================================================
+//      ==
 
 function shapeNotification(n) {
   return {

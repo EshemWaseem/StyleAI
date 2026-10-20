@@ -1,8 +1,8 @@
 // services/matching/cache.js
-// ======================================================
+//      ==
 // In-memory matching cache (1-hour TTL)
 // Key: productId :: sorted(candidateIds)
-// ======================================================
+//      ==
 
 const store = new Map();
 const TTL_MS = 60 * 60 * 1000; // 1 hour

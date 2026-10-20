@@ -1,9 +1,9 @@
 // components/product/AngleGenerator.tsx
-// ======================================================
+//      ==
 // AI-powered product angle generator
 // Uses Gemini 2.5 Flash Image via Node → FastAPI
 // Returns Cloudinary URLs (Node uploads them)
-// ======================================================
+//      ==
 
 import { useState } from "react";
 import { Loader2, Sparkles, X, Check, ImageIcon, AlertCircle } from "lucide-react";

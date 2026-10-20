@@ -1,11 +1,11 @@
 # app/services/gemini_photography.py
-# ======================================================
+#      ==
 # Product photography orchestrator (Gemini Image provider)
 # 1. Generate scene using Gemini Image with product as reference
 # 2. Run QA (compare generated vs original)
 # 3. If QA fails → regenerate once with stricter prompt
 # Sprint 26: brand_context flows into build_scene_prompt()
-# ======================================================
+#      ==
 
 import asyncio
 import logging

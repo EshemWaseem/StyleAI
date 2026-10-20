@@ -100,7 +100,7 @@ export function ProductFormModal({
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ---------- AI tab state ----------
+  //  - AI tab state  -
   const [aiFile, setAiFile] = useState<File | null>(null);
   const [aiPreview, setAiPreview] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -163,9 +163,9 @@ export function ProductFormModal({
     });
   }
 
-  // ======================================================
+  //      ==
   // AI HANDLERS
-  // ======================================================
+  //      ==
   function handleAIFilePick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -303,9 +303,9 @@ export function ProductFormModal({
     e.preventDefault();
     setError("");
 
-    // ======================================================
+    //      ==
     // RESTRICTED MODE — inventory only
-    // ======================================================
+    //      ==
     if (isRestricted && product) {
       const inv = form.inventory;
       if (inv !== null && inv !== undefined) {
@@ -329,9 +329,9 @@ export function ProductFormModal({
       return;
     }
 
-    // ======================================================
+    //      ==
     // FULL MODE
-    // ======================================================
+    //      ==
     if (!form.name.trim()) return setError("Product name is required.");
     if (!form.category) return setError("Product type is required.");
     if (!form.sku.trim()) return setError("SKU is required.");

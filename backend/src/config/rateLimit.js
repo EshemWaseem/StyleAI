@@ -1,20 +1,20 @@
 // src/config/rateLimit.js
-// ======================================================
+//      ==
 // Centralized rate limiting
 // - Redis-backed (multi-instance safe)
 // - Each limiter gets its OWN store instance (v8 requirement)
 // - Per-user, per-email, per-IP strategies
 // - skipSuccessfulRequests for login
 // - Structured logging on block
-// ======================================================
+//      ==
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const crypto = require('crypto');
 const redis = require('./redis');
 
-// ------------------------------------------------------
+//       
 // Custom Redis store (express-rate-limit v8 compatible)
-// ------------------------------------------------------
+//       
 class RedisRateStore {
   constructor({ client, prefix = 'rl:' }) {
     this.client = client;
@@ -85,9 +85,9 @@ function makeStore(name) {
   });
 }
 
-// ------------------------------------------------------
+//       
 // Base options factory (each limiter calls this)
-// ------------------------------------------------------
+//       
 function makeBaseOpts(storeName) {
   return {
     standardHeaders: true,
@@ -104,9 +104,9 @@ function makeBaseOpts(storeName) {
   };
 }
 
-// ------------------------------------------------------
+//       
 // Key helpers
-// ------------------------------------------------------
+//       
 function tokenHash(authHeader) {
   return crypto
     .createHash('sha256')
@@ -128,9 +128,9 @@ function emailKey(prefix, req) {
   return `${prefix}:anon:${ipKeyGenerator(req.ip)}`;
 }
 
-// ------------------------------------------------------
+//       
 // Skip paths
-// ------------------------------------------------------
+//       
 function shouldSkipRateLimit(req) {
   const p = req.path || '';
   if (p.startsWith('/api/health')) return true;
@@ -142,9 +142,9 @@ function shouldSkipRateLimit(req) {
 
 const isProd = process.env.NODE_ENV === 'production';
 
-// ------------------------------------------------------
+//       
 // Limiters
-// ------------------------------------------------------
+//       
 
 // Global — per user (auth) / per IP (anon)
 const globalLimiter = rateLimit({
@@ -224,6 +224,18 @@ const passwordResetLimiter = rateLimit({
   },
 });
 
+// NEW (A): Verify email resend — per email (3/hour, distinct bucket)
+const verifyEmailLimiter = rateLimit({
+  ...makeBaseOpts('verify-email'),
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  keyGenerator: (req) => emailKey('verify-email', req),
+  message: {
+    message: 'Too many verification email requests. Try again later.',
+    code: 'VERIFY_EMAIL_RATE_LIMIT',
+  },
+});
+
 // Heavy operations — uploads, AI, exports
 const heavyLimiter = rateLimit({
   ...makeBaseOpts('heavy'),
@@ -247,5 +259,6 @@ module.exports = {
   loginEmailLimiter,
   registerLimiter,
   passwordResetLimiter,
+  verifyEmailLimiter, // NEW
   heavyLimiter,
 };

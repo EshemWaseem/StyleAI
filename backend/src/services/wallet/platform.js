@@ -1,9 +1,9 @@
 // backend/src/services/wallet/platform.js
-// ======================================================
+//      ==
 // Platform wallet — Super Admin's wallet. All platform-side
 // income lands here (subscriptions, offer commissions).
 // Currency: PKR
-// ======================================================
+//      ==
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
 const { postTransaction } = require('./helpers');

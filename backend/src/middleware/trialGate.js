@@ -1,12 +1,12 @@
 // backend/src/middleware/trialGate.js
-// ======================================================
+//      ==
 // GLOBAL TRIAL ENFORCEMENT (Layer 1 — Authoritative)
-// ------------------------------------------------------
+//       
 // Runs before every /api/* route (except allowed paths).
 // Blocks trial-expired / inactive subscriptions with 402.
 //
 // This is THE source of truth. Frontend is reactive only.
-// ======================================================
+//      ==
 
 const { verifyToken } = require('../utils/jwt');
 const prisma = require('../config/prisma');
@@ -48,17 +48,17 @@ function setCached(userId, entry) {
   CACHE.set(userId, { ...entry, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
-// ------------------------------------------------------
+//       
 // Public helper — call after user upgrades / changes plan
-// ------------------------------------------------------
+//       
 function clearTrialCache(userId) {
   if (userId) CACHE.delete(userId);
   else CACHE.clear();
 }
 
-// ------------------------------------------------------
+//       
 // Middleware
-// ------------------------------------------------------
+//       
 async function trialGate(req, res, next) {
   try {
     const url = req.originalUrl || req.url || '';

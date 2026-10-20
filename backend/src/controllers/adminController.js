@@ -2,13 +2,13 @@
 const admin = require('../services/admin');
 const ai = require('../services/ai');
 
-// ---------- Dashboard ----------
+//  - Dashboard  -
 async function dashboard(req, res, next) {
   try { res.json({ success: true, data: await admin.getPlatformStats(req.user) }); }
   catch (err) { next(err); }
 }
 
-// ---------- Users ----------
+//  - Users  -
 async function listUsers(req, res, next) {
   try { res.json(await admin.listUsers(req.user, req.query)); }
   catch (err) { next(err); }
@@ -36,7 +36,7 @@ async function changeUserRole(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// ---------- Brands ----------
+//  - Brands  -
 async function listBrands(req, res, next) {
   try { res.json(await admin.listBrands(req.user, req.query)); }
   catch (err) { next(err); }
@@ -46,7 +46,7 @@ async function deleteBrand(req, res, next) {
   catch (err) { next(err); }
 }
 
-// ---------- Influencers ----------
+//  - Influencers  -
 async function listInfluencers(req, res, next) {
   try { res.json(await admin.listInfluencers(req.user, req.query)); }
   catch (err) { next(err); }
@@ -62,13 +62,13 @@ async function deleteInfluencer(req, res, next) {
   catch (err) { next(err); }
 }
 
-// ---------- Agencies ----------
+//  - Agencies  -
 async function listAgencies(req, res, next) {
   try { res.json(await admin.listAgencies(req.user, req.query)); }
   catch (err) { next(err); }
 }
 
-// ---------- Products ----------
+//  - Products  -
 async function listProducts(req, res, next) {
   try { res.json(await admin.listProducts(req.user, req.query)); }
   catch (err) { next(err); }
@@ -78,21 +78,21 @@ async function deleteProduct(req, res, next) {
   catch (err) { next(err); }
 }
 
-// ---------- Campaigns ----------
+//  - Campaigns  -
 async function listCampaigns(req, res, next) {
   try { res.json(await admin.listCampaigns(req.user, req.query)); }
   catch (err) { next(err); }
 }
 
-// ---------- Payments ----------
+//  - Payments  -
 async function listPayments(req, res, next) {
   try { res.json(await admin.listPayments(req.user, req.query)); }
   catch (err) { next(err); }
 }
 
-// ======================================================
+//      ==
 // FINANCE
-// ======================================================
+//      ==
 async function getFinanceRules(req, res, next) {
   try {
     const rules = await admin.getFinanceRules();
@@ -107,9 +107,9 @@ async function updateFinanceRules(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// ======================================================
+//      ==
 // SETTINGS
-// ======================================================
+//      ==
 async function getAllSettings(req, res, next) {
   try {
     const settings = await admin.getAllSettingsGrouped();
@@ -124,9 +124,9 @@ async function updateSettings(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// ======================================================
+//      ==
 // AUDIT
-// ======================================================
+//      ==
 async function listAuditLogs(req, res, next) {
   try {
     const result = await admin.listAuditLogs(req.query);
@@ -134,9 +134,9 @@ async function listAuditLogs(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// ======================================================
+//      ==
 // AI — Model Management Dashboard (SRS §48-49)
-// ======================================================
+//      ==
 async function getAIStats(req, res, next) {
   try {
     const sinceHours = Number(req.query.sinceHours) || 24;

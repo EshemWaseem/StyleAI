@@ -1,8 +1,8 @@
 # app/services/image_qa.py
-# ======================================================
+#      ==
 # Image QA — Gemini vision compares original vs generated
 # Returns QualityReport; falls back to a soft pass on failure.
-# ======================================================
+#      ==
 
 import json
 import logging

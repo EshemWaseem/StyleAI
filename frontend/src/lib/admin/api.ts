@@ -11,11 +11,11 @@ import type {
 } from "./types";
 
 export const adminApi = {
-  // ---------- Dashboard ----------
+  //  - Dashboard  -
   getStats: () =>
     http.get<{ success: boolean; data: PlatformStats }>("/api/admin/dashboard"),
 
-  // ---------- Users ----------
+  //  - Users  -
   listUsers: (filters: AdminUserFilters = {}) => {
     const qs = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
@@ -34,7 +34,7 @@ export const adminApi = {
   deleteUser: (id: string) =>
     http.delete<{ message: string }>(`/api/admin/users/${id}`),
 
-  // ---------- Brands ----------
+  //  - Brands  -
   listBrands: (filters: { search?: string; limit?: number; offset?: number } = {}) => {
     const qs = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
@@ -48,7 +48,7 @@ export const adminApi = {
   deleteBrand: (id: string) =>
     http.delete<{ message: string }>(`/api/admin/brands/${id}`),
 
-  // ---------- Influencers ----------
+  //  - Influencers  -
   listInfluencers: (filters: { search?: string; status?: string; limit?: number; offset?: number } = {}) => {
     const qs = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
@@ -64,7 +64,7 @@ export const adminApi = {
   deleteInfluencer: (id: string) =>
     http.delete<{ message: string }>(`/api/admin/influencers/${id}`),
 
-  // ---------- Agencies ----------
+  //  - Agencies  -
   listAgencies: (filters: { limit?: number; offset?: number } = {}) => {
     const qs = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
@@ -76,7 +76,7 @@ export const adminApi = {
     );
   },
 
-  // ---------- Products ----------
+  //  - Products  -
   listProducts: (filters: { search?: string; limit?: number; offset?: number } = {}) => {
     const qs = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
@@ -90,7 +90,7 @@ export const adminApi = {
   deleteProduct: (id: string) =>
     http.delete<{ message: string }>(`/api/admin/products/${id}`),
 
-  // ---------- Campaigns ----------
+  //  - Campaigns  -
   listCampaigns: (filters: { limit?: number; offset?: number } = {}) => {
     const qs = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
@@ -102,7 +102,7 @@ export const adminApi = {
     );
   },
 
-  // ---------- Payments ----------
+  //  - Payments  -
   listPayments: (filters: { limit?: number; offset?: number } = {}) => {
     const qs = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
@@ -114,7 +114,7 @@ export const adminApi = {
     );
   },
 
-  // ---------- AI (Model Management — SRS §48-49) ----------
+  //  - AI (Model Management — SRS §48-49)  -
   getAIStats: (sinceHours = 24) =>
     http.get<{ stats: AIUsageStats }>(`/api/admin/ai/stats?sinceHours=${sinceHours}`),
 

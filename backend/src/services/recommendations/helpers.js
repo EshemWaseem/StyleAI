@@ -1,7 +1,7 @@
 // services/recommendations/helpers.js
-// ======================================================
+//      ==
 // Shared helpers for recommendations
-// ======================================================
+//      ==
 
 function safeSignal(fn, ...args) {
   try {

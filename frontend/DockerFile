@@ -1,8 +1,8 @@
 # frontend/Dockerfile
-# ======================================================
+#      ==
 # TanStack Start frontend — production
 # Builds a Nitro server, runs on Node
-# ======================================================
+#      ==
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -13,9 +13,9 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# ======================================================
+#      ==
 # Runtime stage
-# ======================================================
+#      ==
 FROM node:20-alpine
 
 WORKDIR /app

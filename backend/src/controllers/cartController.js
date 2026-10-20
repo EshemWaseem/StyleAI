@@ -1,8 +1,8 @@
 const prisma = require('../config/prisma');
 
-// ======================================================
+//      ==
 // Helper — get or create the cart for current user
-// ======================================================
+//      ==
 async function getOrCreateCart(userId) {
   let cart = await prisma.cart.findUnique({
     where: { userId },
@@ -35,9 +35,9 @@ async function getOrCreateCart(userId) {
   return cart;
 }
 
-// ======================================================
+//      ==
 // GET /api/cart  → my cart
-// ======================================================
+//      ==
 async function getCart(req, res, next) {
   try {
     const cart = await getOrCreateCart(req.user.id);
@@ -71,10 +71,10 @@ async function getCart(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // POST /api/cart/items  → add item
 // Body: { productId, quantity? }
-// ======================================================
+//      ==
 async function addItem(req, res, next) {
   try {
     const { productId, quantity = 1 } = req.body;
@@ -133,10 +133,10 @@ async function addItem(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // PATCH /api/cart/items/:productId  → update quantity
 // Body: { quantity }
-// ======================================================
+//      ==
 async function updateItem(req, res, next) {
   try {
     const { productId } = req.params;
@@ -165,9 +165,9 @@ async function updateItem(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // DELETE /api/cart/items/:productId  → remove one item
-// ======================================================
+//      ==
 async function removeItem(req, res, next) {
   try {
     const { productId } = req.params;
@@ -188,9 +188,9 @@ async function removeItem(req, res, next) {
   }
 }
 
-// ======================================================
+//      ==
 // DELETE /api/cart  → clear entire cart
-// ======================================================
+//      ==
 async function clearCart(req, res, next) {
   try {
     const cart = await prisma.cart.findUnique({ where: { userId: req.user.id } });

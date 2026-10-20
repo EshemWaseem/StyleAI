@@ -1,8 +1,8 @@
 # app/services/gemini_image.py
-# ======================================================
+#      ==
 # Gemini 2.5 Flash Image — product-preserving angle generation
 # Falls back across models on 503 / rate-limit.
-# ======================================================
+#      ==
 
 import asyncio
 import logging

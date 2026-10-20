@@ -1,9 +1,9 @@
 // subscription.prisma 01-10
-// ======================================================
+//      ==
 // SUBSCRIPTION + PAYMENT — Role-aware SaaS
 // Brands & Agencies: tied to organizationId
 // Influencers: tied to userId
-// ======================================================
+//      ==
 
 model Subscription {
   id             String       @id @default(uuid())

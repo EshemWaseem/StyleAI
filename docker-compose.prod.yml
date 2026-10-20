@@ -1,12 +1,8 @@
-# docker-compose.prod.yml
-# ======================================================
-# StyleAI — full production stack
-# ======================================================
 
 services:
-  # ====================================================
+  #      
   # DATABASE
-  # ====================================================
+  #      
   postgres:
     image: pgvector/pgvector:pg16
     container_name: styleai-postgres
@@ -26,9 +22,9 @@ services:
       retries: 5
       start_period: 15s
 
-  # ====================================================
+  #      
   # REDIS (queues)
-  # ====================================================
+  #      
   redis:
     image: redis:7-alpine
     container_name: styleai-redis
@@ -44,9 +40,9 @@ services:
       timeout: 3s
       retries: 3
 
-  # ====================================================
+  #      
   # BACKEND (Node.js)
-  # ====================================================
+  #      
   backend:
     build:
       context: ./backend
@@ -68,9 +64,9 @@ services:
     volumes:
       - styleai_backend_uploads:/app/uploads
 
-  # ====================================================
+  #      
   # FRONTEND (TanStack Start)
-  # ====================================================
+  #      
   frontend:
     build:
       context: ./frontend
@@ -83,9 +79,9 @@ services:
     networks:
       - styleai-net
 
-  # ====================================================
+  #      
   # AI SERVICE (FastAPI)
-  # ====================================================
+  #      
   ai-services:
     build:
       context: ./ai-services
@@ -104,10 +100,10 @@ services:
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
 
-  # ====================================================
+  #      
   # OLLAMA (OPTIONAL — for local LLM)
   # Remove if using cloud providers (Groq, Gemini)
-  # ====================================================
+  #      
   # ollama:
   #   image: ollama/ollama:latest
   #   container_name: styleai-ollama
@@ -125,9 +121,9 @@ services:
   #   #           count: 1
   #   #           capabilities: [gpu]
 
-  # ====================================================
+  #      
   # NGINX — reverse proxy + SSL
-  # ====================================================
+  #      
   nginx:
     image: nginx:alpine
     container_name: styleai-nginx
@@ -147,10 +143,10 @@ services:
     networks:
       - styleai-net
 
-  # ====================================================
+  #      
   # CERTBOT — Let's Encrypt SSL
   # Run manually to issue/renew certs (see DEPLOYMENT.md)
-  # ====================================================
+  #      
   certbot:
     image: certbot/certbot:latest
     container_name: styleai-certbot

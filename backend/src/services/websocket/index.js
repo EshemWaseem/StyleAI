@@ -1,7 +1,7 @@
 // services/websocket/index.js
-// ======================================================
+//      ==
 // Socket.IO server — attached to Express HTTP server
-// ======================================================
+//      ==
 
 const { Server } = require('socket.io');
 const { authenticateSocket } = require('./auth');

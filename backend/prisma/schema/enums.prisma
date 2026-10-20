@@ -1,7 +1,7 @@
 // enums.prisma 06-10
-// ======================================================
+//      ==
 // ENUMS — all in one place
-// ======================================================
+//      ==
 
 enum RoleName {
   SUPER_ADMIN
@@ -92,9 +92,9 @@ enum AgencyTaskStatus {
   CANCELLED
 }
 
-// ======================================================
+//      ==
 // AGENCY SERVICE CATEGORIES
-// ======================================================
+//      ==
 enum AgencyServiceType {
   BRAND_SYSTEM_MANAGEMENT
   BRAND_WEBSITE
@@ -138,9 +138,9 @@ enum InfluencerAvailability {
   UNAVAILABLE
 }
 
-// ======================================================
+//      ==
 // OFFER STATUS — Option A (simplified flow)
-// ======================================================
+//      ==
 enum OfferStatus {
   DRAFT
   PENDING          // brand sent offer, awaiting influencer

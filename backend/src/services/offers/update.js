@@ -1,7 +1,7 @@
 // services/offers/update.js
-// ======================================================
+//      ==
 // PATCH /api/offers/:id — edit DRAFT offer only
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const {

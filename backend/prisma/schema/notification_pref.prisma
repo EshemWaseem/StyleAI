@@ -1,8 +1,8 @@
 // notification_pref.prisma
-// ======================================================
+//      ==
 // Per-user notification preferences.
 // Only EMAIL is controllable — in-app is always on (audit trail).
-// ======================================================
+//      ==
 
 model NotificationPreference {
   id     String @id @default(uuid())

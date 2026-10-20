@@ -1,8 +1,8 @@
 # app/prompts/photography_prompts.py
-# ======================================================
+#      ==
 # Scene prompts + QA prompt for product photography
 # Sprint 26: brand_context optional block (visual style only)
-# ======================================================
+#      ==
 
 BASE_PRESERVATION = """CRITICAL — PRESERVE THE PRODUCT EXACTLY:
 - Keep the same color, material, texture, pattern, logo, brand markings, shape, proportions.
@@ -92,9 +92,9 @@ def build_scene_prompt(req) -> str:
     return f"{base}{extra_block}\n{brand_block}\n{BASE_PRESERVATION}"
 
 
-# ------------------------------------------------------
+#       
 # QA prompt (unchanged)
-# ------------------------------------------------------
+#       
 QA_PROMPT = """You are a strict product-image quality inspector.
 
 Compare the ORIGINAL product image (first) with the GENERATED scene (second).

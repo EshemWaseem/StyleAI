@@ -1,16 +1,16 @@
 // services/listings/index.js
-// ======================================================
+//      ==
 // Influencer public listings — create, browse, claim
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { getAllSettings, parsePagination, writeAudit } = require('../admin/helpers');
 const { httpError, validateIntField, validatePriceField } = require('../influencer/helpers');
 const { getPlatform, isValidContentType } = require('../../config/platformCatalog');
 const { notifyUser } = require('../notifications');
-// ------------------------------------------------------
+//       
 // Validate a single listing line item
-// ------------------------------------------------------
+//       
 function validateItem(item, i) {
   if (!item || typeof item !== 'object') {
     throw httpError(`items[${i}] invalid`, 400, 'INVALID_ITEM');
@@ -39,9 +39,9 @@ function validateItem(item, i) {
   };
 }
 
-// ------------------------------------------------------
+//       
 // API shaping
-// ------------------------------------------------------
+//       
 function shapeListing(l, { influencer } = {}) {
   return {
     id: l.id,
@@ -76,9 +76,9 @@ function shapeListing(l, { influencer } = {}) {
   };
 }
 
-// ------------------------------------------------------
+//       
 // Auto-expire stale listings (call before listing)
-// ------------------------------------------------------
+//       
 async function expireStaleListings() {
   try {
     await prisma.influencerListing.updateMany({
@@ -91,9 +91,9 @@ async function expireStaleListings() {
   }
 }
 
-// ------------------------------------------------------
+//       
 // CREATE — influencer only
-// ------------------------------------------------------
+//       
 async function createListing(user, payload = {}) {
   const influencer = await prisma.influencer.findUnique({ where: { userId: user.id } });
   if (!influencer) {
@@ -143,9 +143,9 @@ async function createListing(user, payload = {}) {
   return shapeListing(listing, { influencer });
 }
 
-// ------------------------------------------------------
+//       
 // LIST — role-aware
-// ------------------------------------------------------
+//       
 async function listListings(user, query = {}) {
   await expireStaleListings();
 
@@ -200,9 +200,9 @@ async function listListings(user, query = {}) {
   };
 }
 
-// ------------------------------------------------------
+//       
 // GET one
-// ------------------------------------------------------
+//       
 async function getListing(user, id) {
   const l = await prisma.influencerListing.findUnique({
     where: { id },
@@ -218,9 +218,9 @@ async function getListing(user, id) {
   return shapeListing(l, { influencer: l.influencer });
 }
 
-// ------------------------------------------------------
+//       
 // CANCEL — owner or admin
-// ------------------------------------------------------
+//       
 async function cancelListing(user, id) {
   const l = await prisma.influencerListing.findUnique({
     where: { id },
@@ -252,9 +252,9 @@ async function cancelListing(user, id) {
   return shapeListing(updated, { influencer: updated.influencer });
 }
 
-// ------------------------------------------------------
+//       
 // CLAIM — brand claims listing → creates DRAFT CustomOffer
-// ------------------------------------------------------
+//       
 async function claimListing(user, listingId, payload = {}) {
   const { brandId } = payload;
   if (!brandId) throw httpError('brandId required', 400, 'MISSING_BRAND');

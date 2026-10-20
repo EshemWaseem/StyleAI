@@ -1,8 +1,8 @@
 // services/offers/create.js
-// ======================================================
+//      ==
 // POST /api/offers — brand creates offer → ESCROW → DIRECT TO INFLUENCER
 // Status: DRAFT → PENDING (sent to influencer)
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const {
@@ -37,9 +37,9 @@ async function createOffer(user, payload = {}) {
   if (!brand) throw httpError('Brand not found', 404, 'BRAND_NOT_FOUND');
   if (!influencer) throw httpError('Influencer not found', 404, 'INFLUENCER_NOT_FOUND');
 
-  // ------------------------------------------------------
+  //       
   // Permission check
-  // ------------------------------------------------------
+  //       
   const isAdmin = user.roles?.includes('SUPER_ADMIN');
   const isAgency = user.roles?.includes('AGENCY');
 
@@ -64,9 +64,9 @@ async function createOffer(user, payload = {}) {
     throw httpError('Forbidden: cannot create offer for this brand', 403, 'FORBIDDEN');
   }
 
-  // ------------------------------------------------------
+  //       
   // Product validation (optional)
-  // ------------------------------------------------------
+  //       
   let resolvedProductId = null;
   if (productId) {
     const product = await prisma.product.findUnique({
@@ -80,9 +80,9 @@ async function createOffer(user, payload = {}) {
     resolvedProductId = product.id;
   }
 
-  // ------------------------------------------------------
+  //       
   // Bundle check
-  // ------------------------------------------------------
+  //       
   if (influencer.acceptsBundles === false && Array.isArray(items) && items.length > 1) {
     throw httpError(
       'This influencer does not accept bundled offers',
@@ -91,9 +91,9 @@ async function createOffer(user, payload = {}) {
     );
   }
 
-  // ------------------------------------------------------
+  //       
   // Compute totals
-  // ------------------------------------------------------
+  //       
   const totals = await computeOfferTotals({
     items,
     currency: influencer.currency,
@@ -102,9 +102,9 @@ async function createOffer(user, payload = {}) {
 
   const createdByAgencyId = isAgency && !isAdmin ? user.organizationId : null;
 
-  // ------------------------------------------------------
+  //       
   // Step 1 — Create offer as DRAFT (for escrow reference)
-  // ------------------------------------------------------
+  //       
   let created = await prisma.customOffer.create({
     data: {
       brandId,
@@ -128,9 +128,9 @@ async function createOffer(user, payload = {}) {
     include: { product: true },
   });
 
-  // ------------------------------------------------------
+  //       
   // Step 2 — Hold escrow from brand wallet
-  // ------------------------------------------------------
+  //       
   try {
     await holdEscrowForOffer(user.id, created.id);
   } catch (escrowErr) {
@@ -145,18 +145,18 @@ async function createOffer(user, payload = {}) {
     );
   }
 
-  // ------------------------------------------------------
+  //       
   // Step 3 — Flip to PENDING (sent to influencer)
-  // ------------------------------------------------------
+  //       
   created = await prisma.customOffer.update({
     where: { id: created.id },
     data: { status: 'PENDING' },
     include: { product: true },
   });
 
-  // ------------------------------------------------------
+  //       
   // Step 4 — Notify influencer (in-app + email)
-  // ------------------------------------------------------
+  //       
   if (influencer.userId) {
     try {
       await notifyUser(influencer.userId, {
@@ -179,9 +179,9 @@ async function createOffer(user, payload = {}) {
     }
   }
 
-  // ------------------------------------------------------
+  //       
   // Step 5 — Audit
-  // ------------------------------------------------------
+  //       
   await writeAudit({
     actorId: user.id,
     action: 'offer.create',

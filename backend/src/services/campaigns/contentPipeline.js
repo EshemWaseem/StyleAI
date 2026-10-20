@@ -1,8 +1,8 @@
 // services/campaigns/contentPipeline.js
-// ======================================================
+//      ==
 // Multi-party content workflow with ITERATION TRACKING
 // + Real-time offer/engagement notifications
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
@@ -14,9 +14,9 @@ const {
 } = require('./helpers');
 const { emitOfferUpdated } = require('../websocket/broadcast');
 
-// ======================================================
+//      ==
 // Load deliverable + campaign with auth info
-// ======================================================
+//      ==
 async function loadDeliverableAuth(deliverableId) {
   const d = await prisma.campaignDeliverable.findUnique({
     where: { id: deliverableId },
@@ -43,9 +43,9 @@ async function findBrandOwnerUserId(campaign) {
   return owner?.id || null;
 }
 
-// ======================================================
+//      ==
 // Version-aware submission creation
-// ======================================================
+//      ==
 async function createVersionedSubmission(data) {
   return prisma.$transaction(async (tx) => {
     const previous = await tx.contentSubmission.findMany({
@@ -71,9 +71,9 @@ async function createVersionedSubmission(data) {
   });
 }
 
-// ======================================================
+//      ==
 // Helper — emit offer update (non-blocking, silent)
-// ======================================================
+//      ==
 async function safeEmitOffer(offerId, eventType) {
   try {
     const offer = await prisma.customOffer.findUnique({
@@ -88,9 +88,9 @@ async function safeEmitOffer(offerId, eventType) {
   }
 }
 
-// ======================================================
+//      ==
 // 1. INFLUENCER — submit RAW
-// ======================================================
+//      ==
 async function submitRawContent(user, deliverableId, payload = {}) {
   const d = await loadDeliverableAuth(deliverableId);
   assertIsInfluencerSide(user, d.campaign);
@@ -204,12 +204,12 @@ async function submitRawContent(user, deliverableId, payload = {}) {
 }
 
 
-// ======================================================
+//      ==
 // 2. START EDITING — agency OR influencer (solo flow)
-// ======================================================
-// ======================================================
+//      ==
+//      ==
 // 2. START EDITING — agency OR influencer (solo flow)
-// ======================================================
+//      ==
 async function startEditing(user, deliverableId) {
   const d = await loadDeliverableAuth(deliverableId);
 
@@ -244,12 +244,12 @@ async function startEditing(user, deliverableId) {
   return shapeDeliverable({ ...d, status: 'AGENCY_EDITING' });
 }
 
-// ======================================================
+//      ==
 // 3. AGENCY — submit FINAL
-// ======================================================
-// ======================================================
+//      ==
+//      ==
 // 3. SUBMIT FINAL — agency OR influencer OR admin
-// ======================================================
+//      ==
 async function submitFinalContent(user, deliverableId, payload = {}) {
   const d = await loadDeliverableAuth(deliverableId);
 
@@ -358,9 +358,9 @@ async function submitFinalContent(user, deliverableId, payload = {}) {
   return shapeDeliverable({ ...d, status: 'FINAL_UPLOADED', submissions: [submission] });
 }
 
-// ======================================================
+//      ==
 // 4. BRAND — approve
-// ======================================================
+//      ==
 async function approveContent(user, deliverableId) {
   const d = await loadDeliverableAuth(deliverableId);
   assertIsBrandSide(user, d.campaign);
@@ -432,9 +432,9 @@ async function approveContent(user, deliverableId) {
   return shapeDeliverable({ ...d, status: 'BRAND_APPROVED' });
 }
 
-// ======================================================
+//      ==
 // 5. BRAND — reject with feedback
-// ======================================================
+//      ==
 async function rejectContent(user, deliverableId, payload = {}) {
   const d = await loadDeliverableAuth(deliverableId);
   assertIsBrandSide(user, d.campaign);
@@ -494,9 +494,9 @@ async function rejectContent(user, deliverableId, payload = {}) {
   return shapeDeliverable({ ...d, status: 'BRAND_REJECTED' });
 }
 
-// ======================================================
+//      ==
 // 6. AGENCY — publish
-// ======================================================
+//      ==
 async function publishContent(user, deliverableId, payload = {}) {
   const d = await loadDeliverableAuth(deliverableId);
   assertIsAgencySide(user, d.campaign);
@@ -556,9 +556,9 @@ async function publishContent(user, deliverableId, payload = {}) {
   return shapeDeliverable({ ...d, status: 'PUBLISHED' });
 }
 
-// ======================================================
+//      ==
 // 7. ANY — enter metrics
-// ======================================================
+//      ==
 async function enterMetrics(user, deliverableId, payload = {}) {
   const d = await loadDeliverableAuth(deliverableId);
 
@@ -639,10 +639,10 @@ async function recomputeCampaignAggregates(campaignId) {
   });
 }
 
-// ======================================================
+//      ==
 // 8. INFLUENCER — Forward agency content as FINAL
 // Brand ko sirf dikhega ke influencer ne submit kiya
-// ======================================================
+//      ==
 async function submitFinalAsInfluencer(user, deliverableId, payload = {}) {
   const d = await loadDeliverableAuth(deliverableId);
   assertIsInfluencerSide(user, d.campaign);

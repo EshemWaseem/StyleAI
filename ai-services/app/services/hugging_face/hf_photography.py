@@ -1,9 +1,9 @@
 # app/services/hugging_face/hf_photography.py
-# ======================================================
+#      ==
 # Product photography via HF image-to-image
 # PRESERVES the input product image — only changes scene.
 # Sprint 26: brand_context appended as a short style hint.
-# ======================================================
+#      ==
 
 import base64
 import logging

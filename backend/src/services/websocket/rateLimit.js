@@ -1,8 +1,8 @@
 // services/websocket/rateLimit.js
-// ======================================================
+//      ==
 // In-memory sliding-window rate limiter per socket.
 // Not distributed (Redis-ready for future).
-// ======================================================
+//      ==
 
 const windows = new Map(); // `${socketId}:${event}` -> { count, resetAt }
 

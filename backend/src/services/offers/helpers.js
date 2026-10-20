@@ -1,7 +1,7 @@
 // services/offers/helpers.js
-// ======================================================
+//      ==
 // Shared offer utilities — validation, totals, shaping
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { getAllSettings, parsePagination } = require('../admin/helpers');
@@ -15,17 +15,17 @@ const {
   isValidContentType,
 } = require('../../config/platformCatalog');
 
-// ------------------------------------------------------
+//       
 // Finance rules resolver
-// ------------------------------------------------------
+//       
 async function getFinanceRules() {
   const all = await getAllSettings();
   return all.finance || {};
 }
 
-// ------------------------------------------------------
+//       
 // Validate ONE offer line item
-// ------------------------------------------------------
+//       
 function validateOfferItem(item, index) {
   if (!item || typeof item !== 'object') {
     throw httpError(`items[${index}] must be an object`, 400, 'INVALID_ITEM');
@@ -59,9 +59,9 @@ function validateOfferItem(item, index) {
   return { platform, contentType, quantity, unitPrice, lineTotal, label };
 }
 
-// ------------------------------------------------------
+//       
 // Full offer math
-// ------------------------------------------------------
+//       
 async function computeOfferTotals({ items, currency, influencer }) {
   if (!Array.isArray(items) || items.length === 0) {
     throw httpError('Offer must contain at least one item', 400, 'EMPTY_OFFER');
@@ -109,10 +109,10 @@ async function computeOfferTotals({ items, currency, influencer }) {
   };
 }
 
-// ------------------------------------------------------
+//       
 // API shaping — includes ownership IDs so frontend can
 // compute per-viewer permissions
-// ------------------------------------------------------
+//       
 function shapeOffer(offer, { brand, influencer } = {}) {
   return {
     id: offer.id,

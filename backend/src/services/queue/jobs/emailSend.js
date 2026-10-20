@@ -1,7 +1,7 @@
 // services/queue/jobs/emailSend.js
-// ======================================================
+//      ==
 // Send email via queue (retry-safe).
-// ======================================================
+//      ==
 const { sendMail } = require('../../email/send');
 
 async function processEmailSend(job) {

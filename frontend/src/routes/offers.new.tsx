@@ -66,7 +66,7 @@ function NewOfferPage() {
       .finally(() => setPricingLoading(false));
   }, [influencerId]);
 
-  // ------- No brand yet -------
+  //  -- No brand yet  --
   if (!resolvedBrandId) {
     return (
       <ProtectedRoute roles={["BRAND_OWNER", "BRAND_TEAM_MEMBER"]}>
@@ -84,7 +84,7 @@ function NewOfferPage() {
     );
   }
 
-  // ------- Show picker if no influencer selected -------
+  //  -- Show picker if no influencer selected  --
   const showPicker = !influencerId;
 
   return (
@@ -120,7 +120,7 @@ function NewOfferPage() {
           </div>
         )}
 
-        {/* -------- State 1: picker -------- */}
+        {/*  --- State 1: picker  --- */}
         {showPicker && (
           <InfluencerPicker
             onSelect={(id) => setPickedInfluencerId(id)}
@@ -128,7 +128,7 @@ function NewOfferPage() {
           />
         )}
 
-        {/* -------- State 2: loading pricing -------- */}
+        {/*  --- State 2: loading pricing  --- */}
         {!showPicker && pricingLoading && (
           <div className="mt-16 flex items-center justify-center">
             <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
@@ -138,7 +138,7 @@ function NewOfferPage() {
           </div>
         )}
 
-        {/* -------- State 3: builder -------- */}
+        {/*  --- State 3: builder  --- */}
         {!showPicker && !pricingLoading && pricing && (
           <Panel className="mt-8 p-6">
             <OfferBuilder

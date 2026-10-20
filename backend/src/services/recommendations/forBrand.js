@@ -1,8 +1,8 @@
 // services/recommendations/forBrand.js
-// ======================================================
+//      ==
 // Main orchestrator — REAL data-driven recommendations
 // Priority-sorted, performance-aware.
-// ======================================================
+//      ==
 
 const prisma = require('../../config/prisma');
 const { product, campaign, offer, performance, tips } = require('./signals');

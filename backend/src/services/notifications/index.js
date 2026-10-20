@@ -1,7 +1,7 @@
 // services/notifications/index.js
-// ======================================================
+//      ==
 // Barrel — public surface of the notifications domain
-// ======================================================
+//      ==
 
 const { shapeNotification } = require('./helpers');
 const { emitNotification, notifyUser, notifyAdmins } = require('./emit');

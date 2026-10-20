@@ -1,8 +1,8 @@
 # app/prompts/image_angle_prompts.py
-# ======================================================
+#      ==
 # Prompts for Gemini 2.5 Flash Image — product angle generation
 # CRITICAL: preserve the product EXACTLY. Only change camera angle.
-# ======================================================
+#      ==
 
 BASE_PRESERVATION_RULE = """CRITICAL — PRESERVE THE PRODUCT EXACTLY:
 - Keep the same color, material, texture, pattern, stitching, logo, and brand markings.

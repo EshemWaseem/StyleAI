@@ -1,7 +1,7 @@
 // services/assistant/aiClient.js
-// ======================================================
+//      ==
 // Call FastAPI /api/v1/chat/text (raw text completion)
-// ======================================================
+//      ==
 
 const { httpError } = require('../influencer/helpers');
 

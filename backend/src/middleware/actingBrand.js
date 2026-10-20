@@ -1,9 +1,9 @@
 // middleware/actingBrand.js
-// ======================================================
+//      ==
 // Agency clients use "X-Acting-Brand: <brandId>" header
 // to operate on behalf of a client brand.
 // Populates req.actingBrand = { id, organizationId, ... }
-// ======================================================
+//      ==
 
 const prisma = require('../config/prisma');
 const { httpError } = require('../services/influencer/helpers');

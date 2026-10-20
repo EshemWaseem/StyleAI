@@ -21,7 +21,6 @@ import {
   roleLabels,
   type RoleName,
 } from "@/lib/role";
-import { joinRequestsApi } from "@/lib/join-requests";
 import { http, type ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/register")({
@@ -193,6 +192,10 @@ function RegisterPage() {
       setError("Organization name is required for this role.");
       return;
     }
+    if (isTeamMember && !selectedBrandId) {
+      setError("Please select a brand to join.");
+      return;
+    }
     if (isTeamMember && !selectedRoleId) {
       setError("Please select the role you'd like to apply for.");
       return;
@@ -225,6 +228,12 @@ function RegisterPage() {
           email: email.trim(),
           password,
           role,
+          // R3 FIX: pass brand intent so backend creates join request atomically
+          ...(isTeamMember && {
+            brandId: selectedBrandId,
+            brandRoleId: selectedRoleId,
+            requestMessage: requestMessage.trim() || undefined,
+          }),
           ...(needsOrg && {
             organizationName: organizationName.trim(),
             country: geo.country?.name,
@@ -234,23 +243,9 @@ function RegisterPage() {
         { skipAuth: true }
       );
 
-      // For BRAND_TEAM_MEMBER — try to send join request after registration
-      if (isTeamMember && res.token) {
-        try {
-          localStorage.setItem("token", res.token);
-          await joinRequestsApi.create(
-            selectedBrandId,
-            requestMessage.trim() || undefined,
-            selectedRoleId
-          );
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-        } catch {
-          // ignore — user can be verified and pending anyway
-        }
-      }
+      // R3 FIX: join request is now created atomically by backend inside
+      // the registration transaction. No separate join request call needed.
 
-      // Always show verify-email screen now (since email not verified)
       setRegisteredEmail(email.trim().toLowerCase());
       if (isTeamMember) {
         setRequestSent(true);
@@ -297,9 +292,9 @@ function RegisterPage() {
     }
   }
 
-  // ======================================================
+  //      ==
   // TEAM MEMBER PENDING SCREEN
-  // ======================================================
+  //      ==
   if (requestSent) {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
@@ -349,9 +344,9 @@ function RegisterPage() {
     );
   }
 
-  // ======================================================
+  //      ==
   // VERIFY EMAIL SCREEN (normal user)
-  // ======================================================
+  //      ==
   if (verifySent) {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">

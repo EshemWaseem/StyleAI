@@ -2,13 +2,10 @@
 const { verifyToken } = require('../utils/jwt');
 const prisma = require('../config/prisma');
 
-// ======================================================
+//      ==
 // Routes that pending users CAN still access
-// ======================================================
-const PENDING_SAFE_PATHS = [
-  '/api/auth/me',
-  '/api/auth/logout',
-];
+//      ==
+const PENDING_SAFE_PATHS = ['/api/auth/me', '/api/auth/logout'];
 
 function isPendingSafePath(req) {
   const url = req.originalUrl || req.url || '';
@@ -76,6 +73,27 @@ async function authenticate(req, res, next) {
       });
     }
 
+    // NEW (D3): verify token version — enables "logout all devices"
+    // DEFENSIVE: default BOTH sides to 0 so missing DB column
+    // (schema not pushed yet) never breaks login.
+    const tokenVersion = decoded.tokenVersion ?? 0;
+    const userTokenVersion = user.tokenVersion ?? 0;
+    if (tokenVersion !== userTokenVersion) {
+      return res.status(401).json({
+        message:
+          'Your session was signed out. Please sign in again with your current password.',
+        code: 'SESSION_REVOKED',
+      });
+    }
+
+    // NEW: defense-in-depth — unverified accounts must not use API
+    if (user.emailVerified === false) {
+      return res.status(403).json({
+        message: 'Please verify your email address to continue.',
+        code: 'EMAIL_NOT_VERIFIED',
+      });
+    }
+
     const roles = user.userRoles.map((ur) => ur.role.name);
 
     const ownerRoles = ['SUPER_ADMIN', 'BRAND_OWNER', 'AGENCY'];
@@ -110,7 +128,6 @@ async function authenticate(req, res, next) {
       !!pendingRequest ||
       (roles.includes('BRAND_TEAM_MEMBER') && !isOwner && !hasActiveBrandRole);
 
-    // ✅ BLOCK pending users — every request, every route
     if (pendingApproval && !isPendingSafePath(req)) {
       return res.status(403).json({
         message:
@@ -124,7 +141,6 @@ async function authenticate(req, res, next) {
       email: user.email,
       name: user.name,
       organizationId: user.organizationId,
-      // ✅ NEW
       phone: user.phone ?? null,
       country: user.country ?? null,
       countryCode: user.countryCode ?? null,
@@ -217,7 +233,10 @@ function requireApproved(req, res, next) {
   next();
 }
 
-function requirePermissionOrRole({ permissions = [], roles: allowedRoles = [] } = {}) {
+function requirePermissionOrRole({
+  permissions = [],
+  roles: allowedRoles = [],
+} = {}) {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Please sign in to continue.' });

@@ -46,7 +46,7 @@ function PlansPage() {
       .finally(() => setLoading(false));
   }, [authLoading, role]);
 
-  // ----- Admin view -----
+  //   Admin view  
   if (user?.roles?.includes("SUPER_ADMIN")) {
     return (
       <ProtectedRoute roles={["SUPER_ADMIN"]} skipTrialCheck>
@@ -67,7 +67,7 @@ function PlansPage() {
     );
   }
 
-  // ----- No role -----
+  //   No role  
   if (!authLoading && !role) {
     return (
       <ProtectedRoute skipTrialCheck>

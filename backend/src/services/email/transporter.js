@@ -1,7 +1,7 @@
 // services/email/transporter.js
-// ======================================================
+//      ==
 // Gmail SMTP transporter (singleton)
-// ======================================================
+//      ==
 const nodemailer = require('nodemailer');
 
 const GMAIL_USER = process.env.GMAIL_USER;

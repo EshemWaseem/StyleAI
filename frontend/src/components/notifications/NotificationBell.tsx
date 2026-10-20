@@ -26,9 +26,9 @@ export function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // ------------------------------------------------------
+  //       
   // Initial snapshot — only when a user is signed in
-  // ------------------------------------------------------
+  //       
   useEffect(() => {
     if (!user) {
       // Not signed in → don't fetch, don't keep stale state
@@ -62,9 +62,9 @@ export function NotificationBell() {
     };
   }, [user?.id]);
 
-  // ------------------------------------------------------
+  //       
   // Live updates via SSE — only when a user is signed in
-  // ------------------------------------------------------
+  //       
   useEffect(() => {
     if (!user) return;
 
@@ -82,9 +82,9 @@ export function NotificationBell() {
     };
   }, [user?.id]);
 
-  // ------------------------------------------------------
+  //       
   // If user signs out → close the SSE stream
-  // ------------------------------------------------------
+  //       
   useEffect(() => {
     if (user) return;
     // user just became null (logout) → kill SSE so it doesn't spam 401s

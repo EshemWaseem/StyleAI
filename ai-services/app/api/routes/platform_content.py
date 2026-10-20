@@ -1,8 +1,8 @@
 # app/api/routes/platform_content.py
-# ======================================================
+#      ==
 # POST /api/v1/content/platform
 # Generates per-platform content (Instagram / TikTok / YouTube / Blog)
-# ======================================================
+#      ==
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException

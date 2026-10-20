@@ -1,7 +1,7 @@
 # app/schemas/platform_content.py
-# ======================================================
+#      ==
 # Schemas for per-platform content generation
-# ======================================================
+#      ==
 
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field

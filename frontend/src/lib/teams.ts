@@ -1,13 +1,13 @@
 import { http } from "./api";
 
-// ======================================================
+//      ==
 // LEGACY TEAM API — kept for backwards compatibility
 //
 // ⚠️  The "Team" concept has been replaced by brand-level roles.
 //     New code should use `brandTeamApi` from `./brand-team`.
 //     This file remains so that /teams/:teamId detail page keeps working
 //     until it is fully migrated in a later phase.
-// ======================================================
+//      ==
 
 export interface TeamMember {
   id: string;

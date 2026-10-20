@@ -2,18 +2,18 @@
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
 
-// ------------------------------------------------------
+//       
 // Canonical party ordering — ensures (A,B) === (B,A)
-// ------------------------------------------------------
+//       
 function canonicalize(partyA, partyB) {
   const a = `${partyA.type}:${partyA.id}`;
   const b = `${partyB.type}:${partyB.id}`;
   return a < b ? [partyA, partyB] : [partyB, partyA];
 }
 
-// ------------------------------------------------------
+//       
 // Resolve the caller's party identity (org or influencer)
-// ------------------------------------------------------
+//       
 async function resolveMyParty(user) {
   const isInfluencer = user.roles?.includes('INFLUENCER');
   if (isInfluencer) {
@@ -29,9 +29,9 @@ async function resolveMyParty(user) {
   return null;
 }
 
-// ------------------------------------------------------
+//       
 // Which party am I in this conversation?
-// ------------------------------------------------------
+//       
 async function myPartyIn(user, conversation) {
   const me = await resolveMyParty(user);
   if (!me) return null;
@@ -55,9 +55,9 @@ async function assertCanAccessConversation(user, conversation) {
   return mine;
 }
 
-// ------------------------------------------------------
+//       
 // Resolve sender role (BRAND / AGENCY / INFLUENCER / ADMIN)
-// ------------------------------------------------------
+//       
 function resolveSenderRole(user) {
   if (user.roles?.includes('SUPER_ADMIN')) return 'ADMIN';
   if (user.roles?.includes('INFLUENCER')) return 'INFLUENCER';
@@ -65,9 +65,9 @@ function resolveSenderRole(user) {
   return 'BRAND';
 }
 
-// ------------------------------------------------------
+//       
 // Shaping — enrich with party info
-// ------------------------------------------------------
+//       
 async function enrichParty(type, id) {
   if (type === 'INFLUENCER') {
     const inf = await prisma.influencer.findUnique({
@@ -106,10 +106,10 @@ async function enrichParty(type, id) {
   return null;
 }
 
-// ------------------------------------------------------
+//       
 // shapeConversation — accepts `user` and returns `mySide`
 // so the client knows exactly which party is "them"
-// ------------------------------------------------------
+//       
 async function shapeConversation(c, { user } = {}) {
   const [partyA, partyB] = await Promise.all([
     enrichParty(c.partyAType, c.partyAId),

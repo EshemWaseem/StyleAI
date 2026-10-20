@@ -1,8 +1,8 @@
 # app/api/routes/product_photography.py
-# ======================================================
+#      ==
 # POST /api/v1/product/photography
 # Provider-aware: IMAGE_PROVIDER=hf | gemini
-# ======================================================
+#      ==
 
 import logging
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile

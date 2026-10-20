@@ -39,9 +39,9 @@ async function listMyConversations(user, query = {}) {
   return { conversations: shaped, total: shaped.length };
 }
 
-// ------------------------------------------------------
+//       
 // Open chat with ANY party: POST /chat/conversations/with
-// ------------------------------------------------------
+//       
 async function getOrCreateConversation(user, targetType, targetId, contextType = 'DIRECT') {
   const me = await resolveMyParty(user);
   if (!me) throw httpError('You have no chat identity', 403, 'NO_IDENTITY');

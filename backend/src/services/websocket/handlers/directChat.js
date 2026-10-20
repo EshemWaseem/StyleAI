@@ -1,8 +1,8 @@
 // services/websocket/handlers/directChat.js
-// ======================================================
+//      ==
 // Direct chat events (receive-side).
 // Sending stays REST — this only handles WS-specific events.
-// ======================================================
+//      ==
 
 const prisma = require('../../../config/prisma');
 const { checkRate } = require('../rateLimit');

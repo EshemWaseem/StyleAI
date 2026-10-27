@@ -4,8 +4,6 @@
 @import "./styles/responsive.css";
 @custom-variant dark (&:is(.dark *));
 
-
-
 @theme inline {
   --font-sans:    "Work Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Instrument Serif", Georgia, serif;
@@ -63,10 +61,6 @@
                  0 18px 40px -22px oklch(0.2 0.01 60 / 0.28);
 }
 
-/*      ==
-   Color palette — dark (default)
-        == */
-
 :root {
   --radius: 0.5rem;
 
@@ -112,10 +106,6 @@
   --sidebar-ring:               oklch(0.57  0.085 145);
 }
 
-/*      ==
-   Color palette — .dark override
-        == */
-
 .dark {
   --background:        oklch(0.129 0.042 264.695);
   --foreground:        oklch(0.984 0.003 247.858);
@@ -153,10 +143,6 @@
   --sidebar-ring:               oklch(0.551 0.027 264.364);
 }
 
-/*      ==
-   Base layer
-        == */
-
 @layer base {
   * { border-color: var(--color-border); }
 
@@ -171,10 +157,6 @@
   button, a { outline-offset: 3px; }
 }
 
-/*      ==
-   Page transition
-        == */
-
 @media (prefers-reduced-motion: no-preference) {
   .page-enter {
     animation: page-enter 420ms ease-out both;
@@ -185,10 +167,6 @@
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
-/*      ==
-   Select styling
-        == */
 
 select {
   color:            var(--color-foreground);
@@ -203,10 +181,6 @@ select option:hover {
   background-color: var(--color-accent);
   color:            var(--color-accent-foreground);
 }
-
-/*      ==
-   PhoneInput
-        == */
 
 .PhoneInput {
   display:          flex !important;
@@ -296,10 +270,6 @@ select option:hover {
   border-width: 0 1.5px 1.5px 0 !important;
 }
 
-/*      ==
-   Scrollbar styling
-        == */
-
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
@@ -324,7 +294,6 @@ select option:hover {
   scrollbar-color: color-mix(in oklch, var(--color-accent) 50%, transparent) transparent;
 }
 
-/* Modal scrollbar */
 .modal-scroll::-webkit-scrollbar       { width: 4px; height: 4px; }
 .modal-scroll::-webkit-scrollbar-thumb {
   background-color: color-mix(in oklch, var(--color-accent) 50%, transparent);
@@ -333,10 +302,6 @@ select option:hover {
 .modal-scroll::-webkit-scrollbar-thumb:hover {
   background-color: color-mix(in oklch, var(--color-accent) 85%, transparent);
 }
-
-/*      ==
-   UI Panel / Overlay system
-        == */
 
 .ui-overlay {
   position:         fixed;
@@ -350,7 +315,6 @@ select option:hover {
   backdrop-filter:  blur(4px);
   -webkit-backdrop-filter: blur(4px);
   padding:          1rem;
-  /* last item breathing room inside overlay scroll */
   padding-bottom:   calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 @media (min-width: 640px) {
@@ -401,10 +365,6 @@ select option:hover {
   padding:         1rem 1.5rem;
 }
 
-/*      ==
-   UI Cards / Empty / Error
-        == */
-
 .ui-card {
   border-radius:    var(--radius-xl);
   border:           1px solid var(--color-border);
@@ -429,33 +389,24 @@ select option:hover {
   color:            var(--color-destructive);
 }
 
-/*      ==
-   Page layout
-        == */
-
+/* Page content — responsive width with generous footer breathing room */
 .ui-page-content {
-  margin-left:  auto;
-  margin-right: auto;
-  width:        100%;
-  max-width:    1400px;
-  display:      flex;
+  width:         100%;
+  max-width:     1440px;
+  margin-left:   auto;
+  margin-right:  auto;
+  display:       flex;
   flex-direction: column;
-  flex:         1;
-  min-height:   0;
-  padding:      1rem;
-
-  /*
-    KEY FIX: page-level bottom clearance so the last
-    list tile gets 3 px of air above the viewport edge
-    when scrolled to the end.
-  */
-  padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+  flex:          1;
+  min-height:    0;
+  padding:       1rem;
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
 }
 @media (min-width: 640px) {
   .ui-page-content {
     padding-left:   1.5rem;
     padding-right:  1.5rem;
-    padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 @media (min-width: 1024px) {
@@ -463,12 +414,11 @@ select option:hover {
     padding-left:   2rem;
     padding-right:  2rem;
     padding-top:    1.25rem;
-    padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
 .ui-page-content > *:not(.ui-page-full) { flex-shrink: 0; }
-.ui-page-content > *:last-child:not(.ui-page-full) { flex-grow: 1; }
 
 .ui-page-full {
   display:        flex;
@@ -476,10 +426,6 @@ select option:hover {
   flex:           1;
   min-height:     0;
 }
-
-/*      ==
-   Chat shell
-        == */
 
 .ui-chat-shell {
   display:          grid;
@@ -501,10 +447,6 @@ select option:hover {
   min-height:     0;
   flex-direction: column;
   border-bottom:  1px solid var(--color-border);
-  /*
-    Inner list inside chat sidebar also needs clearance:
-    children should use resp-scroll which adds 3 px.
-  */
 }
 @media (min-width: 768px) {
   .ui-chat-sidebar {
@@ -513,16 +455,9 @@ select option:hover {
   }
 }
 
-/*      ==
-   Hover-reveal scrollbar
-        == */
-
 .hover-scroll {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
-  /*
-    Same 3 px fix so hover-scroll lists aren't clipped
-  */
   padding-bottom:       3px;
   scroll-padding-bottom: 3px;
 }
@@ -547,10 +482,6 @@ select option:hover {
   background-clip:  padding-box;
 }
 
-/*      ==
-   No-scrollbar utility
-        == */
-
 .no-scrollbar {
   scrollbar-width:   none;
   -ms-overflow-style: none;
@@ -559,4 +490,70 @@ select option:hover {
   display: none;
   width:   0;
   height:  0;
+}
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   RESPONSIVE TYPOGRAPHY — STYLEAI
+   Keeps text readable across narrow screens and tablets.
+   Add this at the END of styles.css.
+   ========================================================= */
+
+@media (max-width: 1023px) {
+  /*
+   * Prevent rem-based typography from shrinking if the
+   * root font size is controlled by viewport width.
+   */
+  html {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /*
+   * Increase small Tailwind text utilities throughout
+   * the website, including responsive class variants.
+   */
+  [class*="text-xs"] {
+    font-size: 0.8125rem !important; /* 13px */
+    line-height: 1.25rem !important; /* 20px */
+  }
+
+  [class*="text-sm"] {
+    font-size: 0.9375rem !important; /* 15px */
+    line-height: 1.45rem !important; /* 23.2px */
+  }
+
+  /*
+   * Make explicitly tiny labels readable.
+   * This also handles classes such as text-[10px].
+   */
+  [class*="text-[9px]"],
+  [class*="text-[10px]"] {
+    font-size: 0.6875rem !important; /* 11px */
+    line-height: 1rem !important; /* 16px */
+  }
+
+  [class*="text-[11px]"] {
+    font-size: 0.75rem !important; /* 12px */
+    line-height: 1.125rem !important; /* 18px */
+  }
+
+  [class*="text-[12px]"] {
+    font-size: 0.8125rem !important; /* 13px */
+    line-height: 1.25rem !important; /* 20px */
+  }
+
+  
+  .recharts-cartesian-axis-tick-value {
+    font-size: 12px !important;
+  }
 }

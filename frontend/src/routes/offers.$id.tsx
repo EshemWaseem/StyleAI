@@ -61,7 +61,7 @@ function OfferDetailPage() {
     }
   }
 
-  // ✅ Async handler for cancel (uses Swal confirm)
+  //  Async handler for cancel (uses Swal confirm)
   async function handleCancel() {
     if (!offer) return;
     const ok = await swalConfirm(

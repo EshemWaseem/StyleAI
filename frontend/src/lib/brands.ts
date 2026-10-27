@@ -22,7 +22,7 @@ export interface Brand {
   targetGender: string | null;
   productCount?: number;
 
-  // ✅ Storefront application status
+  //  Storefront application status
   storefrontStatus?: StorefrontOptIn;
   storefrontAppliedAt?: string | null;
   storefrontReviewedAt?: string | null;

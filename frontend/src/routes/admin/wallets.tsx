@@ -67,7 +67,7 @@ function AdminWalletsPage() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <>
+      <div className="w-full max-w-full flex flex-col gap-6 pb-12">
         <PageHeader
           eyebrow="Super admin"
           title="Wallet overview"
@@ -75,19 +75,19 @@ function AdminWalletsPage() {
         />
 
         {error && (
-          <div className="mt-6 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             <AlertCircle className="mt-0.5 size-4 shrink-0" /> <span>{error}</span>
           </div>
         )}
 
         {loading ? (
-          <div className="mt-16 flex items-center justify-center">
+          <div className="flex items-center justify-center py-20">
             <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Loading…</span>
           </div>
         ) : stats ? (
           <>
-            <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 icon={TrendingUp}
                 label="Platform revenue"
@@ -114,13 +114,13 @@ function AdminWalletsPage() {
               />
             </section>
 
-            <section className="mt-4 grid gap-4 sm:grid-cols-3">
+            <section className="grid gap-4 sm:grid-cols-3">
               <MiniCard label="User wallets" value={stats.wallets.users} />
               <MiniCard label="Organization wallets" value={stats.wallets.organizations} />
               <MiniCard label="Influencer wallets" value={stats.wallets.influencers} />
             </section>
 
-            <Panel className="mt-8 overflow-hidden">
+            <Panel className="w-full max-w-full overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Users className="size-4 text-accent" />
@@ -181,7 +181,7 @@ function AdminWalletsPage() {
             </Panel>
           </>
         ) : null}
-      </>
+      </div>
     </ProtectedRoute>
   );
 }

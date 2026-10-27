@@ -2,7 +2,7 @@
 
 Complete guide to deploy StyleAI to production.
 
----
+
 
 ## 1. Prerequisites
 
@@ -20,7 +20,7 @@ sudo usermod -aG docker $USER
 # Log out and back in
 ```
 
----
+
 
 ## 2. First-Time Setup
 
@@ -57,7 +57,7 @@ chmod +x scripts/*.sh
 ./scripts/deploy.sh
 ```
 
----
+
 
 ## 3. SSL Setup (Let's Encrypt)
 
@@ -84,7 +84,7 @@ docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
 ### 3.4 Auto-renewal
 The `certbot` service already runs renewal every 12h. It's automatic.
 
----
+
 
 ## 4. Post-Deploy Checklist
 
@@ -98,7 +98,7 @@ The `certbot` service already runs renewal every 12h. It's automatic.
 - [ ] Backups scheduled: `crontab -e` → `0 3 * * * /path/to/scripts/backup-db.sh`
 - [ ] Monitor logs: `docker compose -f docker-compose.prod.yml logs -f`
 
----
+
 
 ## 5. Common Operations
 
@@ -135,7 +135,7 @@ docker compose -f docker-compose.prod.yml exec postgres \
   psql -U styleai -d styleai
 ```
 
----
+
 
 ## 6. Monitoring (Optional)
 
@@ -151,7 +151,7 @@ SENTRY_DSN=https://...
 - Interval: 5 minutes
 - Alert: email
 
----
+
 
 ## 7. Ollama Decision
 
@@ -168,12 +168,12 @@ Get a free key at https://console.groq.com
 
 **Skip Ollama entirely** — uncomment the `ollama` service in `docker-compose.prod.yml` only if you want local LLM.
 
----
+
 
 ## 8. Troubleshooting
 
 | Problem | Fix |
-|---|---|
+|||
 | Backend can't reach DB | Check `backend/.env` → `DATABASE_URL` uses `postgres:5432` (not localhost) |
 | CORS errors | `backend/.env` → `FRONTEND_URL=https://your-domain.com` (no trailing slash) |
 | Webhooks fail | Stripe Dashboard → add `https://your-domain.com/api/webhooks/stripe` |
@@ -181,7 +181,7 @@ Get a free key at https://console.groq.com
 | Out of memory | Reduce Postgres `shared_buffers`, or upgrade VPS |
 | SSL renewal fails | Check port 80 is open, `.well-known/acme-challenge/` is reachable |
 
----
+
 
 ## 9. What's Next
 
@@ -193,6 +193,6 @@ After successful deploy:
 5. **Set up UptimeRobot** (downtime alerts)
 6. **Schedule backups** (cron)
 
----
+
 
 **🎉 You're live. Ship fast, iterate faster.**

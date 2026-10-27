@@ -29,11 +29,7 @@ async function resume(req, res, next) {
   catch (e) { next(e); }
 }
 
-//       
-// DELETE /api/billing/invoices/:id
-// Users can delete only their own FAILED invoices
-// Admins can delete any FAILED/PENDING
-//       
+
 async function deleteInvoice(req, res, next) {
   try {
     const { id } = req.params;
@@ -43,7 +39,7 @@ async function deleteInvoice(req, res, next) {
 
     const isAdmin = req.user.roles?.includes('SUPER_ADMIN');
 
-    // Ownership check
+
     if (!isAdmin) {
       if (!req.user.organizationId || payment.organizationId !== req.user.organizationId) {
         throw httpError('Forbidden', 403, 'FORBIDDEN');
@@ -65,9 +61,7 @@ async function deleteInvoice(req, res, next) {
   } catch (e) { next(e); }
 }
 
-//       
-// DELETE /api/billing/invoices  (bulk delete all FAILED in own org)
-//       
+
 async function deleteAllFailed(req, res, next) {
   try {
     const isAdmin = req.user.roles?.includes('SUPER_ADMIN');

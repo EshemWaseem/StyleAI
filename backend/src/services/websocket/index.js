@@ -1,7 +1,7 @@
 // services/websocket/index.js
-//      ==
+
 // Socket.IO server — attached to Express HTTP server
-//      ==
+
 
 const { Server } = require('socket.io');
 const { authenticateSocket } = require('./auth');
@@ -26,7 +26,7 @@ function initWebSocket(httpServer, allowedOrigins) {
     transports: ['websocket', 'polling'], // WS preferred, polling fallback
   });
 
-  // ---- Auth middleware — runs BEFORE connection opens ----
+  //  Auth middleware — runs BEFORE connection opens 
   io.use(authenticateSocket);
 
   io.on('connection', (socket) => {

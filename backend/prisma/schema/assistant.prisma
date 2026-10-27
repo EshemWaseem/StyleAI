@@ -1,7 +1,7 @@
 // assistant.prisma
-//      ==
+
 // AI Assistant — persistent chat with memory
-//      ==
+
 
 model AssistantConversation {
   id             String   @id @default(uuid())

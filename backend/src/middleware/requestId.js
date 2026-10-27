@@ -1,7 +1,7 @@
 // middleware/requestId.js
-//      ==
+
 // Attaches a unique request ID to every request.
-//      ==
+
 const crypto = require('crypto');
 
 function requestId(req, res, next) {

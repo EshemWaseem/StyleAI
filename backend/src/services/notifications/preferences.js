@@ -1,8 +1,8 @@
 // services/notifications/preferences.js
-//      ==
+
 // Notification preferences — email categories + unsubscribe tokens.
 // Auto-creates on first access (backward compatible).
-//      ==
+
 
 const prisma = require('../../config/prisma');
 

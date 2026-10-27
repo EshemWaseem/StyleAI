@@ -102,6 +102,13 @@ export const adminApi = {
     );
   },
 
+  //  - NEW: Campaign Requests  -
+  createCampaignRequest: (payload: { brandId: string; title: string; description?: string; budget?: number }) =>
+    http.post<{ message: string; request: any }>(`/api/admin/campaign-requests`, payload),
+  
+  listCampaignRequests: () =>
+    http.get<{ requests: any[] }>(`/api/admin/campaign-requests`),
+
   //  - Payments  -
   listPayments: (filters: { limit?: number; offset?: number } = {}) => {
     const qs = new URLSearchParams();

@@ -92,9 +92,9 @@ export function getDashboardPath(roles: RoleName[]): string {
   return "/dashboard";
 }
 
-//      ==
+
 // JWT EXPIRY CHECK
-//      ==
+
 const EXPIRY_BUFFER_MS = 5_000;
 
 function isTokenExpired(token: string): boolean {
@@ -111,9 +111,9 @@ function isTokenExpired(token: string): boolean {
   }
 }
 
-//      ==
+
 // CONTEXT
-//      ==
+
 interface RegisterPayload {
   name: string;
   email: string;
@@ -215,7 +215,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     return me.user;
   }, []);
 
-  // ✅ register — handles pending approval
+  //  register — handles pending approval
   const register = useCallback(async (payload: RegisterPayload) => {
     const res = await http.post<{
       token: string | null;

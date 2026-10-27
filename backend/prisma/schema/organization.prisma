@@ -1,7 +1,7 @@
 // organization.prisma
-//      ==
+
 // ORGANIZATION + TEAM (legacy)
-//      ==
+
 
 model Organization {
   id       String  @id @default(uuid())
@@ -25,17 +25,20 @@ model Organization {
   savedInfluencers OrganizationInfluencer[]
   wallet           Wallet?
 
-  // ---- Agency relations (multi-brand management) ----
+  //  Agency relations (multi-brand management) 
   createdOffers      CustomOffer[]       @relation("AgencyCreatedOffers")
   managedCampaigns   Campaign[]          @relation("AgencyManagedCampaigns")
   contentSubmissions ContentSubmission[] @relation("AgencyContentSubmissions")
   publications       ContentPublish[]    @relation("AgencyPublications")
   metricEntries      DeliverableMetric[] @relation("AgencyMetrics")
 
-  // ---- Knowledge base (Sprint 21) ----
+  //  Agency Ad Accounts (Meta / Google) 
+  adAccounts AgencyAdAccount[] @relation("OrganizationAdAccounts")
+
+  //  Knowledge base (Sprint 21) 
   documents Document[]
 
-  // ---- AI Assistant (Sprint 22) ----
+  //  AI Assistant (Sprint 22) 
   assistantConversations AssistantConversation[]
 
   createdAt DateTime @default(now())

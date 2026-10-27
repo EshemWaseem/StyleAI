@@ -1,7 +1,7 @@
 // influencer.prisma
-//      ==
+
 // INFLUENCER — global pool, optionally linked to a User
-//      ==
+
 
 model Influencer {
   id String @id @default(uuid())
@@ -85,9 +85,9 @@ model InfluencerSocialAccount {
   engagementRate Float              @default(0)
   isPrimary      Boolean            @default(false)
 
-  //      ==
+  
   // NEW — Engagement analytics (from Apify scraper)
-  //      ==
+  
   totalPosts    Int    @default(0)
   totalLikes    BigInt @default(0)
   totalComments BigInt @default(0)

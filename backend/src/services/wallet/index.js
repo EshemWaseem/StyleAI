@@ -16,6 +16,7 @@ const {
   releaseEscrowForOffer,
   refundEscrowForOffer,
 } = require('./offerFlow');
+const { creditOrderRevenue } = require('./orderFlow');
 const {
   ensureWallet,
   recalculateBalance,
@@ -39,10 +40,13 @@ module.exports = {
   MIN_TOPUP,
   MAX_TOPUP,
 
-  // Offer escrow — CRITICAL
+  // Offer escrow
   holdEscrowForOffer,
   releaseEscrowForOffer,
   refundEscrowForOffer,
+
+  // Order revenue
+  creditOrderRevenue,
 
   // Admin-facing
   reviewWithdrawal,

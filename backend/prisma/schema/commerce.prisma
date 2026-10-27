@@ -1,7 +1,7 @@
 // commerce.prisma 30-09
-//      ==
+
 // CART + ORDER
-//      ==
+
 
 model Cart {
   id     String @id @default(uuid())
@@ -42,12 +42,14 @@ model Order {
   total       Decimal     @db.Decimal(10, 2)
   currency    String      @default("USD")
 
-  // ---- Payments (Sprint 24) ----
+  //  Payments (Sprint 24) 
   paymentProvider PaymentProvider?
   paymentStatus   PaymentStatus   @default(PENDING)
   paymentRef      String?
   codConfirmedAt  DateTime?
   codConfirmedBy  String?
+
+  shippingAddress Json?  
 
   user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   brand    Brand?      @relation(fields: [brandId], references: [id], onDelete: SetNull)

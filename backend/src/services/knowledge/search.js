@@ -1,5 +1,5 @@
 // services/knowledge/search.js
-//      ==
+
 // Advanced hybrid search:
 //   1. Query expansion (LLM)
 //   2. Vector search per variant (pgvector)
@@ -7,7 +7,7 @@
 //   4. Reciprocal Rank Fusion (RRF)
 //   5. LLM reranking (top-K)
 //   6. Similarity threshold + document diversity
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { embedTexts } = require('./embedder');

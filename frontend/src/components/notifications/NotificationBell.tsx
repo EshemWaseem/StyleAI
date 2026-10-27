@@ -4,34 +4,23 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuItem,
+  DropdownMenu, DropdownMenuContent, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import {
-  notificationsApi,
-  notificationsSSE,
-  type Notification,
-} from "@/lib/notifications";
+import { notificationsApi, notificationsSSE, type Notification } from "@/lib/notifications";
 import { useRole } from "@/lib/role";
 
 export function NotificationBell() {
   const navigate = useNavigate();
   const { user } = useRole();
+  const userId = user?.id;
 
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  //       
-  // Initial snapshot — only when a user is signed in
-  //       
   useEffect(() => {
-    if (!user) {
-      // Not signed in → don't fetch, don't keep stale state
+    if (!userId) {
       setNotifs([]);
       setUnread(0);
       setLoading(false);
@@ -51,7 +40,7 @@ export function NotificationBell() {
         setNotifs(list.notifications);
         setUnread(count.unread);
       } catch {
-        // silent — 401/403 handled globally
+        // silent
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -60,13 +49,10 @@ export function NotificationBell() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [userId]);
 
-  //       
-  // Live updates via SSE — only when a user is signed in
-  //       
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     const offNotif = notificationsSSE.onNotification((n) => {
       setNotifs((prev) => {
@@ -80,26 +66,20 @@ export function NotificationBell() {
       offNotif();
       offUnread();
     };
-  }, [user?.id]);
+  }, [userId]);
 
-  //       
-  // If user signs out → close the SSE stream
-  //       
   useEffect(() => {
-    if (user) return;
-    // user just became null (logout) → kill SSE so it doesn't spam 401s
+    if (userId) return;
     try {
       notificationsSSE.disconnect();
-    } catch { /* ignore */ }
-  }, [user]);
+    } catch {}
+  }, [userId]);
 
   async function openNotif(n: Notification) {
     if (!n.read) {
       try {
         await notificationsApi.markRead(n.id);
-        setNotifs((prev) =>
-          prev.map((x) => (x.id === n.id ? { ...x, read: true } : x))
-        );
+        setNotifs((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
         setUnread((u) => Math.max(0, u - 1));
       } catch {}
     }
@@ -114,19 +94,12 @@ export function NotificationBell() {
     } catch {}
   }
 
-  // If no user → don't render bell at all
-  if (!user) return null;
+  if (!userId) return null;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Notifications"
-          className="relative"
-          title="Notifications"
-        >
+        <Button variant="ghost" size="icon" aria-label="Notifications" className="relative" title="Notifications">
           <Bell />
           {unread > 0 && (
             <span className="absolute right-1.5 top-1.5 grid min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[9px] font-semibold leading-4 text-accent-foreground">
@@ -140,11 +113,7 @@ export function NotificationBell() {
         <div className="flex items-center justify-between px-3 py-2">
           <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
           {unread > 0 && (
-            <button
-              type="button"
-              onClick={markAllRead}
-              className="inline-flex items-center gap-1 text-[10px] font-medium text-accent hover:underline"
-            >
+            <button type="button" onClick={markAllRead} className="inline-flex items-center gap-1 text-[10px] font-medium text-accent hover:underline">
               <Check className="size-3" /> Mark all read
             </button>
           )}
@@ -156,36 +125,16 @@ export function NotificationBell() {
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
           </div>
         ) : notifs.length === 0 ? (
-          <p className="py-8 text-center text-xs text-muted-foreground">
-            No notifications yet
-          </p>
+          <p className="py-8 text-center text-xs text-muted-foreground">No notifications yet</p>
         ) : (
           notifs.map((n) => (
-            <DropdownMenuItem
-              key={n.id}
-              className="flex-col items-start gap-1 py-2.5 cursor-pointer"
-              onSelect={() => openNotif(n)}
-            >
+            <DropdownMenuItem key={n.id} className="flex-col items-start gap-1 py-2.5 cursor-pointer" onSelect={() => openNotif(n)}>
               <div className="flex w-full items-start gap-2">
-                {!n.read && (
-                  <span className="mt-1 size-1.5 shrink-0 rounded-full bg-accent" />
-                )}
+                {!n.read && <span className="mt-1 size-1.5 shrink-0 rounded-full bg-accent" />}
                 <div className={`min-w-0 flex-1 ${n.read ? "pl-3.5" : ""}`}>
-                  <p
-                    className={`text-sm leading-snug ${
-                      n.read ? "text-muted-foreground" : "font-medium"
-                    }`}
-                  >
-                    {n.title}
-                  </p>
-                  {n.body && (
-                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                      {n.body}
-                    </p>
-                  )}
-                  <p className="mt-1 text-[10px] text-muted-foreground">
-                    {new Date(n.createdAt).toLocaleString()}
-                  </p>
+                  <p className={`text-sm leading-snug ${n.read ? "text-muted-foreground" : "font-medium"}`}>{n.title}</p>
+                  {n.body && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body}</p>}
+                  <p className="mt-1 text-[10px] text-muted-foreground">{new Date(n.createdAt).toLocaleString()}</p>
                 </div>
               </div>
             </DropdownMenuItem>

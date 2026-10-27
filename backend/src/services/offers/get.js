@@ -1,7 +1,7 @@
 // services/offers/get.js
-//      ==
+
 // GET /api/offers/:id — single offer with permission check
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError, shapeOffer } = require('./helpers');

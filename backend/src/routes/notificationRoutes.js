@@ -4,10 +4,10 @@ const { authenticate } = require('../middleware/auth');
 const { authenticateSSE } = require('../middleware/authSSE');
 const ctrl = require('../controllers/notificationController');
 
-// ---- PUBLIC (no auth) — token-based unsubscribe ----
+//  PUBLIC (no auth) — token-based unsubscribe 
 router.get('/unsubscribe', ctrl.unsubscribe);
 
-// ---- SSE — token via query string ----
+//  SSE — token via query string 
 router.get('/stream', authenticateSSE, ctrl.stream);
 
 // Everything else uses normal bearer auth

@@ -504,9 +504,9 @@ function passwordChanged({ name }) {
   };
 }
 
-//      ==
+
 // NEW — Email verification
-//      ==
+
 function verifyEmail({ name, verifyUrl, expiresInHours }) {
   const hrs = Number(expiresInHours) || 24;
   const body = `
@@ -527,9 +527,9 @@ function verifyEmail({ name, verifyUrl, expiresInHours }) {
   };
 }
 
-//      ==
+
 // NEW — Account lockout notification
-//      ==
+
 function accountLocked({ name, lockedUntilMinutes, lastAttemptAt, ip }) {
   const mins = Number(lockedUntilMinutes) || 15;
   const body = `

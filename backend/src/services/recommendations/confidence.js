@@ -1,8 +1,8 @@
 // services/recommendations/confidence.js
-//      ==
+
 // Dynamic confidence calculator — no more magic numbers.
 // Confidence is derived from data density + urgency.
-//      ==
+
 
 /**
  * Compute confidence based on:

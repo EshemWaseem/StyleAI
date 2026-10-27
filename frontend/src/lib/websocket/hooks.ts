@@ -1,7 +1,7 @@
 // lib/websocket/hooks.ts
-//      ==
+
 // Real-time event subscription hook — no polling, no reload.
-//      ==
+
 import { useEffect, useRef } from "react";
 import { getSocket } from "./client";
 

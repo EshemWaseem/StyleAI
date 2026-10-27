@@ -6,15 +6,15 @@ const {
 } = require('../middleware/auth');
 const ctrl = require('../controllers/userController');
 
-//      ==
+
 // SELF ROUTES — must come BEFORE /:id
-//      ==
+
 router.patch('/me', authenticate, ctrl.updateMe);
 router.patch('/me/password', authenticate, ctrl.changeMyPassword);
 
-//      ==
+
 // ADMIN ROUTES
-//      ==
+
 router.get('/', authenticate, requirePermission('user.read'), ctrl.listUsers);
 
 router.get(

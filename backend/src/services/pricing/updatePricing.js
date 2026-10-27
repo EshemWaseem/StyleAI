@@ -1,8 +1,8 @@
 // services/pricing/updatePricing.js
-//      ==
+
 // Logic for PUT /api/influencers/:id/pricing
 // Single write surface for: pricingTiers + currency + minBudget + acceptsBundles
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const {
@@ -48,12 +48,12 @@ async function updateInfluencerPricing(user, influencerId, payload = {}) {
 
   const data = {};
 
-  //  --- pricingTiers  ---
+  //   pricingTiers  
   if (payload.pricingTiers !== undefined) {
     data.pricingTiers = validatePricingTiers(payload.pricingTiers);
   }
 
-  //  --- currency  ---
+  //   currency  
   if (payload.currency !== undefined) {
     if (payload.currency === null) {
       throw httpError('currency cannot be null', 400, 'INVALID_CURRENCY');
@@ -65,7 +65,7 @@ async function updateInfluencerPricing(user, influencerId, payload = {}) {
     data.currency = c;
   }
 
-  //  --- minBudget  ---
+  //   minBudget  
   if (payload.minBudget !== undefined) {
     if (payload.minBudget === null) {
       data.minBudget = null;
@@ -74,7 +74,7 @@ async function updateInfluencerPricing(user, influencerId, payload = {}) {
     }
   }
 
-  //  --- acceptsBundles  ---
+  //   acceptsBundles  
   if (payload.acceptsBundles !== undefined) {
     if (payload.acceptsBundles === null) {
       data.acceptsBundles = null;

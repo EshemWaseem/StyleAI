@@ -1,7 +1,7 @@
 // services/recommendations/signals/campaignSignals.js
-//      ==
+
 // Campaign signals — enriched with real names, dynamic confidence
-//      ==
+
 
 const { computeConfidence } = require('../confidence');
 

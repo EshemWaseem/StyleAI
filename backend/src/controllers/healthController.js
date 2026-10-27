@@ -1,9 +1,9 @@
 // controllers/healthController.js
-//      ==
+
 // Health + readiness probes.
 // GET /api/health          → liveness  (process alive)
 // GET /api/health/ready    → readiness (DB, Redis, AI, Email)
-//      ==
+
 const prisma = require('../config/prisma');
 
 async function liveness(req, res) {
@@ -21,7 +21,7 @@ async function readiness(req, res) {
   let allOk = true;
   let criticalOk = true; // DB is critical; AI/Email are optional
 
-  // --- Database (CRITICAL) ---
+  //  Database (CRITICAL) 
   const t0 = Date.now();
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -32,7 +32,7 @@ async function readiness(req, res) {
     criticalOk = false;
   }
 
-  // --- Redis / Queue ---
+  //  Redis / Queue 
   const t1 = Date.now();
   try {
     const { QUEUE_ENABLED, isHealthy } = require('../services/queue');
@@ -48,7 +48,7 @@ async function readiness(req, res) {
     allOk = false;
   }
 
-  // --- AI Service (optional) ---
+  //  AI Service (optional) 
   const t2 = Date.now();
   const aiUrl = process.env.AI_SERVICE_URL;
   if (aiUrl) {
@@ -68,7 +68,7 @@ async function readiness(req, res) {
     checks.aiService = { ok: true, note: 'AI_SERVICE_URL not set' };
   }
 
-  // --- Email (optional) ---
+  //  Email (optional) 
   try {
     const { EMAIL_ENABLED, getTransporter } = require('../services/email/transporter');
     if (EMAIL_ENABLED) {

@@ -50,9 +50,9 @@ export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
-//      ==
+
 // ROLE HELPERS
-//      ==
+
 const OWNER_ROLES = ["SUPER_ADMIN", "BRAND_OWNER", "AGENCY"];
 
 function isInfluencerOnly(roles: string[] = []) {
@@ -67,9 +67,9 @@ function isAdmin(roles: string[] = []) {
   return roles.includes("SUPER_ADMIN");
 }
 
-//      ==
+
 // LOGIN ATTEMPT HELPERS
-//      ==
+
 interface LoginAttemptRow {
   id: string;
   success: boolean;
@@ -134,9 +134,9 @@ function reasonLabel(reason: string | null, success: boolean): string {
   }
 }
 
-//      ==
+
 // SETTINGS PAGE
-//      ==
+
 function SettingsPage() {
   const { user, loading: authLoading, logoutAll } = useRole();
   const navigate = useNavigate();
@@ -1058,9 +1058,9 @@ function SettingsPage() {
   );
 }
 
-//      ==
+
 // Toggle row helper
-//      ==
+
 function ToggleRow({
   label,
   description,

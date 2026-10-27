@@ -28,9 +28,9 @@ export const Route = createFileRoute("/team")({
   component: TeamPage,
 });
 
-//      ==
+
 // PAGE
-//      ==
+
 
 function TeamPage() {
   const { user, loading: authLoading } = useRole();
@@ -613,9 +613,9 @@ function TeamPage() {
   );
 }
 
-//      ==
+
 // SMALL COMPONENTS
-//      ==
+
 
 function RoleBadge({
   role,
@@ -695,10 +695,10 @@ function RoleDropdown({
   );
 }
 
-//      ==
+
 // ADD MEMBER MODAL — smart (direct add OR invite)
 // Uses .ui-overlay / .ui-panel system
-//      ==
+
 
 function AddMemberModal({
   roles,
@@ -768,9 +768,9 @@ function AddMemberModal({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  //      ==
+  
   // RESULT: ADDED
-  //      ==
+  
   if (result?.type === "ADDED") {
     return (
       <div
@@ -808,9 +808,9 @@ function AddMemberModal({
     );
   }
 
-  //      ==
+  
   // RESULT: INVITED
-  //      ==
+  
   if (result?.type === "INVITED") {
     return (
       <div
@@ -864,9 +864,9 @@ function AddMemberModal({
     );
   }
 
-  //      ==
+  
   // FORM
-  //      ==
+  
   return (
     <div
       className="ui-overlay"
@@ -995,10 +995,10 @@ function AddMemberModal({
   );
 }
 
-//      ==
+
 // APPROVE REQUEST MODAL
 // Uses .ui-overlay / .ui-panel system
-//      ==
+
 
 function ApproveRequestModal({
   request,

@@ -1,7 +1,7 @@
 // storefront.prisma
-//      ==
+
 // Admin-controlled public storefront
-//      ==
+
 
 enum StorefrontSectionType {
   MANUAL
@@ -71,7 +71,7 @@ model StorefrontSectionProduct {
   @@index([productId])
 }
 
-// ✅ NEW — editorial block (admin-editable "loop" section)
+//  — editorial block (admin-editable "loop" section)
 model StorefrontEditorial {
   id        String   @id @default(uuid())
   title     String

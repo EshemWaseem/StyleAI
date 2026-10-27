@@ -2,9 +2,9 @@
 const prisma = require('../../config/prisma');
 const platformDefaults = require('../../config/platformSettings');
 
-//      ==
+
 // ERROR HELPER
-//      ==
+
 function httpError(message, status = 400, code = null) {
   const err = new Error(message);
   err.status = status;
@@ -12,18 +12,18 @@ function httpError(message, status = 400, code = null) {
   return err;
 }
 
-//      ==
+
 // ENSURE SUPER_ADMIN
-//      ==
+
 function assertSuperAdmin(user) {
   if (!user?.roles?.includes('SUPER_ADMIN')) {
     throw httpError('Forbidden: super admin only', 403, 'NOT_ADMIN');
   }
 }
 
-//      ==
+
 // SETTINGS RESOLVER — DB value falls back to defaults
-//      ==
+
 async function getSetting(key, category) {
   const row = await prisma.platformSetting.findUnique({ where: { key } });
   if (row) return row.value;
@@ -52,9 +52,9 @@ async function setSetting(key, value, category, description, adminId) {
   });
 }
 
-//      ==
+
 // AUDIT LOG
-//      ==
+
 async function writeAudit({
   actorId,
   action,
@@ -73,9 +73,9 @@ async function writeAudit({
   }
 }
 
-//      ==
+
 // PAGINATION
-//      ==
+
 function parsePagination(query) {
   const limit = Math.min(Number(query.limit) || 50, 200);
   const offset = Math.max(Number(query.offset) || 0, 0);

@@ -1,9 +1,9 @@
 const prisma = require('../config/prisma');
 const { ensureDefaultRoles } = require('./brandTeamRoleService');
 
-//      ==
+
 // HELPERS
-//      ==
+
 
 async function requireBrandOwner(user) {
   if (user.roles.includes('SUPER_ADMIN')) return;
@@ -71,9 +71,9 @@ function shape(r) {
   };
 }
 
-//      ==
+
 // USER SENDS REQUEST
-//      ==
+
 
 async function createRequest(user, { brandId, message, requestedRoleId }) {
   if (!brandId) {
@@ -159,9 +159,9 @@ async function createRequest(user, { brandId, message, requestedRoleId }) {
   return shape(request);
 }
 
-//      ==
+
 // USER — MY REQUESTS
-//      ==
+
 
 async function listMine(user) {
   const requests = await prisma.brandJoinRequest.findMany({
@@ -183,9 +183,9 @@ async function listMine(user) {
   return requests.map(shape);
 }
 
-//      ==
+
 // OWNER — LIST PENDING
-//      ==
+
 
 async function listForBrandOwner(user, { status = 'PENDING' } = {}) {
   await requireBrandOwner(user);
@@ -214,9 +214,9 @@ async function listForBrandOwner(user, { status = 'PENDING' } = {}) {
   return requests.map(shape);
 }
 
-//      ==
+
 // OWNER — APPROVE (with role assignment)
-//      ==
+
 
 async function approve(user, requestId, { approvedRoleId } = {}) {
   await requireBrandOwner(user);
@@ -344,9 +344,9 @@ async function approve(user, requestId, { approvedRoleId } = {}) {
   return shape(result);
 }
 
-//      ==
+
 // OWNER — REJECT
-//      ==
+
 
 async function reject(user, requestId, reason) {
   await requireBrandOwner(user);
@@ -393,9 +393,9 @@ async function reject(user, requestId, reason) {
   return shape(updated);
 }
 
-//      ==
+
 // USER — CANCEL OWN REQUEST
-//      ==
+
 
 async function cancelMine(user, requestId) {
   const request = await prisma.brandJoinRequest.findUnique({

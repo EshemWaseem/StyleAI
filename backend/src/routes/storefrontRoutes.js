@@ -1,21 +1,20 @@
-// routes/storefrontRoutes.js
+// backend/src/routes/storefrontRoutes.js
 const router = require('express').Router();
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
 const ctrl = require('../controllers/storefrontController');
 
-// PUBLIC
+// Public — no auth required
 router.get('/', ctrl.getPublicStorefront);
 
-// BRAND SIDE — application flow
-router.get('/me/status', authenticate, ctrl.getMyStatus);
-router.post('/me/apply', authenticate, ctrl.apply);
-router.post('/me/withdraw', authenticate, ctrl.withdraw);
+// Everything below this line requires authentication
+router.use(authenticate);
 
-// BRAND SIDE — per-product visibility (own products only)
-router.patch(
-  '/me/products/:productId/visibility',
-  authenticate,
-  ctrl.toggleProductVisibility
-);
+// Everything below this line requires a brand-level role
+router.use(authorize('BRAND_OWNER', 'BRAND_TEAM_MEMBER'));
+
+router.get('/me/status', ctrl.getMyStatus);
+router.post('/me/apply', ctrl.apply);
+router.post('/me/withdraw', ctrl.withdraw);
+router.patch('/me/products/:productId/visibility', ctrl.toggleProductVisibility);
 
 module.exports = router;

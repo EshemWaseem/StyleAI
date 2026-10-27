@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Camera, Loader2, Upload, X, Sparkles, AlertCircle, CheckCircle2,
-  Image as ImageIcon, RotateCw,
+  Image as ImageIcon, RotateCw, Rocket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
@@ -15,6 +15,7 @@ import {
   type PhotographyResult,
 } from "@/lib/ai";
 import { cn } from "@/lib/utils";
+import { CreateMetaCampaignModal } from "@/components/agency/CreateMetaCampaignModal";
 
 export const Route = createFileRoute("/studio/photography")({
   head: () => ({ meta: [{ title: "AI Photography — StyleAI" }] }),
@@ -53,6 +54,7 @@ function PhotographyStudio() {
   const [elapsed, setElapsed] = useState(0);
   const [result, setResult] = useState<PhotographyResult | null>(null);
   const [error, setError] = useState("");
+  const [showAdModal, setShowAdModal] = useState(false);
 
   // Load products
   useEffect(() => {
@@ -343,6 +345,16 @@ function PhotographyStudio() {
                     </div>
                   </Panel>
 
+                   <div className="flex justify-end">
+                <Button 
+                  size="lg" 
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => setShowAdModal(true)}
+                >
+                  <Rocket className="mr-2 size-5" /> Create Ad with this Image
+                </Button>
+              </div>
+
                   <Panel>
                     <div className="flex items-start justify-between">
                       <SectionTitle
@@ -402,6 +414,18 @@ function PhotographyStudio() {
             </div>
           </div>
         )}
+
+
+         {showAdModal && result && (
+              <CreateMetaCampaignModal
+                initialImageUrl={result.image.url}
+                onClose={() => setShowAdModal(false)}
+                onSuccess={() => {
+                  setShowAdModal(false);
+                  alert("Campaign launched successfully from AI Photography!");
+                }}
+              />
+            )}
       </>
     </ProtectedRoute>
   );

@@ -8,10 +8,11 @@ import type {
   AgencyServiceType,
   AgencyEngagement,
   CreateEngagementInput,
+  AgencyAdAccount,
+  IntegrationProvider,
 } from "./types";
 
 export const agencyProfileApi = {
-  // ---- Profile ----
   getMe: () =>
     http.get<{ profile: AgencyProfile }>("/api/agency/me/profile"),
 
@@ -21,8 +22,7 @@ export const agencyProfileApi = {
       payload
     ),
 
-  // ---- Directory ----
-      browse: (filters: {
+  browse: (filters: {
     serviceType?: AgencyServiceType;
     serviceGroup?: "BRAND" | "INFLUENCER";
     limit?: number;
@@ -47,9 +47,7 @@ export const agencyProfileApi = {
       influencerSide: AgencyServiceType[];
     }>("/api/agency/service-types"),
 
-  //      ==
   // ENGAGEMENTS
-  //      ==
   createEngagement: (payload: CreateEngagementInput) =>
     http.post<{ message: string; engagement: AgencyEngagement }>(
       "/api/agency/engagements",
@@ -109,9 +107,6 @@ export const agencyProfileApi = {
       payload
     ),
 
-  //      ==
-  // AGENCY DELIVERABLES (Bridge to campaign)
-  //      ==
   uploadDeliverable: (id: string, payload: { files: any[]; notes?: string }) =>
     http.post<{ message: string; engagement: AgencyEngagement }>(
       `/api/agency/engagements/${id}/deliverable`,
@@ -128,5 +123,90 @@ export const agencyProfileApi = {
     ),
 };
 
-// Backward-compat
+export const agencyIntegrationsApi = {
+  list: () =>
+    http.get<{ accounts: AgencyAdAccount[] }>("/api/agency/integrations"),
+
+  connect: (provider: IntegrationProvider) =>
+    http.get<{ url: string }>(`/api/agency/integrations/${provider}/connect`),
+
+  disconnect: (provider: IntegrationProvider) =>
+    http.delete<{ message: string }>(`/api/agency/integrations/${provider}`),
+};
+
+export interface ExternalCampaign {
+  id: string;
+  name: string;
+  status: string;
+  objective: string;
+  budget: string | null;
+  createdAt: string;
+}
+
+export const agencyCampaignsApi = {
+  createMetaCampaign: (payload: {
+    name: string;
+    budget: string;
+    link: string;
+    imageUrl: string;
+    adText: string;
+    headline?: string;
+  }) =>
+    http.post<{ message: string; adId: string }>(
+      "/api/agency/meta-campaigns",
+      payload
+    ),
+
+  createGoogleCampaign: (payload: { name: string; budget: string }) =>
+    http.post<{ message: string; campaignResourceName: string }>(
+      "/api/agency/google-campaigns",
+      payload
+    ),
+
+  listMetaCampaigns: () =>
+    http.get<{ campaigns: ExternalCampaign[] }>("/api/agency/meta-campaigns"),
+
+  toggleMetaCampaign: (id: string, status: "ACTIVE" | "PAUSED") =>
+    http.patch<{ success: boolean }>(
+      `/api/agency/meta-campaigns/${id}/status`,
+      { status }
+    ),
+
+  generateAdText: (payload: {
+    productName: string;
+    category?: string;
+    brandVoice?: string;
+  }) =>
+    http.post<{ adText: string; headline: string }>(
+      "/api/agency/meta-campaigns/generate-text",
+      payload
+    ),
+
+  generateAdImage: (payload: {
+    originalImageUrl: string;
+    style?: string;
+  }) =>
+    http.post<{ generatedImageUrl: string }>(
+      "/api/agency/meta-campaigns/generate-image",
+      payload
+    ),
+
+    generateStrategy: (payload: { productName: string; category?: string; price?: number }) =>
+    http.post<{ 
+      target_audience: string; 
+      suggested_budget: string; 
+      ad_headline: string; 
+      ad_copy: string;
+      ai_insight: string;
+    }>('/api/agency/meta-campaigns/generate-strategy', payload
+    ),
+
+    getMetaCampaignInsights: (id: string) =>
+    http.get<{ spend: number; clicks: number; impressions: number; reach: number }>(
+      `/api/agency/meta-campaigns/${id}/insights`
+    ),
+
+
+};
+
 export const agencyApi = agencyProfileApi;

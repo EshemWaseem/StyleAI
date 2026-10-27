@@ -1,8 +1,8 @@
 // services/wallet/topup.js
-//      ==
+
 // Wallet top-up: brand/agency/influencer → own wallet.
 // Delegates to the same payment gateway registry as subscriptions.
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
@@ -62,7 +62,7 @@ async function createTopUpCheckout(user, payload = {}) {
     });
   }
 
-  // ---- Defaults for success/cancel URLs ----
+  //  Defaults for success/cancel URLs 
   const frontend = getFrontendOrigin();
   const successUrl =
     payload.successUrl || `${frontend}/wallet?topup=success`;
@@ -72,7 +72,7 @@ async function createTopUpCheckout(user, payload = {}) {
   // Resolve gateway
   const gateway = registry.get(providerUpper);
 
-  // ✅ FIX: pass `metadata` (not `meta`) — Stripe gateway forwards
+  //  FIX: pass `metadata` (not `meta`) — Stripe gateway forwards
   //         this directly to session.metadata in Stripe.
   const session = await gateway.createCheckout({
     mode: 'payment',

@@ -1,7 +1,7 @@
 // notification.prisma
-//      ==
+
 // NOTIFICATION — event-driven, per-user
-//      ==
+
 
 model Notification {
   id     String @id @default(uuid())

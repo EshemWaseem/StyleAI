@@ -1,7 +1,7 @@
 // services/payments/stripe/customer.js
-//      ==
+
 // Stripe customer management for orgs AND individual users.
-//      ==
+
 const prisma = require('../../../config/prisma');
 const stripe = require('./client');
 

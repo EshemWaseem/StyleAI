@@ -1,8 +1,8 @@
 // services/notifications/sse.js
-//      ==
+
 // Server-Sent Events connection registry.
 // One Set<res> per userId. Publishes bus events to connected clients.
-//      ==
+
 
 const bus = require('./eventBus');
 const { shapeNotification } = require('./helpers');
@@ -64,7 +64,7 @@ function subscriberCount() {
   return connections.size;
 }
 
-// ---- Wire bus events to connected clients ----
+//  Wire bus events to connected clients 
 bus.on('notification', ({ userId, notification }) => publishToUser(userId, notification));
 bus.on('unread', ({ userId, unread }) => publishUnread(userId, unread));
 

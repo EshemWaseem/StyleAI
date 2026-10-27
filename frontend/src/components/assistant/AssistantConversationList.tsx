@@ -22,7 +22,7 @@ export function AssistantConversationList({
   onDelete,
   onNew,
 }: Props) {
-  // ✅ Async delete handler with Swal confirm
+  //  Async delete handler with Swal confirm
   async function handleDeleteClick(e: React.MouseEvent, id: string) {
     e.stopPropagation();
     const ok = await swalConfirm(

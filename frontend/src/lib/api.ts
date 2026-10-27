@@ -1,5 +1,5 @@
 // frontend/src/lib/api.ts
-//      ==
+
 // Central API client.
 // - Auto-attaches JWT
 // - 401 → logout (except on /login or auth endpoints)
@@ -7,7 +7,7 @@
 // - 423 → account locked: preserves retryAfter + code
 // - 429 → rate limit: preserves retryAfter + code
 // - Sanitizes infra errors
-//      ==
+
 
 const BASE_URL =
   (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
@@ -32,9 +32,9 @@ const FRIENDLY_FALLBACKS: Record<number, string> = {
   504: "Request timed out. Please try again.",
 };
 
-//      ==
+
 // Trial signal (sessionStorage — synchronous across routes)
-//      ==
+
 export function markTrialExpired() {
   if (typeof window !== "undefined") {
     sessionStorage.setItem("trialExpired", "1");
@@ -147,7 +147,7 @@ export async function api<T = any>(
       res.status
     );
 
-    // ---- Parse Retry-After (seconds) ----
+    //  Parse Retry-After (seconds) 
     const retryAfterHeader = res.headers.get("Retry-After");
     const parsedHeader = retryAfterHeader
       ? parseInt(retryAfterHeader, 10)
@@ -158,7 +158,7 @@ export async function api<T = any>(
       ? body.retryAfter
       : undefined;
 
-    // ---- 402: trial expired / inactive subscription ----
+    //  402: trial expired / inactive subscription 
     if (res.status === 402) {
       const code = body?.code;
       if (code === "TRIAL_EXPIRED" || code === "SUBSCRIPTION_INACTIVE") {
@@ -167,7 +167,7 @@ export async function api<T = any>(
       }
     }
 
-    // ---- 401: session expired (only for authenticated routes) ----
+    //  401: session expired (only for authenticated routes) 
     if (res.status === 401 && typeof window !== "undefined") {
       const onLoginPage = window.location.pathname.startsWith("/login");
       const isAuthEndpoint =

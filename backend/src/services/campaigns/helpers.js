@@ -2,9 +2,9 @@
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
 
-//      ==
+
 // AUTH GUARDS
-//      ==
+
 async function assertCanViewCampaign(user, campaign) {
   const isAdmin = user.roles?.includes('SUPER_ADMIN');
   if (isAdmin) return;
@@ -46,9 +46,9 @@ function assertIsAgencySide(user, campaign) {
   }
 }
 
-//      ==
+
 // SHAPING
-//      ==
+
 function shapeSubmission(s) {
   return {
     id: s.id,

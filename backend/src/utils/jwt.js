@@ -1,10 +1,10 @@
 // utils/jwt.js
-//      ==
+
 // JWT signing / verification.
 // Payload MUST include `userId` and `tokenVersion`.
 //   signToken({ userId, tokenVersion })
 // `tokenVersion` enables global session revocation (D3).
-//      ==
+
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET;

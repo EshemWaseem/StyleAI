@@ -1,3 +1,4 @@
+// frontend/src/lib/offers/api.ts
 import { http } from "../api";
 import type {
   CreateOfferPayload,

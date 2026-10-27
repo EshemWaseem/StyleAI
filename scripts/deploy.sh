@@ -19,7 +19,7 @@ error()  { echo -e "${RED}[✗]${NC} $*" >&2; }
 
 cd "$(dirname "$0")/.."
 
-# ---- Pre-flight ----
+#  Pre-flight 
 log "Pre-flight checks..."
 
 if [ ! -f .env ]; then
@@ -42,17 +42,17 @@ fi
 
 success "All env files present"
 
-# ---- Build ----
+#  Build 
 log "Building images..."
 docker compose -f docker-compose.prod.yml build --pull
 
-# ---- Pull Ollama models (if container present) ----
+#  Pull Ollama models (if container present) 
 if docker compose -f docker-compose.prod.yml ps ollama 2>/dev/null | grep -q ollama; then
   log "Pulling Ollama models (best-effort)..."
   docker compose -f docker-compose.prod.yml exec -T ollama ollama pull qwen2.5:7b || true
 fi
 
-# ---- Start DB first ----
+#  Start DB first 
 log "Starting database + redis..."
 docker compose -f docker-compose.prod.yml up -d postgres redis
 
@@ -62,7 +62,7 @@ until docker compose -f docker-compose.prod.yml exec -T postgres pg_isready -U "
 done
 success "Postgres ready"
 
-# ---- Prisma migrate ----
+#  Prisma migrate 
 log "Running Prisma migrations..."
 docker compose -f docker-compose.prod.yml run --rm backend \
   npx prisma db push --accept-data-loss=false || \
@@ -70,11 +70,11 @@ docker compose -f docker-compose.prod.yml run --rm backend \
 
 success "Database synced"
 
-# ---- Start all ----
+#  Start all 
 log "Starting all services..."
 docker compose -f docker-compose.prod.yml up -d
 
-# ---- Wait for health ----
+#  Wait for health 
 log "Waiting for backend health..."
 for i in {1..30}; do
   if curl -fsS http://localhost:4000/api/health >/dev/null 2>&1; then
@@ -83,7 +83,7 @@ for i in {1..30}; do
   sleep 2
 done
 
-# ---- Status ----
+#  Status 
 log "Service status:"
 docker compose -f docker-compose.prod.yml ps
 

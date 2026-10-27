@@ -1,10 +1,4 @@
 # app/services/matching_service.py
-#      ==
-# Matching inference — pure function, no DB, no side-effects
-# Uses Ollama text model via existing ollama_service.
-# Falls back to heuristic if LLM fails.
-#      ==
-
 import re
 import time
 import logging
@@ -17,8 +11,6 @@ from app.schemas.matching import MatchRequest, MatchResultItem
 
 logger = logging.getLogger("styleai.matching")
 
-# qwen2.5:7b on CPU struggles with large JSON output.
-# Keep the batch small so the model can finish the array.
 MAX_CANDIDATES_PER_CALL = 12
 
 _VALID_SCORE_KEYS = {
@@ -31,10 +23,6 @@ _VALID_SCORE_KEYS = {
     "verdict",
 }
 
-
-#       
-# Heuristic fallback (no AI)
-#       
 def _heuristic_score(product: dict, candidate: dict) -> dict:
     pc = (product.get("category") or "").lower()
     inf_cats = [c.lower() for c in (candidate.get("categories") or [])]
@@ -97,20 +85,13 @@ def _heuristic_score(product: dict, candidate: dict) -> dict:
         "verdict": "Computed without AI.",
     }
 
-
-#       
-# JSON sanitizer — qwen2.5:7b emits messy keys
-#       
 def _sanitize_key(k: str) -> str:
     k = str(k).strip()
-    # duplicate suffix: influencer_id_id → influencer_id
     if k.endswith("_id_id"):
-        k = k[:-3]  # remove trailing '_id'
-    # key is whitespace or empty
+        k = k[:-3]
     if not k or len(k.strip()) == 0:
         return "__junk__"
     return k
-
 
 def _sanitize_item(raw: Any) -> dict | None:
     if not isinstance(raw, dict):
@@ -121,7 +102,6 @@ def _sanitize_item(raw: Any) -> dict | None:
         key = _sanitize_key(k)
         if key == "__junk__":
             continue
-        # value is a string equal to another schema key → garbage
         if isinstance(v, str) and v in _VALID_SCORE_KEYS:
             continue
         clean[key] = v
@@ -162,7 +142,6 @@ def _sanitize_item(raw: Any) -> dict | None:
         "verdict": verdict,
     }
 
-
 def _extract_results(raw: Any) -> List[dict]:
     if isinstance(raw, dict):
         arr = raw.get("results")
@@ -181,10 +160,6 @@ def _extract_results(raw: Any) -> List[dict]:
             cleaned.append(s)
     return cleaned
 
-
-#       
-# MAIN
-#       
 async def match_influencers(req: MatchRequest) -> Dict[str, Any]:
     start = time.time()
 
@@ -200,7 +175,7 @@ async def match_influencers(req: MatchRequest) -> Dict[str, Any]:
         )
 
     combined_prompt = (
-        f"{SYSTEM_PROMPT}\n\n---\n\n"
+        f"{SYSTEM_PROMPT}\n\n\n\n"
         f"{build_user_prompt(product, candidates)}"
     )
 

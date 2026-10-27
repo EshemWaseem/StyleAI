@@ -1,5 +1,3 @@
-
-
 .resp-split {
   display: flex;
   flex-direction: column;
@@ -31,7 +29,7 @@
   flex: 1;
 }
 
-/* ── Mobile / Desktop Visibility ─────────────────────── */
+/*  Mobile / Desktop Visibility ─ */
 
 .resp-only-mobile { display: block; }
 @media (min-width: 768px) {
@@ -43,7 +41,7 @@
   .resp-only-desktop { display: flex; }
 }
 
-/* ── Chat Layout ─────────────────────────────────────── */
+/*  Chat Layout  */
 
 .resp-chat-list {
   display: flex;
@@ -73,7 +71,7 @@
   .resp-chat-panel                 { display: flex !important; }
 }
 
-/* ── Touch Targets ───────────────────────────────────── */
+/*  Touch Targets  */
 
 @media (max-width: 767px) {
   .resp-touch {
@@ -82,7 +80,7 @@
   }
 }
 
-/* ── Scroll Areas ────────────────────────────────────── */
+/*  Scroll Areas ─ */
 
 .resp-scroll {
   overflow-y:                auto;
@@ -100,7 +98,7 @@
   scroll-padding-bottom: 3px;
 }
 
-/* ── Safe Area Helpers ───────────────────────────────── */
+/*  Safe Area Helpers  */
 
 .resp-safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -108,14 +106,6 @@
 .resp-safe-top {
   padding-top: env(safe-area-inset-top, 0px);
 }
-
-/*      ==
-   App Root Viewport Lock — SCOPED
-         
-   ✅ DEFAULT: normal document flow. Page scrolls.
-   ✅ When app shell is mounted (dashboard etc.):
-      lock viewport so internal containers scroll.
-        == */
 
 html,
 body {
@@ -125,7 +115,6 @@ body {
   overscroll-behavior: none;
 }
 
-/* Lock ONLY when [data-app-shell] is present */
 html:has([data-app-shell]),
 body:has([data-app-shell]) {
   height: 100%;
@@ -140,8 +129,6 @@ body:has([data-app-shell]) > div:first-child {
   flex-direction: column;
 }
 
-/* ── Mobile safe-area on main content ───────────────── */
-
 @supports (padding: env(safe-area-inset-bottom)) {
   @media (max-width: 767px) {
     main {
@@ -149,10 +136,6 @@ body:has([data-app-shell]) > div:first-child {
     }
   }
 }
-
-/*      ==
-   Sidebar Sheet — scoped to sidebar only
-        == */
 
 .sidebar-sheet-content {
   width:     268px !important;
@@ -169,10 +152,6 @@ body:has([data-app-shell]) > div:first-child {
     display: none;
   }
 }
-
-/*      ==
-   Modal / Dialog responsive helpers
-        == */
 
 @media (max-width: 640px) {
   .ui-panel {
@@ -199,27 +178,11 @@ body:has([data-app-shell]) > div:first-child {
   }
 }
 
-/* ── Prevent iOS double-tap zoom on small buttons ─────── */
-
 button,
 a {
   touch-action: manipulation;
 }
 
-
-
-
-/*      ==
-   GLOBAL CLICK / FOCUS FIXES
-         
-   Fixes common issues:
-   - Body/html focus outline appearing on click
-   - Mobile tap highlight flash
-   - Text selection on empty click
-   - Radix pointer-events lock leak
-        == */
-
-/* 1. Remove focus outline from document containers */
 html,
 body,
 #root,
@@ -236,13 +199,11 @@ body:focus-visible,
   outline: none !important;
 }
 
-/* 2. Remove mobile tap highlight (Chrome/Android blue flash) */
 * {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
 }
 
-/* 3. Prevent accidental text selection on UI chrome */
 button,
 a,
 [role="button"],
@@ -260,7 +221,6 @@ aside,
   -webkit-user-select: none;
 }
 
-/* Re-enable selection for text content */
 p,
 span:not([role]),
 h1, h2, h3, h4, h5, h6,
@@ -276,7 +236,6 @@ pre,
   -webkit-user-select: text;
 }
 
-/* 4. Kill focus ring on non-interactive elements */
 div:focus,
 div:focus-visible,
 section:focus,
@@ -286,23 +245,45 @@ main:focus-visible {
   outline: none !important;
 }
 
-/* 5. Selection color — use theme accent */
 ::selection {
   background-color: color-mix(in oklch, var(--color-accent) 35%, transparent);
   color: var(--color-foreground);
 }
 
-/* When no modal is open, body must be clickable */
 body:not([data-scroll-locked]) {
   pointer-events: auto !important;
 }
 
-/* When scroll-lock is active (modal open), keep default */
 body[data-scroll-locked] {
   pointer-events: auto;
 }
 
-/* Sometimes Radix adds it inline on body — override */
 body[style*="pointer-events: none"]:not([data-scroll-locked]) {
   pointer-events: auto !important;
+}
+
+
+
+
+/* ── Responsive container width constraints ──────────────── */
+
+/*
+ * Prevents page content from stretching edge-to-edge on
+ * large monitors while keeping full bleed on small screens.
+ * Only kicks in above 1280px so tablet/mobile are untouched.
+ */
+@media (min-width: 1280px) {
+  .ui-page-content > *:not(.ui-page-full):not(.ui-chat-shell) {
+    max-width: 100%;
+  }
+}
+
+/*
+ * Extra bottom clearance on mobile so the last card row
+ * is never clipped behind the browser chrome / home bar.
+ */
+@media (max-width: 767px) {
+  .ui-page-content {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
 }

@@ -1,7 +1,7 @@
 // services/notifications/markRead.js
-//      ==
+
 // Mark read — single + bulk
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');

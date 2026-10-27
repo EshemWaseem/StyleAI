@@ -3,7 +3,6 @@ import { http } from "../api";
 import type { ProductMatchForMeResponse, ProductMatchResponse } from "./types";
 
 export const matchingApi = {
-  /** Brand/agency: rank influencers for a product */
   forProduct: (
     productId: string,
     filters: { limit?: number; minScore?: number } = {}
@@ -17,7 +16,6 @@ export const matchingApi = {
     );
   },
 
-  /** Influencer: rank products for my profile */
   forMe: (filters: { limit?: number; minScore?: number } = {}) => {
     const qs = new URLSearchParams();
     if (filters.limit) qs.set("limit", String(filters.limit));

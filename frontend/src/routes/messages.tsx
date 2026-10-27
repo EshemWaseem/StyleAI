@@ -21,9 +21,9 @@ export const Route = createFileRoute("/messages")({
   component: MessagesPage,
 });
 
-//      ==
+
 // Helpers
-//      ==
+
 
 function otherParty(c: Conversation): PartyInfo {
   if (c.mySide === "A") return c.partyB;
@@ -108,9 +108,9 @@ type PartyHit = {
   slug: string | null;
 };
 
-//      ==
+
 // Main Page
-//      ==
+
 
 function MessagesPage() {
   const { user } = useRole();
@@ -633,9 +633,9 @@ function MessagesPage() {
   );
 }
 
-//      ==
+
 // New Chat Modal
-//      ==
+
 
 function NewChatModal({
   onClose,
@@ -793,9 +793,9 @@ function NewChatModal({
   );
 }
 
-//      ==
+
 // Message Bubble
-//      ==
+
 
 function Bubble({
   m,

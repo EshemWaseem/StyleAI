@@ -57,7 +57,7 @@ function AdminStorefrontPage() {
           </TabBtn>
         </nav>
 
-        {/* ✅ Fixed — single render per tab */}
+        {/*  Fixed — single render per tab */}
         <div className="mt-6">
           {tab === "hero" && <HeroManager />}
           {tab === "sections" && <SectionsManager />}
@@ -94,9 +94,9 @@ function TabBtn({
   );
 }
 
-//      ==
+
 // BRANDS MANAGER
-//      ==
+
 const STATUS_STYLE: Record<StorefrontOptIn, string> = {
   NOT_REQUESTED: "bg-muted text-muted-foreground",
   REQUESTED: "bg-amber-500/15 text-amber-500",
@@ -269,9 +269,9 @@ function BrandsManager() {
   );
 }
 
-//      ==
+
 // REVIEW MODAL — shows application + approve/decline
-//      ==
+
 const PLACEMENT_LABEL: Record<string, string> = {
   ECOM: "E-commerce only",
   TRENDING: "+ Trending",
@@ -523,9 +523,9 @@ function ReviewBrandModal({
   );
 }
 
-//      ==
+
 // HERO MANAGER
-//      ==
+
 function HeroManager() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [loading, setLoading] = useState(true);
@@ -717,9 +717,9 @@ function HeroFormModal({
   );
 }
 
-//      ==
+
 // SECTIONS MANAGER
-//      ==
+
 function SectionsManager() {
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1117,9 +1117,9 @@ function ProductRow({ p, action, onClick }: { p: PickerProduct; action: "add" | 
   );
 }
 
-//      ==
+
 // EDITORIAL MANAGER — single block (upsert)
-//      ==
+
 function EditorialManager() {
   const [editorial, setEditorial] = useState<Editorial | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1291,9 +1291,9 @@ function EditorialManager() {
   );
 }
 
-//      ==
+
 // HELPERS
-//      ==
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">

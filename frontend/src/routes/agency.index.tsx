@@ -1,24 +1,26 @@
 // routes/agency.index.tsx
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle, Loader2, Briefcase, Megaphone, Camera,
-  ArrowRight, ExternalLink, CheckCircle2, TrendingUp, Sparkles, Settings2, Globe, Video,
+  ArrowRight, ExternalLink, CheckCircle2, TrendingUp, Sparkles, Settings2,
+  Globe, Video, Facebook, Globe2, X, Plug, Rocket, Play, Pause
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import {
   agencyApi,
+  agencyIntegrationsApi,
+  agencyCampaignsApi,
   type AgencyClientEntry,
   type AgencyProfile,
   type AgencyServiceType,
+  type AgencyAdAccount,
+  type IntegrationProvider,
+  type ExternalCampaign,
 } from "@/lib/agency";
-import {
-  campaignsApi,
-  type Campaign,
-  type Deliverable,
-} from "@/lib/campaigns";
+import { campaignsApi, type Campaign, type Deliverable } from "@/lib/campaigns";
 import { useAgency } from "@/lib/agency/context";
 import {
   AGENCY_SERVICE_LABELS,
@@ -26,6 +28,7 @@ import {
   INFLUENCER_SERVICE_TYPES,
 } from "@/lib/agency/types";
 import { AgencyProfileModal } from "@/components/agency/AgencyProfileModal";
+import { CreateMetaCampaignModal } from "@/components/agency/CreateMetaCampaignModal";
 
 export const Route = createFileRoute("/agency/")({
   head: () => ({ meta: [{ title: "Agency — StyleAI" }] }),
@@ -38,27 +41,54 @@ const ACTIVE_CAMPAIGN_STATUSES = ["ACTIVE", "IN_PROGRESS", "PENDING"];
 
 function AgencyDashboard() {
   const { activeBrandId, setActiveBrand } = useAgency();
+  const search = useSearch({ from: "/agency/" }) as Record<string, string | undefined>;
+
   const [clients, setClients] = useState<AgencyClientEntry[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [profile, setProfile] = useState<AgencyProfile | null>(null);
+  const [integrations, setIntegrations] = useState<AgencyAdAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [connecting, setConnecting] = useState<IntegrationProvider | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // NEW: Meta Campaigns State
+  const [metaCampaigns, setMetaCampaigns] = useState<ExternalCampaign[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(false);
+
+  const oauthBanner = useMemo(() => {
+    if (bannerDismissed) return null;
+    if (search.connected === "true" && search.provider) {
+      return { type: "success" as const, provider: search.provider };
+    }
+    if (search.connected === "false") {
+      return {
+        type: "error" as const,
+        provider: search.provider || "provider",
+        message: search.error || "Connection failed",
+      };
+    }
+    return null;
+  }, [search.connected, search.provider, search.error, bannerDismissed]);
 
   async function loadAll() {
     setLoading(true);
     setError("");
     try {
-      const [c, cp, p] = await Promise.all([
+      const [c, cp, p, i] = await Promise.all([
         agencyApi.listClients().catch(() => ({ clients: [] as AgencyClientEntry[] })),
         campaignsApi.list({ limit: 200 }).catch(() => ({
           campaigns: [] as Campaign[], total: 0, limit: 0, offset: 0,
         })),
         agencyApi.getMe().catch(() => ({ profile: null as any })),
+        agencyIntegrationsApi.list().catch(() => ({ accounts: [] as AgencyAdAccount[] })),
       ]);
       setClients(c.clients || []);
       setCampaigns(cp.campaigns || []);
       setProfile(p.profile || null);
+      setIntegrations(i.accounts || []);
     } catch (e: any) {
       setError(e?.message || "Failed to load agency data");
     } finally {
@@ -66,10 +96,40 @@ function AgencyDashboard() {
     }
   }
 
+  // NEW: Load Meta Campaigns
+  async function loadMetaCampaigns() {
+    if (!integrations.find(i => i.provider === 'META' && i.isActive)) return;
+    setCampaignsLoading(true);
+    try {
+      const res = await agencyCampaignsApi.listMetaCampaigns();
+      setMetaCampaigns(res.campaigns);
+    } catch (e) {
+      console.error("Failed to load Meta campaigns", e);
+    } finally {
+      setCampaignsLoading(false);
+    }
+  }
+
   useEffect(() => {
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    loadMetaCampaigns();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [integrations]);
+
+  // NEW: Toggle Status
+  async function handleToggleStatus(id: string, currentStatus: string) {
+    const newStatus = currentStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+    try {
+      await agencyCampaignsApi.toggleMetaCampaign(id, newStatus);
+      setMetaCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
+    } catch (e: any) {
+      alert(e.message || 'Failed to update status');
+    }
+  }
 
   const stats = useMemo(() => {
     const totalBrands = clients.reduce((sum, c) => sum + c.brands.length, 0);
@@ -106,6 +166,37 @@ function AgencyDashboard() {
     INFLUENCER_SERVICE_TYPES.includes(s)
   );
 
+  async function handleConnect(provider: IntegrationProvider) {
+    try {
+      setConnecting(provider);
+      setError("");
+      const res = await agencyIntegrationsApi.connect(provider);
+      window.location.href = res.url;
+    } catch (e: any) {
+      setError(e?.message || "Failed to start connection");
+      setConnecting(null);
+    }
+  }
+
+  async function handleDisconnect(provider: IntegrationProvider) {
+    if (!window.confirm(`Disconnect ${provider}? You'll lose access to its ad campaigns.`)) return;
+    try {
+      setConnecting(provider);
+      await agencyIntegrationsApi.disconnect(provider);
+      await loadAll();
+    } catch (e: any) {
+      setError(e?.message || "Failed to disconnect");
+    } finally {
+      setConnecting(null);
+    }
+  }
+
+  const integrationMap = useMemo(() => {
+    const map = new Map<IntegrationProvider, AgencyAdAccount>();
+    for (const acc of integrations) map.set(acc.provider, acc);
+    return map;
+  }, [integrations]);
+
   return (
     <ProtectedRoute roles={["AGENCY"]}>
       <PageHeader
@@ -129,6 +220,41 @@ function AgencyDashboard() {
         }
       />
 
+      {oauthBanner && (
+        <div
+          className={`mt-6 flex items-start gap-3 rounded-lg border p-4 text-sm ${
+            oauthBanner.type === "success"
+              ? "border-emerald-500/30 bg-emerald-500/5"
+              : "border-destructive/30 bg-destructive/5"
+          }`}
+        >
+          {oauthBanner.type === "success" ? (
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+          ) : (
+            <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+          )}
+          <div className="flex-1">
+            <p className="font-medium">
+              {oauthBanner.type === "success"
+                ? `${oauthBanner.provider} connected successfully`
+                : `Could not connect ${oauthBanner.provider}`}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {oauthBanner.type === "success"
+                ? "Your ad account is now linked. You can launch campaigns from here."
+                : oauthBanner.message}
+            </p>
+          </div>
+          <button
+            onClick={() => setBannerDismissed(true)}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Dismiss"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
+
       {error && (
         <div className="mt-6 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           <AlertCircle className="mt-0.5 size-4 shrink-0" /> <span>{error}</span>
@@ -142,7 +268,7 @@ function AgencyDashboard() {
         </div>
       ) : (
         <>
-          {/*   ======== SERVICE CATEGORIES   ======== */}
+          {/* SERVICE CATEGORIES */}
           {!hasServices ? (
             <Panel className="mt-8 border-dashed">
               <div className="flex flex-col items-center px-4 py-10 text-center">
@@ -174,7 +300,6 @@ function AgencyDashboard() {
               />
 
               <div className="mt-4 grid gap-4 md:grid-cols-2">
-                {/* Brand-side */}
                 <Panel className="p-5">
                   <div className="flex items-center gap-2">
                     <span className="grid size-8 place-items-center rounded-md bg-accent/15 text-accent">
@@ -185,16 +310,12 @@ function AgencyDashboard() {
                     </p>
                   </div>
                   <div className="mt-4 space-y-2">
-                    {BRAND_SERVICE_TYPES.map((type) => {
-                      const offered = brandServices.includes(type);
-                      return (
-                        <ServiceRow key={type} type={type} offered={offered} />
-                      );
-                    })}
+                    {BRAND_SERVICE_TYPES.map((type) => (
+                      <ServiceRow key={type} type={type} offered={brandServices.includes(type)} />
+                    ))}
                   </div>
                 </Panel>
 
-                {/* Influencer-side */}
                 <Panel className="p-5">
                   <div className="flex items-center gap-2">
                     <span className="grid size-8 place-items-center rounded-md bg-purple-500/15 text-purple-500">
@@ -205,19 +326,116 @@ function AgencyDashboard() {
                     </p>
                   </div>
                   <div className="mt-4 space-y-2">
-                    {INFLUENCER_SERVICE_TYPES.map((type) => {
-                      const offered = influencerServices.includes(type);
-                      return (
-                        <ServiceRow key={type} type={type} offered={offered} />
-                      );
-                    })}
+                    {INFLUENCER_SERVICE_TYPES.map((type) => (
+                      <ServiceRow key={type} type={type} offered={influencerServices.includes(type)} />
+                    ))}
                   </div>
                 </Panel>
               </div>
             </section>
           )}
 
-          {/*   ======== STATS (only if clients)   ======== */}
+          {/* AD INTEGRATIONS */}
+          <section className="mt-10">
+            <SectionTitle
+              title="Ad Integrations"
+              description="Connect your Meta and Google Ad accounts to launch campaigns."
+            />
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <IntegrationCard
+                provider="META"
+                name="Meta Ads"
+                description="Facebook & Instagram campaigns"
+                Icon={Facebook}
+                color="bg-blue-500/15 text-blue-500"
+                integration={integrationMap.get("META")}
+                onConnect={handleConnect}
+                onDisconnect={handleDisconnect}
+                onCreateCampaign={() => setShowCampaignModal(true)}
+                isBusy={connecting === "META"}
+              />
+              <IntegrationCard
+                provider="GOOGLE"
+                name="Google Ads"
+                description="Search & display campaigns"
+                Icon={Globe2}
+                color="bg-red-500/15 text-red-500"
+                integration={integrationMap.get("GOOGLE")}
+                onConnect={handleConnect}
+                onDisconnect={handleDisconnect}
+                isBusy={connecting === "GOOGLE"}
+              />
+            </div>
+          </section>
+
+          {/* 🔥 NEW: LIVE CAMPAIGNS SECTION 🔥 */}
+          {integrations.find(i => i.provider === 'META' && i.isActive) && (
+            <section className="mt-10">
+              <SectionTitle
+                title="Live Ad Campaigns"
+                description="Manage your Meta (FB/IG) campaigns directly from here."
+                action={
+                  <Button variant="outline" size="sm" onClick={loadMetaCampaigns} disabled={campaignsLoading}>
+                    {campaignsLoading ? <Loader2 className="mr-1 size-3 animate-spin" /> : "Refresh"}
+                  </Button>
+                }
+              />
+              
+              {campaignsLoading && metaCampaigns.length === 0 ? (
+                <p className="mt-4 text-sm text-muted-foreground">Loading campaigns from Meta...</p>
+              ) : metaCampaigns.length === 0 ? (
+                <div className="mt-4 rounded-xl border border-dashed border-border p-8 text-center">
+                  <Megaphone className="mx-auto size-6 text-muted-foreground" />
+                  <p className="mt-2 text-sm font-medium">No ad campaigns found</p>
+                  <p className="text-xs text-muted-foreground">Create your first campaign using the button above.</p>
+                </div>
+              ) : (
+                <Panel className="mt-4 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                        <th className="p-3 font-medium">Campaign Name</th>
+                        <th className="p-3 font-medium">Daily Budget</th>
+                        <th className="p-3 font-medium">Status</th>
+                        <th className="p-3 font-medium text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {metaCampaigns.map((c) => (
+                        <tr key={c.id} className="hover:bg-accent/5">
+                          <td className="p-3 font-medium">{c.name}</td>
+                          <td className="p-3 tabular-nums">{c.budget ? `$${c.budget}` : '—'}</td>
+                          <td className="p-3">
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${
+                              c.status === 'ACTIVE' ? 'bg-emerald-500/15 text-emerald-500' : 'bg-amber-500/15 text-amber-500'
+                            }`}>
+                              {c.status}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleStatus(c.id, c.status)}
+                              className="h-7 px-2 text-xs"
+                            >
+                              {c.status === 'ACTIVE' ? (
+                                <><Pause className="mr-1 size-3" /> Pause</>
+                              ) : (
+                                <><Play className="mr-1 size-3" /> Activate</>
+                              )}
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Panel>
+              )}
+            </section>
+          )}
+
+          {/* STATS */}
           {hasClients && (
             <>
               <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -319,7 +537,7 @@ function AgencyDashboard() {
             </>
           )}
 
-          {/*   ======== QUICK ACTIONS   ======== */}
+          {/* QUICK ACTIONS */}
           <section className="mt-10">
             <SectionTitle title="Quick actions" />
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -356,13 +574,143 @@ function AgencyDashboard() {
           }}
         />
       )}
+
+      {showCampaignModal && (
+        <CreateMetaCampaignModal
+          onClose={() => setShowCampaignModal(false)}
+          onSuccess={() => {
+            setShowCampaignModal(false);
+            alert("Campaign created successfully in PAUSED state! Check your Facebook Ad Manager.");
+            loadMetaCampaigns(); // Refresh list after create
+          }}
+        />
+      )}
     </ProtectedRoute>
   );
 }
 
-//      ==
-// SERVICE ROW
-//      ==
+function IntegrationCard({
+  provider,
+  name,
+  description,
+  Icon,
+  color,
+  integration,
+  onConnect,
+  onDisconnect,
+  onCreateCampaign,
+  isBusy,
+}: {
+  provider: IntegrationProvider;
+  name: string;
+  description: string;
+  Icon: typeof Facebook;
+  color: string;
+  integration?: AgencyAdAccount;
+  onConnect: (p: IntegrationProvider) => void;
+  onDisconnect: (p: IntegrationProvider) => void;
+  onCreateCampaign?: () => void;
+  isBusy: boolean;
+}) {
+  const connected = !!integration && integration.isActive;
+
+  return (
+    <Panel className="flex flex-col gap-4 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className={`grid size-10 place-items-center rounded-lg ${color}`}>
+            <Icon className="size-5" />
+          </span>
+          <div>
+            <p className="text-sm font-medium">{name}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
+          </div>
+        </div>
+        {connected ? (
+          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium uppercase text-emerald-500">
+            Active
+          </span>
+        ) : (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
+            Not connected
+          </span>
+        )}
+      </div>
+
+      {connected && integration ? (
+        <div className="space-y-2 border-t border-border pt-3">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Account</span>
+            <span className="font-medium text-foreground">
+              {integration.accountName || "—"}
+            </span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">ID</span>
+            <span className="font-mono text-foreground">
+              {integration.accountId || "—"}
+            </span>
+          </div>
+          {integration.tokenExpiresAt && (
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Expires</span>
+              <span className="text-foreground">
+                {new Date(integration.tokenExpiresAt).toLocaleDateString()}
+              </span>
+            </div>
+          )}
+
+          {provider === "META" && onCreateCampaign && (
+            <Button
+              size="sm"
+              className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={onCreateCampaign}
+            >
+              <Rocket className="mr-1.5 size-3.5" /> Create Campaign
+            </Button>
+          )}
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2 w-full"
+            onClick={() => onDisconnect(provider)}
+            disabled={isBusy}
+          >
+            {isBusy ? (
+              <>
+                <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                Disconnecting…
+              </>
+            ) : (
+              "Disconnect"
+            )}
+          </Button>
+        </div>
+      ) : (
+        <Button
+          size="sm"
+          className="mt-auto"
+          onClick={() => onConnect(provider)}
+          disabled={isBusy}
+        >
+          {isBusy ? (
+            <>
+              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+              Redirecting…
+            </>
+          ) : (
+            <>
+              <Plug className="mr-1.5 size-3.5" />
+              Connect
+            </>
+          )}
+        </Button>
+      )}
+    </Panel>
+  );
+}
+
 function ServiceRow({ type, offered }: { type: AgencyServiceType; offered: boolean }) {
   const Icon =
     type === "BRAND_WEBSITE" ? Globe :
@@ -387,9 +735,6 @@ function ServiceRow({ type, offered }: { type: AgencyServiceType; offered: boole
   );
 }
 
-//      ==
-// STAT CARD
-//      ==
 function StatCard({
   icon: Icon, label, value, note, accent,
 }: {
@@ -421,9 +766,6 @@ function StatCard({
   );
 }
 
-//      ==
-// BRAND ROW
-//      ==
 function BrandRow({
   brand, clientName, activeBrandId, onAct,
 }: {
@@ -464,9 +806,6 @@ function BrandRow({
   );
 }
 
-//      ==
-// QUICK ACTION
-//      ==
 function QuickAction({
   to, icon: Icon, title, description,
 }: {

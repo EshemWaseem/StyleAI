@@ -31,9 +31,9 @@ function assertServiceTypeForClient(serviceType, clientType) {
   }
 }
 
-//      ==
+
 // CREATE ENGAGEMENT (client → agency)
-//      ==
+
 async function createEngagement(user, payload = {}) {
   const {
     agencyOrganizationId,
@@ -134,15 +134,15 @@ async function createEngagement(user, payload = {}) {
     }).catch(() => {});
   }
 
-  // ✅ Real-time: notify agency users
+  //  Real-time: notify agency users
   await emitEngagementCreated(engagement).catch(() => {});
 
   return shapeEngagement(engagement);
 }
 
-//      ==
+
 // ACCEPT (agency)
-//      ==
+
 async function acceptEngagement(user, engagementId, payload = {}) {
   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -177,15 +177,15 @@ async function acceptEngagement(user, engagementId, payload = {}) {
     meta: { engagementId },
   }).catch(() => {});
 
-  // ✅ Real-time
+  //  Real-time
   await emitEngagementUpdated(updated, 'accepted').catch(() => {});
 
   return shapeEngagement(updated);
 }
 
-//      ==
+
 // REJECT (agency)
-//      ==
+
 async function rejectEngagement(user, engagementId, payload = {}) {
   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -224,15 +224,15 @@ async function rejectEngagement(user, engagementId, payload = {}) {
     meta: { engagementId },
   }).catch(() => {});
 
-  // ✅ Real-time
+  //  Real-time
   await emitEngagementUpdated(updated, 'rejected').catch(() => {});
 
   return shapeEngagement(updated);
 }
 
-//      ==
+
 // START WORK (agency)
-//      ==
+
 async function startEngagement(user, engagementId) {
   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -256,15 +256,15 @@ async function startEngagement(user, engagementId) {
     meta: { engagementId },
   }).catch(() => {});
 
-  // ✅ Real-time
+  //  Real-time
   await emitEngagementUpdated(updated, 'started').catch(() => {});
 
   return shapeEngagement(updated);
 }
 
-//      ==
+
 // COMPLETE (agency)
-//      ==
+
 async function completeEngagement(user, engagementId, payload = {}) {
   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -299,15 +299,15 @@ async function completeEngagement(user, engagementId, payload = {}) {
     meta: { engagementId },
   }).catch(() => {});
 
-  // ✅ Real-time
+  //  Real-time
   await emitEngagementUpdated(updated, 'completed').catch(() => {});
 
   return shapeEngagement(updated);
 }
 
-//      ==
+
 // CANCEL (client)
-//      ==
+
 async function cancelEngagement(user, engagementId, payload = {}) {
   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -343,15 +343,15 @@ async function cancelEngagement(user, engagementId, payload = {}) {
     }).catch(() => {});
   }
 
-  // ✅ Real-time
+  //  Real-time
   await emitEngagementUpdated(updated, 'cancelled').catch(() => {});
 
   return shapeEngagement(updated);
 }
 
-//      ==
+
 // LIST — agency inbox
-//      ==
+
 async function listAgencyInbox(user, query = {}) {
   if (!user.roles?.includes('AGENCY')) {
     throw httpError('Only agencies can view inbox', 403, 'NOT_AGENCY');
@@ -368,9 +368,9 @@ async function listAgencyInbox(user, query = {}) {
   return { engagements: items.map(shapeEngagement) };
 }
 
-//      ==
+
 // LIST — my sent requests
-//      ==
+
 async function listMyEngagements(user, query = {}) {
   const where = { hiredByUserId: user.id };
   if (query.status) where.status = query.status;
@@ -398,9 +398,9 @@ async function listMyEngagements(user, query = {}) {
   };
 }
 
-//      ==
+
 // GET ONE
-//      ==
+
 async function getEngagement(user, engagementId) {
   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -416,9 +416,9 @@ async function getEngagement(user, engagementId) {
   return shapeEngagement(engagement);
 }
 
-//      ==
+
 // AGENCY — Upload deliverable files
-//      ==
+
 async function uploadAgencyDeliverable(user, engagementId, payload = {}) {
   const { files, notes } = payload;
 
@@ -465,16 +465,16 @@ async function uploadAgencyDeliverable(user, engagementId, payload = {}) {
     meta: { engagementId },
   }).catch(() => {});
 
-  // ✅ Real-time
+  //  Real-time
   await emitEngagementUpdated(updated, 'delivered').catch(() => {});
 
   return shapeEngagement(updated);
 }
 
-//      ==
+
 // INFLUENCER — Link engagement to campaign
 // Auto-creates a FINAL ContentSubmission so brand sees it in normal pipeline
-//      ==
+
 async function linkEngagementToCampaign(user, engagementId, payload = {}) {
   const { campaignId, deliverableId } = payload;
 
@@ -508,7 +508,7 @@ async function linkEngagementToCampaign(user, engagementId, payload = {}) {
     throw httpError('You do not have access to this campaign', 403, 'FORBIDDEN');
   }
 
-  // ---- 1. Auto-create FINAL submission from agency files ----
+  //  1. Auto-create FINAL submission from agency files 
   const submission = await prisma.contentSubmission.create({
     data: {
       deliverableId,
@@ -525,13 +525,13 @@ async function linkEngagementToCampaign(user, engagementId, payload = {}) {
     },
   });
 
-  // ---- 2. Update campaign deliverable status ----
+  //  2. Update campaign deliverable status 
   await prisma.campaignDeliverable.update({
     where: { id: deliverableId },
     data: { status: 'FINAL_UPLOADED' },
   });
 
-  // ---- 3. Update engagement ----
+  //  3. Update engagement 
   const updated = await prisma.agencyEngagement.update({
     where: { id: engagementId },
     data: {
@@ -551,7 +551,7 @@ async function linkEngagementToCampaign(user, engagementId, payload = {}) {
     meta: { campaignId, deliverableId, submissionId: submission.id },
   });
 
-  // ---- 4. Notify brand owner ----
+  //  4. Notify brand owner 
   const brandOwner = await prisma.user.findFirst({
     where: {
       organizationId: deliverable.campaign.brand.organizationId,
@@ -569,10 +569,10 @@ async function linkEngagementToCampaign(user, engagementId, payload = {}) {
     }).catch(() => {});
   }
 
-  // ✅ Real-time: engagement now COMPLETED
+  //  Real-time: engagement now COMPLETED
   await emitEngagementUpdated(updated, 'completed').catch(() => {});
 
-  // ✅ Real-time: notify brand + influencer that the linked offer is COMPLETED
+  //  Real-time: notify brand + influencer that the linked offer is COMPLETED
   try {
     const linkedCampaign = await prisma.campaign.findUnique({
       where: { id: deliverable.campaign.id },
@@ -595,9 +595,9 @@ async function linkEngagementToCampaign(user, engagementId, payload = {}) {
   return shapeEngagement(updated);
 }
 
-//      ==
+
 // SHAPING
-//      ==
+
 function shapeEngagement(e) {
   return {
     id: e.id,
@@ -686,9 +686,9 @@ module.exports = {
 //   }
 // }
 
-// //      ==
+// 
 // // CREATE ENGAGEMENT (client → agency)
-// //      ==
+// 
 // async function createEngagement(user, payload = {}) {
 //   const {
 //     agencyOrganizationId,
@@ -815,9 +815,9 @@ module.exports = {
 //   return shapeEngagement(engagement);
 // }
 
-// //      ==
+// 
 // // ACCEPT (agency)
-// //      ==
+// 
 // async function acceptEngagement(user, engagementId, payload = {}) {
 //   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
 //   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -877,9 +877,9 @@ module.exports = {
 //   return shapeEngagement(updated);
 // }
 
-// //      ==
+// 
 // // REJECT (agency)
-// //      ==
+// 
 // async function rejectEngagement(user, engagementId, payload = {}) {
 //   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
 //   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -963,9 +963,9 @@ module.exports = {
 //   return shapeEngagement(updated);
 // }
 
-// //      ==
+// 
 // // START WORK (agency)
-// //      ==
+// 
 // async function startEngagement(user, engagementId) {
 //   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
 //   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -1015,9 +1015,9 @@ module.exports = {
 //   return shapeEngagement(updated);
 // }
 
-// //      ==
+// 
 // // COMPLETE (agency)
-// //      ==
+// 
 // async function completeEngagement(user, engagementId, payload = {}) {
 //   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
 //   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -1080,9 +1080,9 @@ module.exports = {
 //   return shapeEngagement(updated);
 // }
 
-// //      ==
+// 
 // // CANCEL (client)
-// //      ==
+// 
 // async function cancelEngagement(user, engagementId, payload = {}) {
 //   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
 //   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -1143,9 +1143,9 @@ module.exports = {
 //   return shapeEngagement(updated);
 // }
 
-// //      ==
+// 
 // // LIST — agency inbox
-// //      ==
+// 
 // async function listAgencyInbox(user, query = {}) {
 //   if (!user.roles?.includes('AGENCY')) {
 //     throw httpError('Only agencies can view inbox', 403, 'NOT_AGENCY');
@@ -1162,9 +1162,9 @@ module.exports = {
 //   return { engagements: items.map(shapeEngagement) };
 // }
 
-// //      ==
+// 
 // // LIST — my sent requests
-// //      ==
+// 
 // async function listMyEngagements(user, query = {}) {
 //   const where = { hiredByUserId: user.id };
 //   if (query.status) where.status = query.status;
@@ -1192,9 +1192,9 @@ module.exports = {
 //   };
 // }
 
-// //      ==
+// 
 // // GET ONE
-// //      ==
+// 
 // async function getEngagement(user, engagementId) {
 //   const engagement = await prisma.agencyEngagement.findUnique({ where: { id: engagementId } });
 //   if (!engagement) throw httpError('Engagement not found', 404, 'NOT_FOUND');
@@ -1232,9 +1232,9 @@ module.exports = {
 //   return shapeEngagement(engagement);
 // }
 
-// //      ==
+// 
 // // AGENCY — Upload deliverable files
-// //      ==
+// 
 // async function uploadAgencyDeliverable(user, engagementId, payload = {}) {
 //   const { files, notes } = payload;
 
@@ -1305,10 +1305,10 @@ module.exports = {
 //   return shapeEngagement(updated);
 // }
 
-// //      ==
+// 
 // // INFLUENCER — Link engagement to campaign
 // // Auto-creates a FINAL ContentSubmission so brand sees it in normal pipeline
-// //      ==
+// 
 // async function linkEngagementToCampaign(user, engagementId, payload = {}) {
 //   const { campaignId, deliverableId } = payload;
 
@@ -1342,7 +1342,7 @@ module.exports = {
 //     throw httpError('You do not have access to this campaign', 403, 'FORBIDDEN');
 //   }
 
-//   // ---- 1. Auto-create FINAL submission from agency files ----
+//   //  1. Auto-create FINAL submission from agency files 
 //   const submission = await prisma.contentSubmission.create({
 //     data: {
 //       deliverableId,
@@ -1359,13 +1359,13 @@ module.exports = {
 //     },
 //   });
 
-//   // ---- 2. Update campaign deliverable status ----
+//   //  2. Update campaign deliverable status 
 //   await prisma.campaignDeliverable.update({
 //     where: { id: deliverableId },
 //     data: { status: 'FINAL_UPLOADED' },
 //   });
 
-//   // ---- 3. Update engagement ----
+//   //  3. Update engagement 
 //   const updated = await prisma.agencyEngagement.update({
 //     where: { id: engagementId },
 //     data: {
@@ -1385,7 +1385,7 @@ module.exports = {
 //     meta: { campaignId, deliverableId, submissionId: submission.id },
 //   });
 
-//   // ---- 4. Notify brand owner ----
+//   //  4. Notify brand owner 
 //   const brandOwner = await prisma.user.findFirst({
 //     where: {
 //       organizationId: deliverable.campaign.brand.organizationId,
@@ -1427,9 +1427,9 @@ module.exports = {
 //   return shapeEngagement(updated);
 // }
 
-// //      ==
+// 
 // // SHAPING
-// //      ==
+// 
 // function shapeEngagement(e) {
 //   return {
 //     id: e.id,

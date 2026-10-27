@@ -1,7 +1,9 @@
 // components/payments/PaymentMethodPicker.tsx
 import { CreditCard, Wallet, Banknote, Smartphone } from 'lucide-react';
-import type { PaymentProvider } from '@/lib/payments';
 import { cn } from '@/lib/utils';
+
+// Assuming this type comes from your backend/types
+export type PaymentProvider = 'STRIPE' | 'JAZZCASH' | 'EASYPAISA' | 'COD' | 'WALLET';
 
 const META: Record<PaymentProvider, { label: string; icon: any; subtitle: string }> = {
   STRIPE:    { label: 'Card (Stripe)',    icon: CreditCard,  subtitle: 'Visa, Mastercard, Amex' },
@@ -47,7 +49,7 @@ export function PaymentMethodPicker({ value, onChange, allowed, disabled }: Prop
               disabled && 'opacity-50 cursor-not-allowed'
             )}
           >
-            <Icon className="mt-0.5 size-5 text-accent" />
+            <Icon className={cn("mt-0.5 size-5", selected ? "text-accent" : "text-muted-foreground")} />
             <div className="flex-1">
               <div className="text-sm font-medium">{meta.label}</div>
               <div className="text-xs text-muted-foreground">{meta.subtitle}</div>

@@ -88,7 +88,7 @@ async def _warmup_all() -> None:
     """
     tasks = []
 
-    # ---- TEXT ----
+    #  TEXT 
     if settings.LLM_PROVIDER == "ollama":
         text_model = settings.OLLAMA_TEXT_MODEL
         if text_model:
@@ -104,7 +104,7 @@ async def _warmup_all() -> None:
             settings.text_model,
         )
 
-    # ---- VISION ----
+    #  VISION 
     if settings.VISION_PROVIDER == "ollama":
         vision_model = settings.OLLAMA_VISION_MODEL
         if vision_model and vision_model != settings.OLLAMA_TEXT_MODEL:
@@ -189,7 +189,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---- Mount routes ----
+#  Mount routes 
 app.include_router(health_routes.router)
 app.include_router(product_content_routes.router)
 app.include_router(product_analyze_routes.router)

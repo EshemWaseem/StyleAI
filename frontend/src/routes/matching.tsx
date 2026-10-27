@@ -2,7 +2,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  AlertCircle, Loader2, Sparkles, Package, Sliders,
+  AlertCircle, Loader2, Sparkles, Package, Sliders, CheckCircle2, Cpu
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
@@ -24,13 +24,9 @@ function MatchingPage() {
   const [matching, setMatching] = useState(false);
   const [error, setError] = useState("");
 
-  //  - Slider value: instant (smooth UI)  -
   const [minScore, setMinScore] = useState(0);
-
-  //  - Applied value: debounced (triggers API)  -
   const [appliedMinScore, setAppliedMinScore] = useState(0);
 
-  // Load products once
   useEffect(() => {
     productsApi
       .list()
@@ -43,13 +39,11 @@ function MatchingPage() {
       .finally(() => setProductsLoading(false));
   }, []);
 
-  // Debounce: minScore → appliedMinScore (400ms after user stops dragging)
   useEffect(() => {
     const t = setTimeout(() => setAppliedMinScore(minScore), 400);
     return () => clearTimeout(t);
   }, [minScore]);
 
-  // Re-run matching only when product OR appliedMinScore changes
   useEffect(() => {
     if (!productId) return;
 
@@ -101,7 +95,6 @@ function MatchingPage() {
           </div>
         ) : (
           <>
-            {/*    FILTERS (always visible — no flicker)    */}
             <Panel className="mt-6 p-4">
               <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
                 <div>
@@ -149,9 +142,7 @@ function MatchingPage() {
               </div>
             )}
 
-            {/*    RESULT AREA (content never unmounts mid-fetch)    */}
             <div className="relative mt-6">
-              {/* Subtle inline loader — does NOT hide the results */}
               {matching && (
                 <div className="absolute inset-0 z-10 flex items-start justify-center bg-background/40 backdrop-blur-[1px]">
                   <div className="mt-6 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 shadow-sm">
@@ -184,15 +175,28 @@ function MatchingPage() {
                       value={data.matches[0] ? `${data.matches[0].score}` : "—"}
                       sub={data.matches[0]?.influencer.displayName ?? "—"}
                     />
-                    <Stat
-                      label={data.aiPowered ? "AI powered" : "Fallback"}
-                      value={data.aiPowered ? "✓ Live" : "Heuristic"}
-                      sub={
-                        data.aiPowered
-                          ? `${data.provider} · ${data.latencyMs}ms`
-                          : "AI service unavailable"
-                      }
-                    />
+                    
+                    <div className="rounded-xl border border-border bg-card p-4 flex flex-col justify-center">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                        Engine Status
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {data.aiPowered ? (
+                          <>
+                            <CheckCircle2 className="size-4 text-emerald-500" />
+                            <span className="text-sm font-medium text-emerald-500">Live AI</span>
+                          </>
+                        ) : (
+                          <>
+                            <Cpu className="size-4 text-amber-500" />
+                            <span className="text-sm font-medium text-amber-500">Heuristic</span>
+                          </>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-[10px] text-muted-foreground truncate">
+                        {data.aiPowered ? `${data.provider} · ${data.latencyMs}ms` : "AI service offline"}
+                      </p>
+                    </div>
                   </section>
 
                   <section className="mt-8">

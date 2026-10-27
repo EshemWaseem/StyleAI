@@ -1,8 +1,8 @@
 // components/ProtectedRoute.tsx
-//      ==
+
 // Frontend route guard — AUTH & ROLE ONLY.
 // Trial enforcement is on the BACKEND (trialGate middleware).
-//      ==
+
 
 import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";

@@ -1,7 +1,7 @@
 // services/payments/checkout.js
-//      ==
+
 // Subscription checkout — role-aware (BRAND | AGENCY | INFLUENCER)
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const config = require('../../config/payment_service');
@@ -17,7 +17,7 @@ async function createSubscriptionCheckout(user, {
   successUrl,
   cancelUrl,
 }) {
-  // ---- Validate inputs ----
+  //  Validate inputs 
   if (!provider)  throw new PaymentError('Payment provider is required', 400, 'MISSING_PROVIDER');
   if (!planName)  throw new PaymentError('Plan name is required', 400, 'MISSING_PLAN');
 
@@ -31,7 +31,7 @@ async function createSubscriptionCheckout(user, {
     );
   }
 
-  // ---- Look up the plan (role-aware) ----
+  //  Look up the plan (role-aware) 
   const plan = getPlan(role, planName);
   if (!plan) {
     throw new PaymentError(`Unknown plan "${planName}" for role ${role}`, 400, 'UNKNOWN_PLAN');
@@ -48,7 +48,7 @@ async function createSubscriptionCheckout(user, {
     throw new PaymentError('Invalid plan amount', 400, 'INVALID_AMOUNT');
   }
 
-  // ---- Identity ----
+  //  Identity 
   const identity = getSubscriptionIdentity(user, role);
 
   // For BRAND/AGENCY → load organization
@@ -61,7 +61,7 @@ async function createSubscriptionCheckout(user, {
     if (!organization) throw new PaymentError('Organization not found', 404, 'ORG_NOT_FOUND');
   }
 
-  // ---- Get gateway + create checkout session ----
+  //  Get gateway + create checkout session 
   const gateway = registry.get(provider);
 
   const session = await gateway.createCheckout({
@@ -84,7 +84,7 @@ async function createSubscriptionCheckout(user, {
     },
   });
 
-  // ---- Persist intent (audit) ----
+  //  Persist intent (audit) 
   // Payment.organizationId is nullable — null for influencer subscriptions
   await prisma.payment.create({
     data: {

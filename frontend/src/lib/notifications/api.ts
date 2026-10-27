@@ -24,7 +24,7 @@ export const notificationsApi = {
   remove: (id: string) =>
     http.delete<{ message: string; id: string }>(`/api/notifications/${id}`),
 
-  // ---- Preferences ----
+  //  Preferences 
   getPreferences: () =>
     http.get<{ preferences: NotificationPreference }>("/api/notifications/preferences"),
   updatePreferences: (updates: UpdatePreferenceInput) =>

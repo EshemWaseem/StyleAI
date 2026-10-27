@@ -184,7 +184,7 @@ class GeminiVision:
             mime_type=_sniff_mime(image_bytes),
         )
 
-        # ---- Attempt 1 (with fallback chain) ----
+        #  Attempt 1 (with fallback chain) 
         raw_text, model_used = await self._generate_with_fallback(
             image_part, PRODUCT_ANALYSIS_PROMPT
         )
@@ -199,7 +199,7 @@ class GeminiVision:
                 raw_text[:400],
             )
 
-            # ---- Attempt 2 (stricter suffix, again with fallback chain) ----
+            #  Attempt 2 (stricter suffix, again with fallback chain) 
             retry_text, model_used = await self._generate_with_fallback(
                 image_part, PRODUCT_ANALYSIS_PROMPT + RETRY_SUFFIX
             )

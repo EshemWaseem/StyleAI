@@ -1,14 +1,14 @@
 // services/campaigns/chat.js
-//      ==
+
 // Campaign chat — send, list, mark read
 // Participants: brand owner/member, agency, influencer
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
 const { assertCanViewCampaign } = require('./helpers');
 
-// ── WebSocket broadcast (soft dependency — never blocks send) ──
+//  WebSocket broadcast (soft dependency — never blocks send) 
 let broadcastCampaignMessage = null;
 try {
   broadcastCampaignMessage = require('../websocket/broadcast').broadcastCampaignMessage;

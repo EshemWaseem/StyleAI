@@ -1,7 +1,7 @@
 // services/pricing/validatePricing.js
-//      ==
+
 // Structural validation for Influencer.pricingTiers
-//      ==
+
 // Rules:
 //   • Object keyed by Prisma InfluencerPlatform values
 //   • Each platform value = { contentType: price }
@@ -9,7 +9,7 @@
 //   • price is a non-negative number (0 allowed — influencer's choice)
 //   • null/undefined/'' for a contentType → REMOVES that tier
 //   • Empty platform objects are dropped from the result
-//      ==
+
 
 const {
   getPlatform,

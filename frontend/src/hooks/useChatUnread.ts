@@ -5,14 +5,9 @@ import { chatApi } from "@/lib/chat";
 import { http } from "@/lib/api";
 import { useRole } from "@/lib/role";
 
-/**
- * Global unread counter for chat (direct + campaign).
- * - Only runs when a user is signed in
- * - Fetches initial total once per session
- * - Listens to WS `chat:new` / `read:*` events
- */
 export function useChatUnread() {
   const { user } = useRole();
+  const userId = user?.id;
   const [total, setTotal] = useState(0);
   const fetchedRef = useRef(false);
 
@@ -31,40 +26,27 @@ export function useChatUnread() {
           "/api/campaigns/unread-total"
         );
         campaign = r.unread || 0;
-      } catch {
-        /* ignore */
-      }
+      } catch {}
 
       setTotal(direct + campaign);
-    } catch {
-      /* ignore — 401 handled globally */
-    }
+    } catch {}
   }
 
-  //       
-  // Reset when signed out
-  //       
   useEffect(() => {
-    if (user) return;
+    if (userId) return;
     fetchedRef.current = false;
     setTotal(0);
-  }, [user]);
+  }, [userId]);
 
-  //       
-  // Initial fetch — only when signed in
-  //       
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     if (fetchedRef.current) return;
     fetchedRef.current = true;
     refetch();
-  }, [user?.id]);
+  }, [userId]);
 
-  //       
-  // WS subscription — only when signed in
-  //       
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     let off: (() => void) | null = null;
     let intervalId: any = null;
@@ -102,14 +84,14 @@ export function useChatUnread() {
       if (intervalId) clearInterval(intervalId);
       off?.();
     };
-  }, [user?.id]);
+  }, [userId]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     const handler = () => refetch();
     window.addEventListener("focus", handler);
     return () => window.removeEventListener("focus", handler);
-  }, [user?.id]);
+  }, [userId]);
 
   return total;
 }

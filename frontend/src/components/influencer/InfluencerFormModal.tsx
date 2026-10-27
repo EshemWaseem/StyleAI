@@ -298,7 +298,7 @@ export function InfluencerFormModal({
       if (health === "FAKE" || health === "SUSPICIOUS") {
         setFetchResult(`⚠️ Synced! But ${health} engagement detected (Score: ${result.authenticityScore}/100)`);
       } else {
-        setFetchResult(`✅ Success! Profile synced. Authenticity Score: ${result.authenticityScore}/100`);
+        setFetchResult(` Success! Profile synced. Authenticity Score: ${result.authenticityScore}/100`);
       }
 
     } catch (err: any) {
@@ -552,7 +552,7 @@ export function InfluencerFormModal({
               </div>
 
               {fetchResult && (
-                <p className={`mt-3 text-xs font-medium ${fetchResult.startsWith("✅") ? "text-emerald-500" : fetchResult.startsWith("⏳") ? "text-blue-500" : "text-amber-500"}`}>
+                <p className={`mt-3 text-xs font-medium ${fetchResult.startsWith("") ? "text-emerald-500" : fetchResult.startsWith("⏳") ? "text-blue-500" : "text-amber-500"}`}>
                   {fetchResult}
                 </p>
               )}

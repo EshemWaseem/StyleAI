@@ -246,7 +246,7 @@ function InfluencerDetailPage() {
         }
       />
 
-      {/* ✅ PROFILE COMPLETENESS SECTION (Only visible to Owner) */}
+      {/*  PROFILE COMPLETENESS SECTION (Only visible to Owner) */}
       {isOwner && (
         <Panel className="mt-6 border-accent/30 bg-accent/5">
           <div className="flex flex-col md:flex-row items-center gap-6">

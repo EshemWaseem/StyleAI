@@ -85,9 +85,9 @@ function BillingPage() {
     const status = params.get("status");
 
     (async () => {
-      //      ==
+      
       // PAYMENT SUCCESS → verify → brief toast → redirect
-      //      ==
+      
       if (status === "success") {
         // Verify the session directly with Stripe (fallback if webhook failed)
         if (sessionId) {
@@ -124,16 +124,16 @@ function BillingPage() {
         return;
       }
 
-      //      ==
+      
       // PAYMENT CANCELLED
-      //      ==
+      
       if (status === "cancel") {
         setError("Payment was cancelled.");
       }
 
-      //      ==
+      
       // NORMAL LOAD (no status params)
-      //      ==
+      
       await load();
 
       // Clean URL so refreshing doesn't re-trigger

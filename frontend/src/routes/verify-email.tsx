@@ -118,7 +118,7 @@ function VerifyEmailPage() {
     }
   }
 
-  // ---- Verifying ----
+  //  Verifying 
   if (state.kind === "verifying") {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
@@ -137,7 +137,7 @@ function VerifyEmailPage() {
     );
   }
 
-  // ---- Success ----
+  //  Success 
   if (state.kind === "success") {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
@@ -167,7 +167,7 @@ function VerifyEmailPage() {
     );
   }
 
-  // ---- Resend sent ----
+  //  Resend sent 
   if (state.kind === "resend-sent") {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
@@ -195,7 +195,7 @@ function VerifyEmailPage() {
     );
   }
 
-  // ---- Error OR resend-form ----
+  //  Error OR resend-form 
   return (
     <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
       <div className="w-full max-w-sm">

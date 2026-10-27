@@ -1,8 +1,8 @@
 // services/websocket/presence.js
-//      ==
+
 // Track online users (in-memory).
 // Pattern is Redis-ready — swap Map for Redis hash later.
-//      ==
+
 
 // userId -> Set<socketId>
 const online = new Map();

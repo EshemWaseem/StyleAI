@@ -6,9 +6,9 @@ const {
   parsePagination,
 } = require('./helpers');
 
-//      ==
+
 // LIST — all users with role filter
-//      ==
+
 async function listUsers(adminUser, filters = {}) {
   assertSuperAdmin(adminUser);
 
@@ -63,9 +63,9 @@ async function listUsers(adminUser, filters = {}) {
   };
 }
 
-//      ==
+
 // GET ONE
-//      ==
+
 async function getUser(adminUser, userId) {
   assertSuperAdmin(adminUser);
 
@@ -104,9 +104,9 @@ async function getUser(adminUser, userId) {
   };
 }
 
-//      ==
+
 // ACTIVATE / DEACTIVATE
-//      ==
+
 async function setUserActive(adminUser, userId, isActive, req) {
   assertSuperAdmin(adminUser);
 
@@ -135,9 +135,9 @@ async function setUserActive(adminUser, userId, isActive, req) {
   return updated;
 }
 
-//      ==
+
 // DELETE — with safeguards
-//      ==
+
 async function deleteUser(adminUser, userId, req) {
   assertSuperAdmin(adminUser);
 
@@ -170,9 +170,9 @@ async function deleteUser(adminUser, userId, req) {
   return { id: userId };
 }
 
-//      ==
+
 // CHANGE ROLE
-//      ==
+
 async function changeUserRole(adminUser, userId, roleName, req) {
   assertSuperAdmin(adminUser);
 

@@ -24,16 +24,13 @@ import { connectSocket, disconnectSocket } from "@/lib/websocket/client";
 import { cn } from "@/lib/utils";
 import { useRole, type RoleName } from "@/lib/role";
 import { billingApi } from "@/lib/billing";
-import { influencersApi } from "@/lib/influencers"; // ✅ NEW
+import { influencersApi } from "@/lib/influencers";
 import {
   isTrialExpiredSync,
   markTrialExpired,
   clearTrialExpired,
 } from "@/lib/api";
 
-//      ==
-// TYPES
-//      ==
 type NavItem = {
   to: string;
   label: string;
@@ -45,9 +42,6 @@ type NavGroup = {
   items: NavItem[];
 };
 
-//      ==
-// ADMIN NAV
-//      ==
 const ADMIN_NAV: NavGroup[] = [
   {
     group: "Platform",
@@ -83,9 +77,6 @@ const ADMIN_NAV: NavGroup[] = [
   { group: "Account", items: [{ to: "/settings", label: "My Account", icon: Settings }] },
 ];
 
-//      ==
-// BRAND NAV
-//      ==
 const BRAND_NAV: NavGroup[] = [
   {
     group: "Workspace",
@@ -142,9 +133,6 @@ const BRAND_NAV: NavGroup[] = [
   },
 ];
 
-//      ==
-// INFLUENCER NAV (Dynamic)
-//      ==
 const getInfluencerNav = (slug?: string): NavGroup[] => [
   {
     group: "Workspace",
@@ -165,7 +153,6 @@ const getInfluencerNav = (slug?: string): NavGroup[] => [
   {
     group: "My profile",
     items: [
-      // ✅ FIXED: Dynamic link to own public profile
       ...(slug ? [{ to: `/influencers/${slug}`, label: "Public profile", icon: User }] : []),
       { to: "/influencer/pricing", label: "My pricing", icon: BadgeDollarSign },
       { to: "/influencer/offers", label: "My listings", icon: Package },
@@ -191,9 +178,6 @@ const getInfluencerNav = (slug?: string): NavGroup[] => [
   },
 ];
 
-//      ==
-// AGENCY NAV
-//      ==
 const AGENCY_NAV: NavGroup[] = [
   {
     group: "Workspace",
@@ -230,9 +214,6 @@ const AGENCY_NAV: NavGroup[] = [
   },
 ];
 
-//      ==
-// Sidebar Nav
-//      ==
 function SidebarNav({
   collapsed, onNavigate,
 }: {
@@ -250,13 +231,14 @@ function SidebarNav({
   const isBrandTeamMember = userRoles.includes("BRAND_TEAM_MEMBER");
   const isInfluencer = userRoles.includes("INFLUENCER");
 
-  // ✅ Fetch influencer's own slug dynamically
   useEffect(() => {
+    let isMounted = true;
     if (isInfluencer) {
       influencersApi.getMe()
-        .then((res) => setMySlug(res.influencer?.slug))
+        .then((res) => { if (isMounted) setMySlug(res.influencer?.slug); })
         .catch(() => {});
     }
+    return () => { isMounted = false; };
   }, [isInfluencer]);
 
   let navToRender: NavGroup[] = [];
@@ -264,7 +246,7 @@ function SidebarNav({
   else if (isAgency) navToRender = AGENCY_NAV;
   else if (isBrandOwner) navToRender = BRAND_NAV;
   else if (isBrandTeamMember) navToRender = BRAND_NAV;
-  else if (isInfluencer) navToRender = getInfluencerNav(mySlug); // ✅ Dynamic call
+  else if (isInfluencer) navToRender = getInfluencerNav(mySlug);
   else navToRender = BRAND_NAV;
 
   return (
@@ -316,9 +298,6 @@ function SidebarNav({
   );
 }
 
-//      ==
-// AGENCY BRAND SWITCHER
-//      ==
 function AgencyBrandSwitcher() {
   const { isAgency, clients, activeBrandId, setActiveBrand } = useAgency();
   if (!isAgency) return null;
@@ -356,9 +335,6 @@ function AgencyBrandSwitcher() {
   );
 }
 
-//      ==
-// AGENCY ACTING-AS BANNER
-//      ==
 function AgencyActingBanner() {
   const { isAgency, activeBrandId, activeBrandName, setActiveBrand } = useAgency();
   if (!isAgency || !activeBrandId) return null;
@@ -386,9 +362,6 @@ function AgencyActingBanner() {
   );
 }
 
-//      ==
-// BRANDMARK
-//      ==
 function Brandmark({ collapsed }: { collapsed?: boolean }) {
   return (
     <Link to="/dashboard" className="flex items-center gap-2.5" aria-label="StyleAI workspace">
@@ -404,9 +377,6 @@ function Brandmark({ collapsed }: { collapsed?: boolean }) {
   );
 }
 
-//      ==
-// ASSISTANT
-//      ==
 type PromptSet = { placeholder: string; suggestions: string[] };
 
 const BRAND_PROMPTS: PromptSet = {
@@ -486,9 +456,6 @@ function Assistant() {
   );
 }
 
-//      ==
-// STANDALONE MODE HELPER — synchronous decision
-//      ==
 function computeStandalone(pathname: string, isAdmin: boolean): boolean {
   if (isAdmin) return false;
   if (pathname === "/trial-expired") return true;
@@ -498,9 +465,6 @@ function computeStandalone(pathname: string, isAdmin: boolean): boolean {
   return false;
 }
 
-//      ==
-// APP SHELL
-//      ==
 export function AppShell({
   children, breadcrumb = [],
 }: {
@@ -524,6 +488,7 @@ function AppShellInner({
   const { user, logout } = useRole();
   const location = useLocation();
 
+  const userId = user?.id;
   const userRoles = user?.roles ?? [];
   const isAdmin = userRoles.includes("SUPER_ADMIN");
   const isBrandOwner = userRoles.includes("BRAND_OWNER");
@@ -535,11 +500,12 @@ function AppShellInner({
     )
   );
 
+  // FIXED: Uses userId instead of user object to prevent loop
   useEffect(() => {
-    if (user) {
+    if (userId) {
       connectSocket();
     }
-  }, [user]);
+  }, [userId]);
 
   useEffect(() => {
     const path = location.pathname;
@@ -569,9 +535,7 @@ function AppShellInner({
         }
         setStandalone(expired);
       })
-      .catch(() => {
-        // Silent — keep sync value
-      });
+      .catch(() => {});
   }, [location.pathname, isAdmin]);
 
   function handleLogout() {
@@ -580,9 +544,6 @@ function AppShellInner({
     logout();
   }
 
-  //      ==
-  // STANDALONE RENDER — minimal top bar, no sidebar
-  //      ==
   if (standalone) {
     return (
       <TooltipProvider delayDuration={300}>
@@ -612,9 +573,6 @@ function AppShellInner({
     );
   }
 
-  //      ==
-  // NORMAL RENDER — full sidebar + navbar
-  //      ==
   return (
     <TooltipProvider delayDuration={300}>
       <div
@@ -738,6 +696,13 @@ function AppShellInner({
                       <Link to="/settings" className="cursor-pointer">
                         <Settings className="size-4" />
                         <span>Profile & settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild>
+                      <Link to="/orders" className="cursor-pointer">
+                        <Package className="size-4" />
+                        <span>My Orders</span>
                       </Link>
                     </DropdownMenuItem>
 

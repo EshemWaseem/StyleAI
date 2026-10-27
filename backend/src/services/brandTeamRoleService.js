@@ -7,9 +7,9 @@ const {
   BRAND_TEAM_PERMISSIONS,
 } = require('../config/brandTeamPermissions');
 
-//      ==
+
 // HELPERS
-//      ==
+
 
 /**
  * Resolve the brand owned by the user's organization.
@@ -97,9 +97,9 @@ function shape(role) {
   };
 }
 
-//      ==
+
 // LIST
-//      ==
+
 
 async function listRoles(user, brandId = null) {
   const brand = await resolveBrand(user, brandId);
@@ -114,9 +114,9 @@ async function listRoles(user, brandId = null) {
   return roles.map(shape);
 }
 
-//      ==
+
 // GET ONE
-//      ==
+
 
 async function getRole(user, roleId) {
   const role = await prisma.brandTeamRole.findUnique({
@@ -142,9 +142,9 @@ async function getRole(user, roleId) {
   return shape(role);
 }
 
-//      ==
+
 // CREATE
-//      ==
+
 
 async function createRole(user, { brandId = null, name, description, permissions, color }) {
   const brand = await resolveBrand(user, brandId);
@@ -188,9 +188,9 @@ async function createRole(user, { brandId = null, name, description, permissions
   return shape(role);
 }
 
-//      ==
+
 // UPDATE
-//      ==
+
 
 async function updateRole(user, roleId, { name, description, permissions, color }) {
   const existing = await prisma.brandTeamRole.findUnique({
@@ -266,9 +266,9 @@ async function updateRole(user, roleId, { name, description, permissions, color 
   return shape(updated);
 }
 
-//      ==
+
 // DELETE
-//      ==
+
 
 async function deleteRole(user, roleId) {
   const existing = await prisma.brandTeamRole.findUnique({
@@ -310,9 +310,9 @@ async function deleteRole(user, roleId) {
   return { id: roleId };
 }
 
-//      ==
+
 // METADATA — for frontend role editor
-//      ==
+
 
 function getPermissionCatalog() {
   return {

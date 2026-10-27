@@ -1,8 +1,8 @@
 // usage.prisma 01-10
-//      ==
+
 // Monthly usage tracking per subscription
 // Auto-resets on subscription renewal (by periodStart)
-//      ==
+
 
 model UsageCounter {
   id             String   @id @default(uuid())

@@ -1,7 +1,7 @@
 // backend/src/config/platformCatalog.js
-//      ==
+
 // PLATFORM VOCABULARY (facts about platforms) — NOT defaults.
-//      ==
+
 // This file answers ONE question: "what content types does
 // each platform support?" — used to VALIDATE user input.
 //
@@ -13,7 +13,7 @@
 //   • PlatformSetting (DB)           → commission %, discount rules
 //
 // Platform keys MUST match Prisma enum InfluencerPlatform.
-//      ==
+
 
 /**
  * Content types each platform natively supports.

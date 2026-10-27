@@ -45,7 +45,7 @@ export function OfferBuilder({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // ---- load platform catalog + brand products ----
+  //  load platform catalog + brand products 
   useEffect(() => {
     pricingApi.listPlatforms().then((r) => {
       setCatalog(r.platforms);
@@ -69,7 +69,7 @@ export function OfferBuilder({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- live estimate ----
+  //  live estimate 
   useEffect(() => {
     if (items.length === 0) {
       setEstimate(null);
@@ -142,7 +142,7 @@ export function OfferBuilder({
       return;
     }
 
-    // ✅ Swal confirm instead of native confirm
+    //  Swal confirm instead of native confirm
     const ok = await swalConfirm(
       `Send offer to ${influencerName}?`,
       `Total: ${estimate.currency} ${estimate.total.toFixed(2)} — Escrow will be held from your wallet immediately. The influencer can accept or decline.`
@@ -397,9 +397,9 @@ export function OfferBuilder({
   );
 }
 
-//      ==
+
 // Helpers
-//      ==
+
 function Row({
   label, value, muted, bold,
 }: { label: string; value: string; muted?: boolean; bold?: boolean }) {

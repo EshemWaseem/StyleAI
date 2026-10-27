@@ -13,7 +13,7 @@ model Product {
   occasion    String?
   inventory   Int?
 
-  // ✅ NEW — public storefront flag
+  //  — public storefront flag
   storefrontVisible Boolean @default(false)
 
   aiContent  Json?
@@ -27,7 +27,7 @@ model Product {
   orderItems OrderItem[]
   campaigns  Campaign[]
 
-  // ✅ NEW — storefront section links
+  //  — storefront section links
   storefrontSections StorefrontSectionProduct[]
 
   createdAt DateTime @default(now())

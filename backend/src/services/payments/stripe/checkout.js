@@ -1,9 +1,9 @@
 // services/payments/stripe/checkout.js
-//      ==
+
 // Stripe checkout — subscription + one-off (wallet top-up, orders)
 // Handles both organization-tied (BRAND/AGENCY) and
 // user-tied (INFLUENCER) customers.
-//      ==
+
 
 const stripe = require('./client');
 const customer = require('./customer');
@@ -67,7 +67,7 @@ async function subscriptionCheckout({
   successUrl,
   cancelUrl,
 }) {
-  // ✅ Resolve customer — org OR user (never null)
+  //  Resolve customer — org OR user (never null)
   const customerId = await resolveCustomerId({ organization, user });
 
   const { amount, currency } = normalizeAmountAndCurrency(plan, cycle);
@@ -93,7 +93,7 @@ async function subscriptionCheckout({
         },
       ];
 
-  // ✅ Metadata — only include keys that have values
+  //  Metadata — only include keys that have values
   const metadata = {
     planName: plan.name,
     role: plan.role || 'BRAND',

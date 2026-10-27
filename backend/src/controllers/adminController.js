@@ -1,6 +1,7 @@
 // backend/src/controllers/adminController.js
 const admin = require('../services/admin');
 const ai = require('../services/ai');
+const prisma = require('../config/prisma'); // : Needed for Campaign Requests
 
 //  - Dashboard  -
 async function dashboard(req, res, next) {
@@ -84,15 +85,54 @@ async function listCampaigns(req, res, next) {
   catch (err) { next(err); }
 }
 
+
+// NEW: ADMIN CAMPAIGN REQUESTS
+
+async function createCampaignRequest(req, res, next) {
+  try {
+    const { brandId, title, description, budget } = req.body;
+    
+    if (!brandId || !title) {
+      return res.status(400).json({ message: 'brandId and title are required' });
+    }
+
+    const request = await prisma.adminCampaignRequest.create({
+      data: {
+        adminId: req.user.id,
+        brandId,
+        title,
+        description,
+        budget: budget ? parseFloat(budget) : null,
+      }
+    });
+    
+    res.status(201).json({ message: 'Request sent successfully', request });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function listCampaignRequests(req, res, next) {
+  try {
+    const requests = await prisma.adminCampaignRequest.findMany({
+      include: { brand: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ requests });
+  } catch (err) {
+    next(err);
+  }
+}
+
 //  - Payments  -
 async function listPayments(req, res, next) {
   try { res.json(await admin.listPayments(req.user, req.query)); }
   catch (err) { next(err); }
 }
 
-//      ==
+
 // FINANCE
-//      ==
+
 async function getFinanceRules(req, res, next) {
   try {
     const rules = await admin.getFinanceRules();
@@ -107,9 +147,9 @@ async function updateFinanceRules(req, res, next) {
   } catch (err) { next(err); }
 }
 
-//      ==
+
 // SETTINGS
-//      ==
+
 async function getAllSettings(req, res, next) {
   try {
     const settings = await admin.getAllSettingsGrouped();
@@ -124,9 +164,9 @@ async function updateSettings(req, res, next) {
   } catch (err) { next(err); }
 }
 
-//      ==
+
 // AUDIT
-//      ==
+
 async function listAuditLogs(req, res, next) {
   try {
     const result = await admin.listAuditLogs(req.query);
@@ -134,9 +174,9 @@ async function listAuditLogs(req, res, next) {
   } catch (err) { next(err); }
 }
 
-//      ==
+
 // AI — Model Management Dashboard (SRS §48-49)
-//      ==
+
 async function getAIStats(req, res, next) {
   try {
     const sinceHours = Number(req.query.sinceHours) || 24;
@@ -212,6 +252,8 @@ module.exports = {
   listAgencies,
   listProducts, deleteProduct,
   listCampaigns,
+  createCampaignRequest, 
+  listCampaignRequests,  
   listPayments,
   getFinanceRules,
   updateFinanceRules,

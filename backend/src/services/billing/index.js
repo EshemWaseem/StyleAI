@@ -1,7 +1,7 @@
 // services/billing/index.js
-//      ==
+
 // Billing service — role-aware, trial-aware
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');

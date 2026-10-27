@@ -1,7 +1,7 @@
 // services/websocket/handlers/typing.js
-//      ==
+
 // Typing indicators — ephemeral, no DB writes.
-//      ==
+
 
 const { checkRate } = require('../rateLimit');
 const { emitToUsers, resolveConversationUserIds, resolveCampaignUserIds } = require('../broadcast');
@@ -12,7 +12,7 @@ const { assertCanViewCampaign } = require('../../campaigns/helpers');
 function registerTypingHandlers(io, socket) {
   const { userId, roles, organizationId, name } = socket.data;
 
-  // ---- Direct chat typing ----
+  //  Direct chat typing 
   socket.on('typing:direct', async ({ conversationId, isTyping }) => {
     if (!checkRate(socket.id, 'typing', 60, 10_000)) return;
     if (!conversationId) return;
@@ -38,7 +38,7 @@ function registerTypingHandlers(io, socket) {
     } catch { /* ignore */ }
   });
 
-  // ---- Campaign chat typing ----
+  //  Campaign chat typing 
   socket.on('typing:campaign', async ({ campaignId, isTyping }) => {
     if (!checkRate(socket.id, 'typing', 60, 10_000)) return;
     if (!campaignId) return;

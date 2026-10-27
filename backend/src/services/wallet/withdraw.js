@@ -1,11 +1,11 @@
 // services/wallet/withdraw.js
-//      ==
+
 // Influencer requests withdrawal → PENDING row
 // Admin approves → COMPLETED + balance debit + notify owner
 // Admin rejects  → FAILED (balance untouched) + notify owner
 //
-// ✅ NEW: email notifications (admin on request, user on review).
-//      ==
+// : email notifications (admin on request, user on review).
+
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
@@ -54,9 +54,9 @@ async function resolveOwnerDisplayName(wallet) {
   return 'User';
 }
 
-//      ==
+
 // REQUEST — influencer/owner asks for withdrawal
-//      ==
+
 async function requestWithdrawal(user, payload = {}) {
   const { amount, method, destination, note } = payload;
 
@@ -140,7 +140,7 @@ async function requestWithdrawal(user, payload = {}) {
     body: `A withdrawal of ${wallet.currency} ${numeric.toFixed(2)} needs review.`,
     link: '/admin/withdrawals',
     meta: { txnId: txn.id, amount: numeric, currency: wallet.currency },
-    // ✅ EMAIL
+    //  EMAIL
     emailTemplate: 'withdrawalRequested',
     emailData: {
       userName: ownerName,
@@ -153,9 +153,9 @@ async function requestWithdrawal(user, payload = {}) {
   return shapeTransaction(txn);
 }
 
-//      ==
+
 // REVIEW — admin approves or rejects
-//      ==
+
 async function reviewWithdrawal(adminUser, txnId, payload = {}) {
   const { decision, adminNote } = payload;
   if (!['approve', 'reject'].includes(decision)) {
@@ -209,7 +209,7 @@ async function reviewWithdrawal(adminUser, txnId, payload = {}) {
           currency: txn.currency,
           reason: adminNote || null,
         },
-        // ✅ EMAIL
+        //  EMAIL
         emailTemplate: 'withdrawalReviewed',
         emailData: {
           amount: Math.abs(Number(txn.amount)),
@@ -272,7 +272,7 @@ async function reviewWithdrawal(adminUser, txnId, payload = {}) {
       }.`,
       link: '/wallet',
       meta: { txnId, amount, currency: txn.currency },
-      // ✅ EMAIL
+      //  EMAIL
       emailTemplate: 'withdrawalReviewed',
       emailData: {
         amount,
@@ -286,9 +286,9 @@ async function reviewWithdrawal(adminUser, txnId, payload = {}) {
   return shapeTransaction(result);
 }
 
-//      ==
+
 // LIST — admin view of all withdrawals
-//      ==
+
 async function listWithdrawals(adminUser, query = {}) {
   const { limit, offset } = parsePagination(query);
 
@@ -345,11 +345,11 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 
 // 02-10
 // // services/wallet/withdraw.js
-// //      ==
+// 
 // // Influencer requests withdrawal → PENDING row
 // // Admin approves → COMPLETED + balance debit + notify owner
 // // Admin rejects  → FAILED (balance untouched) + notify owner
-// //      ==
+// 
 
 // const prisma = require('../../config/prisma');
 // const { httpError } = require('../influencer/helpers');
@@ -377,9 +377,9 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 //   return null;
 // }
 
-// //      ==
+// 
 // // REQUEST — influencer/owner asks for withdrawal
-// //      ==
+// 
 // async function requestWithdrawal(user, payload = {}) {
 //   const { amount, method, destination, note } = payload;
 
@@ -466,9 +466,9 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 //   return shapeTransaction(txn);
 // }
 
-// //      ==
+// 
 // // REVIEW — admin approves or rejects
-// //      ==
+// 
 // async function reviewWithdrawal(adminUser, txnId, payload = {}) {
 //   const { decision, adminNote } = payload;
 //   if (!['approve', 'reject'].includes(decision)) {
@@ -583,9 +583,9 @@ module.exports = { requestWithdrawal, reviewWithdrawal, listWithdrawals };
 //   return shapeTransaction(result);
 // }
 
-// //      ==
+// 
 // // LIST — admin view of all withdrawals
-// //      ==
+// 
 // async function listWithdrawals(adminUser, query = {}) {
 //   const { limit, offset } = parsePagination(query);
 

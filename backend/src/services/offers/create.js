@@ -1,8 +1,8 @@
 // services/offers/create.js
-//      ==
+
 // POST /api/offers — brand creates offer → ESCROW → DIRECT TO INFLUENCER
 // Status: DRAFT → PENDING (sent to influencer)
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const {

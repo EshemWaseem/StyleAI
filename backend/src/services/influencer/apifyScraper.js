@@ -1,5 +1,5 @@
 // src/services/influencer/apifyScraper.js
-//      ==
+
 // Apify-based social media profile scraper.
 // Supports: INSTAGRAM, TIKTOK, YOUTUBE
 // Uses 2-layer cache: in-memory (1h) + Postgres (24h)
@@ -10,7 +10,7 @@
 //   - Computes industry-standard engagement rate
 //   - Detects fake followers via engagement benchmarks
 //   - Returns per-post data for transparency
-//      ==
+
 
 const { ApifyClient } = require('apify-client');
 const prisma = require('../../config/prisma');
@@ -59,9 +59,9 @@ function getClient() {
   return new ApifyClient({ token });
 }
 
-//      ==
+
 // Handle / URL normalizer
-//      ==
+
 function normalizeHandle(raw = '') {
   let h = String(raw).trim().replace(/\/$/, '');
 
@@ -76,9 +76,9 @@ function normalizeHandle(raw = '') {
   return h;
 }
 
-//      ==
+
 // Engagement aggregation (shared by all platforms)
-//      ==
+
 function aggregateEngagement(posts) {
   const valid = (posts || []).filter((p) => p && typeof p === 'object');
   const n = valid.length || 1;
@@ -124,10 +124,10 @@ function aggregateEngagement(posts) {
   };
 }
 
-//      ==
+
 // Industry-standard engagement benchmarks
 // Returns expected engagement rate as PERCENT (e.g. 2.0 = 2%)
-//      ==
+
 function expectedEngagementRate(followers) {
   if (followers < 1000) return 8.0;
   if (followers < 10000) return 4.5;
@@ -137,9 +137,9 @@ function expectedEngagementRate(followers) {
   return 1.0;
 }
 
-//      ==
+
 // Fake-follower detection / authenticity scoring
-//      ==
+
 function scoreAuthenticity({
   followers,
   following,
@@ -229,9 +229,9 @@ function scoreAuthenticity({
   };
 }
 
-//      ==
+
 // INSTAGRAM
-//      ==
+
 async function scrapeInstagram(client, handle) {
   //  Step 1: Profile details 
   const profileRun = await client
@@ -359,9 +359,9 @@ async function scrapeInstagram(client, handle) {
   };
 }
 
-//      ==
+
 // TIKTOK
-//      ==
+
 async function scrapeTikTok(client, handle) {
   const input = {
     profiles: [`https://www.tiktok.com/@${handle}`],
@@ -468,9 +468,9 @@ async function scrapeTikTok(client, handle) {
   };
 }
 
-//      ==
+
 // YOUTUBE
-//      ==
+
 async function scrapeYouTube(client, handle) {
   const input = {
     startUrls: [{ url: `https://www.youtube.com/@${handle}/videos` }],
@@ -576,9 +576,9 @@ async function scrapeYouTube(client, handle) {
   };
 }
 
-//      ==
+
 // DB cache helpers
-//      ==
+
 async function dbCacheGet(platform, handle) {
   try {
     const row = await prisma.socialScrapeCache.findUnique({

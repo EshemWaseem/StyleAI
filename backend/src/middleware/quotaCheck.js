@@ -1,7 +1,7 @@
 // middleware/quotaCheck.js
-//      ==
+
 // Quota enforcement for AI + feature usage
-//      ==
+
 
 const svc = require('../services/billing');
 const usage = require('../services/billing/usage');

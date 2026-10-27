@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     #  - Groq (text + optional vision)  -
     GROQ_API_KEY: str = ""
-    # ✅ Real Groq models (verified 2025)
+    #  Real Groq models (verified 2025)
     GROQ_TEXT_MODEL: str = "llama-3.3-70b-versatile"
     GROQ_TEXT_FALLBACK_MODELS: str = "llama-3.1-8b-instant,gemma2-9b-it"
     GROQ_VISION_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"

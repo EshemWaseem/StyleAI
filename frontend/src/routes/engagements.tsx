@@ -53,7 +53,7 @@ function MyEngagementsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
-  // ✅ Real-time: silent refresh on engagement events (no full spinner)
+  //  Real-time: silent refresh on engagement events (no full spinner)
   useRealtimeEvent("engagement:updated", () => refresh());
   useRealtimeEvent("engagement:created", () => refresh());
 
@@ -248,9 +248,9 @@ function StatusBadge({ status }: { status: AgencyEngagementStatus }) {
   );
 }
 
-//      ==
+
 // Forward to Campaign Modal
-//      ==
+
 function ForwardToCampaignModal({
   engagement, onClose, onForwarded,
 }: {

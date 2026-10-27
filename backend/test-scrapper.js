@@ -19,7 +19,7 @@ async function runTest(platform, handle) {
     const result = await scrapeSocialProfile(platform, handle);
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
 
-    console.log(`✅ Scraping complete in ${duration} seconds!\n`);
+    console.log(` Scraping complete in ${duration} seconds!\n`);
     
     if (!result.found) {
       console.log("❌ Account not found or error:", result.reason);

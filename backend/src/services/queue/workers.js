@@ -1,9 +1,9 @@
 // services/queue/workers.js
-//      ==
+
 // Register BullMQ workers.
 // Start: after queues initialized.
 // Stop: during graceful shutdown.
-//      ==
+
 const { Worker } = require('bullmq');
 const { getConnection, QUEUE_ENABLED } = require('./connection');
 const { processWebhookRetry } = require('./jobs/webhookRetry');
@@ -40,7 +40,7 @@ function startWorkers() {
 
   [webhookWorker, emailWorker, aiWorker].forEach((w) => {
     w.on('completed', (job) => {
-      console.log(`[queue:${w.name}] ✅ job ${job.id} completed`);
+      console.log(`[queue:${w.name}]  job ${job.id} completed`);
     });
     w.on('failed', (job, err) => {
       console.error(`[queue:${w.name}] ❌ job ${job?.id} failed:`, err.message);

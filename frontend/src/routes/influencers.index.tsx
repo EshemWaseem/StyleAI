@@ -29,7 +29,7 @@ export const Route = createFileRoute("/influencers/")({
   component: DiscoverPage,
 });
 
-// ✅ Roles that can access this page
+//  Roles that can access this page
 const ALLOWED_ROLES = [
   "SUPER_ADMIN",
   "BRAND_OWNER",
@@ -65,7 +65,7 @@ function DiscoverPage() {
   const isBrandSide = isBrandOwner || isBrandTeamMember;
   const isAgency = userRoles.includes("AGENCY");
 
-  // ✅ Can browse = any allowed role OR has permission
+  //  Can browse = any allowed role OR has permission
   const canBrowse =
     isSuperAdmin ||
     isBrandSide ||

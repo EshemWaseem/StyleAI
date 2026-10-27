@@ -1,7 +1,7 @@
 // hooks/useSmoothScrollTo.ts
-//      ==
+
 // Smooth-scrolls to a section id, accounting for sticky nav height.
-//      ==
+
 import { useCallback } from "react";
 
 export function useSmoothScrollTo(navHeight = 80) {

@@ -1,7 +1,4 @@
 // server.js
-//      ==
-// StyleAI Backend bootstrap
-//      ==
 require('dotenv').config();
 require('./config/fetchTimeout');
 
@@ -11,9 +8,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 
-//      ==
-// ROUTE IMPORTS
-//      ==
+
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const roleRoutes = require('./routes/roleRoutes');
@@ -50,9 +45,10 @@ const webhookRoutes = require('./routes/webhookRoutes');
 
 const storefrontRoutes = require('./routes/storefrontRoutes');
 
-//      ==
+// const checkoutRoutes = require('./routes/checkoutRoutes');
+
 // MIDDLEWARE
-//      ==
+
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { requestId } = require('./middleware/requestId');
 const { trialGate } = require('./middleware/trialGate');
@@ -62,9 +58,9 @@ const { globalLimiter, authUmbrellaLimiter } = require('./config/rateLimit');
 
 const app = express();
 
-//      ==
+
 // PROCESS SAFETY NETS
-//      ==
+
 process.on('unhandledRejection', (reason) =>
   console.error('[fatal] Unhandled Rejection:', reason)
 );
@@ -72,9 +68,9 @@ process.on('uncaughtException', (err) =>
   console.error('[fatal] Uncaught Exception:', err)
 );
 
-//      ==
+
 // SECURITY + PERF
-//      ==
+
 app.set('trust proxy', 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(
@@ -87,9 +83,9 @@ app.use(
   })
 );
 
-//      ==
+
 // CORS
-//      ==
+
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
   .split(',')
   .map((o) => o.trim())
@@ -116,31 +112,31 @@ app.use(
 
 app.use(requestId);
 
-//      ==
+
 // WEBHOOKS — before express.json()
-//      ==
+
 app.use('/api/webhooks', webhookRoutes);
 
-//      ==
+
 // BODY PARSERS
-//      ==
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-//      ==
+
 // RATE LIMITING
-//      ==
+
 app.use('/api', globalLimiter);
 app.use('/api/auth', authUmbrellaLimiter);
 
-//      ==
+
 // TRIAL ENFORCEMENT
-//      ==
+
 app.use(trialGate);
 
-//      ==
+
 // LOGGING
-//      ==
+
 if (process.env.NODE_ENV !== 'test') {
   morgan.token('reqId', (req) => req.id || '-');
   app.use(
@@ -152,9 +148,9 @@ if (process.env.NODE_ENV !== 'test') {
   );
 }
 
-//      ==
+
 // HEALTH + ROUTES
-//      ==
+
 app.use('/api/health', healthRoutes);
 app.use('/api/storefront', storefrontRoutes);
 
@@ -188,13 +184,13 @@ app.use('/api/recommendations', recommendationsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/assistant', assistantRoutes);
-
+// app.use('/api/checkout', checkoutRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-//      ==
+
 // SERVER + PRISMA WARMUP + QUEUE
-//      ==
+
 const PORT = process.env.PORT || 4000;
 const DB_RETRY_INTERVAL_MS = 30_000;
 
@@ -211,7 +207,7 @@ const DB_RETRY_INTERVAL_MS = 30_000;
     await prisma.$connect();
     await prisma.$queryRaw`SELECT 1`;
     dbHealthy = true;
-    console.log('✅ Prisma connected & warmed');
+    console.log(' Prisma connected & warmed');
   } catch (err) {
     console.error('⚠️  Prisma warmup failed:', err.message);
     console.error(
@@ -257,7 +253,7 @@ const DB_RETRY_INTERVAL_MS = 30_000;
       if (retryTimer) {
         clearInterval(retryTimer);
         retryTimer = null;
-        console.log('[queue] ✅ DB online — worker retry loop stopped');
+        console.log('[queue]  DB online — worker retry loop stopped');
       }
     } catch (err) {
       console.warn('[server] worker start failed:', err.message);
@@ -274,7 +270,7 @@ const DB_RETRY_INTERVAL_MS = 30_000;
       try {
         await prisma.$queryRaw`SELECT 1`;
         if (!dbHealthy) {
-          console.log('[queue] ✅ DB is online — starting workers now');
+          console.log('[queue]  DB is online — starting workers now');
           dbHealthy = true;
         }
         await tryStartWorkers();

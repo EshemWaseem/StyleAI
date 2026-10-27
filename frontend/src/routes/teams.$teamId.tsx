@@ -234,9 +234,9 @@ function TeamDetailPage() {
   );
 }
 
-//      ==
+
 // ADD MEMBER MODAL
-//      ==
+
 
 function AddMemberModal({
   teamId,

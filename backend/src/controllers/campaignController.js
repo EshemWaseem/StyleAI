@@ -1,3 +1,4 @@
+// backend/src/controllers/campaignController.js
 const svc = require('../services/campaigns');
 
 async function list(req, res, next) {
@@ -24,9 +25,9 @@ async function complete(req, res, next) {
   } catch (e) { next(e); }
 }
 
-//      ==
+
 // SHIPPING FLOW (Sprint B)
-//      ==
+
 async function submitAddress(req, res, next) {
   try {
     const campaign = await svc.submitShippingAddress(

@@ -42,7 +42,7 @@ export function PricingGrid({
   const [error, setError] = useState("");
   const [okMsg, setOkMsg] = useState("");
 
-  // ---- load catalog ----
+  //  load catalog 
   useEffect(() => {
     pricingApi
       .listPlatforms()
@@ -62,7 +62,7 @@ export function PricingGrid({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- visible catalog: prefer active platforms first ----
+  //  visible catalog: prefer active platforms first 
   const visibleCatalog = useMemo(() => {
     if (!activePlatforms || activePlatforms.length === 0) return catalog;
     const active = new Set(activePlatforms.map((p) => p.toUpperCase()));
@@ -73,7 +73,7 @@ export function PricingGrid({
     });
   }, [catalog, activePlatforms]);
 
-  // ---- edit one price ----
+  //  edit one price 
   function setPrice(platform: string, contentType: string, raw: string) {
     setTiers((prev) => {
       const next = { ...prev };
@@ -96,7 +96,7 @@ export function PricingGrid({
     });
   }
 
-  // ---- save ----
+  //  save 
   async function save() {
     setSaving(true);
     setError("");

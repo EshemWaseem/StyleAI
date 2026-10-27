@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as BillingRouteImport } from './routes/billing'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EngagementsRouteImport } from './routes/engagements'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -23,6 +24,7 @@ import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as PendingRouteImport } from './routes/pending'
 import { Route as PlansRouteImport } from './routes/plans'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReplaceRouteImport } from './routes/replace'
@@ -41,6 +43,7 @@ import { Route as AdminCampaignsRouteImport } from './routes/admin/campaigns'
 import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
 import { Route as AdminInfluencersRouteImport } from './routes/admin/influencers'
 import { Route as AdminOffersRouteImport } from './routes/admin/offers'
+import { Route as AdminOrdersRouteImport } from './routes/admin/orders'
 import { Route as AdminPaymentsRouteImport } from './routes/admin/payments'
 import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
@@ -67,6 +70,8 @@ import { Route as OffersIndexRouteImport } from './routes/offers.index'
 import { Route as OffersIdRouteImport } from './routes/offers.$id'
 import { Route as OffersBrowseRouteImport } from './routes/offers.browse'
 import { Route as OffersNewRouteImport } from './routes/offers.new'
+import { Route as OrdersIndexRouteImport } from './routes/orders.index'
+import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 import { Route as PaymentsResultRouteImport } from './routes/payments.result'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
@@ -87,6 +92,11 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
 const BillingRoute = BillingRouteImport.update({
   id: '/billing',
   path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -142,6 +152,11 @@ const PendingRoute = PendingRouteImport.update({
 const PlansRoute = PlansRouteImport.update({
   id: '/plans',
   path: '/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecommendationsRoute = RecommendationsRouteImport.update({
@@ -232,6 +247,11 @@ const AdminInfluencersRoute = AdminInfluencersRouteImport.update({
 const AdminOffersRoute = AdminOffersRouteImport.update({
   id: '/admin/offers',
   path: '/admin/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/admin/orders',
+  path: '/admin/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
@@ -364,6 +384,16 @@ const OffersNewRoute = OffersNewRouteImport.update({
   path: '/offers/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrdersIndexRoute = OrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersIdRoute = OrdersIdRouteImport.update({
+  id: '/orders/$id',
+  path: '/orders/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PaymentsResultRoute = PaymentsResultRouteImport.update({
   id: '/payments/result',
   path: '/payments/result',
@@ -399,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
+  '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/engagements': typeof EngagementsRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -410,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/pending': typeof PendingRoute
   '/plans': typeof PlansRoute
+  '/privacy': typeof PrivacyRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/replace': typeof ReplaceRoute
@@ -427,6 +459,7 @@ export interface FileRoutesByFullPath {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/influencers': typeof AdminInfluencersRoute
   '/admin/offers': typeof AdminOffersRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -448,6 +481,7 @@ export interface FileRoutesByFullPath {
   '/offers/$id': typeof OffersIdRoute
   '/offers/browse': typeof OffersBrowseRoute
   '/offers/new': typeof OffersNewRoute
+  '/orders/$id': typeof OrdersIdRoute
   '/payments/result': typeof PaymentsResultRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/studio/content': typeof StudioContentRoute
@@ -459,12 +493,14 @@ export interface FileRoutesByFullPath {
   '/campaigns/': typeof CampaignsIndexRoute
   '/influencers/': typeof InfluencersIndexRoute
   '/offers/': typeof OffersIndexRoute
+  '/orders/': typeof OrdersIndexRoute
   '/products/': typeof ProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
+  '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/engagements': typeof EngagementsRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -476,6 +512,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/pending': typeof PendingRoute
   '/plans': typeof PlansRoute
+  '/privacy': typeof PrivacyRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/replace': typeof ReplaceRoute
@@ -493,6 +530,7 @@ export interface FileRoutesByTo {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/influencers': typeof AdminInfluencersRoute
   '/admin/offers': typeof AdminOffersRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -514,6 +552,7 @@ export interface FileRoutesByTo {
   '/offers/$id': typeof OffersIdRoute
   '/offers/browse': typeof OffersBrowseRoute
   '/offers/new': typeof OffersNewRoute
+  '/orders/$id': typeof OrdersIdRoute
   '/payments/result': typeof PaymentsResultRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/studio/content': typeof StudioContentRoute
@@ -525,6 +564,7 @@ export interface FileRoutesByTo {
   '/campaigns': typeof CampaignsIndexRoute
   '/influencers': typeof InfluencersIndexRoute
   '/offers': typeof OffersIndexRoute
+  '/orders': typeof OrdersIndexRoute
   '/products': typeof ProductsIndexRoute
 }
 export interface FileRoutesById {
@@ -532,6 +572,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
+  '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/engagements': typeof EngagementsRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -543,6 +584,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/pending': typeof PendingRoute
   '/plans': typeof PlansRoute
+  '/privacy': typeof PrivacyRoute
   '/recommendations': typeof RecommendationsRoute
   '/register': typeof RegisterRoute
   '/replace': typeof ReplaceRoute
@@ -560,6 +602,7 @@ export interface FileRoutesById {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/influencers': typeof AdminInfluencersRoute
   '/admin/offers': typeof AdminOffersRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -581,6 +624,7 @@ export interface FileRoutesById {
   '/offers/$id': typeof OffersIdRoute
   '/offers/browse': typeof OffersBrowseRoute
   '/offers/new': typeof OffersNewRoute
+  '/orders/$id': typeof OrdersIdRoute
   '/payments/result': typeof PaymentsResultRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/studio/content': typeof StudioContentRoute
@@ -592,6 +636,7 @@ export interface FileRoutesById {
   '/campaigns/': typeof CampaignsIndexRoute
   '/influencers/': typeof InfluencersIndexRoute
   '/offers/': typeof OffersIndexRoute
+  '/orders/': typeof OrdersIndexRoute
   '/products/': typeof ProductsIndexRoute
 }
 export interface FileRouteTypes {
@@ -600,6 +645,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/billing'
+    | '/checkout'
     | '/dashboard'
     | '/engagements'
     | '/forgot-password'
@@ -611,6 +657,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/pending'
     | '/plans'
+    | '/privacy'
     | '/recommendations'
     | '/register'
     | '/replace'
@@ -628,6 +675,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/influencers'
     | '/admin/offers'
+    | '/admin/orders'
     | '/admin/payments'
     | '/admin/products'
     | '/admin/settings'
@@ -649,6 +697,7 @@ export interface FileRouteTypes {
     | '/offers/$id'
     | '/offers/browse'
     | '/offers/new'
+    | '/orders/$id'
     | '/payments/result'
     | '/products/$slug'
     | '/studio/content'
@@ -660,12 +709,14 @@ export interface FileRouteTypes {
     | '/campaigns/'
     | '/influencers/'
     | '/offers/'
+    | '/orders/'
     | '/products/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/analytics'
     | '/billing'
+    | '/checkout'
     | '/dashboard'
     | '/engagements'
     | '/forgot-password'
@@ -677,6 +728,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/pending'
     | '/plans'
+    | '/privacy'
     | '/recommendations'
     | '/register'
     | '/replace'
@@ -694,6 +746,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/influencers'
     | '/admin/offers'
+    | '/admin/orders'
     | '/admin/payments'
     | '/admin/products'
     | '/admin/settings'
@@ -715,6 +768,7 @@ export interface FileRouteTypes {
     | '/offers/$id'
     | '/offers/browse'
     | '/offers/new'
+    | '/orders/$id'
     | '/payments/result'
     | '/products/$slug'
     | '/studio/content'
@@ -726,12 +780,14 @@ export interface FileRouteTypes {
     | '/campaigns'
     | '/influencers'
     | '/offers'
+    | '/orders'
     | '/products'
   id:
     | '__root__'
     | '/'
     | '/analytics'
     | '/billing'
+    | '/checkout'
     | '/dashboard'
     | '/engagements'
     | '/forgot-password'
@@ -743,6 +799,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/pending'
     | '/plans'
+    | '/privacy'
     | '/recommendations'
     | '/register'
     | '/replace'
@@ -760,6 +817,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/influencers'
     | '/admin/offers'
+    | '/admin/orders'
     | '/admin/payments'
     | '/admin/products'
     | '/admin/settings'
@@ -781,6 +839,7 @@ export interface FileRouteTypes {
     | '/offers/$id'
     | '/offers/browse'
     | '/offers/new'
+    | '/orders/$id'
     | '/payments/result'
     | '/products/$slug'
     | '/studio/content'
@@ -792,6 +851,7 @@ export interface FileRouteTypes {
     | '/campaigns/'
     | '/influencers/'
     | '/offers/'
+    | '/orders/'
     | '/products/'
   fileRoutesById: FileRoutesById
 }
@@ -799,6 +859,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
   BillingRoute: typeof BillingRoute
+  CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
   EngagementsRoute: typeof EngagementsRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -810,6 +871,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   PendingRoute: typeof PendingRoute
   PlansRoute: typeof PlansRoute
+  PrivacyRoute: typeof PrivacyRoute
   RecommendationsRoute: typeof RecommendationsRoute
   RegisterRoute: typeof RegisterRoute
   ReplaceRoute: typeof ReplaceRoute
@@ -827,6 +889,7 @@ export interface RootRouteChildren {
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminInfluencersRoute: typeof AdminInfluencersRoute
   AdminOffersRoute: typeof AdminOffersRoute
+  AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -848,6 +911,7 @@ export interface RootRouteChildren {
   OffersIdRoute: typeof OffersIdRoute
   OffersBrowseRoute: typeof OffersBrowseRoute
   OffersNewRoute: typeof OffersNewRoute
+  OrdersIdRoute: typeof OrdersIdRoute
   PaymentsResultRoute: typeof PaymentsResultRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   StudioContentRoute: typeof StudioContentRoute
@@ -859,6 +923,7 @@ export interface RootRouteChildren {
   CampaignsIndexRoute: typeof CampaignsIndexRoute
   InfluencersIndexRoute: typeof InfluencersIndexRoute
   OffersIndexRoute: typeof OffersIndexRoute
+  OrdersIndexRoute: typeof OrdersIndexRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
 }
 
@@ -883,6 +948,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/billing'
       preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -960,6 +1032,13 @@ declare module '@tanstack/react-router' {
       path: '/plans'
       fullPath: '/plans'
       preLoaderRoute: typeof PlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recommendations': {
@@ -1086,6 +1165,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/offers'
       fullPath: '/admin/offers'
       preLoaderRoute: typeof AdminOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/admin/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/payments': {
@@ -1270,6 +1356,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OffersNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orders/': {
+      id: '/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof OrdersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders/$id': {
+      id: '/orders/$id'
+      path: '/orders/$id'
+      fullPath: '/orders/$id'
+      preLoaderRoute: typeof OrdersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/payments/result': {
       id: '/payments/result'
       path: '/payments/result'
@@ -1319,6 +1419,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
   BillingRoute: BillingRoute,
+  CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
   EngagementsRoute: EngagementsRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
@@ -1330,6 +1431,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   PendingRoute: PendingRoute,
   PlansRoute: PlansRoute,
+  PrivacyRoute: PrivacyRoute,
   RecommendationsRoute: RecommendationsRoute,
   RegisterRoute: RegisterRoute,
   ReplaceRoute: ReplaceRoute,
@@ -1347,6 +1449,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFinanceRoute: AdminFinanceRoute,
   AdminInfluencersRoute: AdminInfluencersRoute,
   AdminOffersRoute: AdminOffersRoute,
+  AdminOrdersRoute: AdminOrdersRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
@@ -1368,6 +1471,7 @@ const rootRouteChildren: RootRouteChildren = {
   OffersIdRoute: OffersIdRoute,
   OffersBrowseRoute: OffersBrowseRoute,
   OffersNewRoute: OffersNewRoute,
+  OrdersIdRoute: OrdersIdRoute,
   PaymentsResultRoute: PaymentsResultRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   StudioContentRoute: StudioContentRoute,
@@ -1379,6 +1483,7 @@ const rootRouteChildren: RootRouteChildren = {
   CampaignsIndexRoute: CampaignsIndexRoute,
   InfluencersIndexRoute: InfluencersIndexRoute,
   OffersIndexRoute: OffersIndexRoute,
+  OrdersIndexRoute: OrdersIndexRoute,
   ProductsIndexRoute: ProductsIndexRoute,
 }
 export const routeTree = rootRouteImport

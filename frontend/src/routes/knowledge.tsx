@@ -418,7 +418,7 @@ function KnowledgePage() {
                         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                           #{i + 1} · {r.documentName} · chunk {r.chunkIndex}
                         </p>
-                        {/* ✅ Full content — expandable */}
+                        {/*  Full content — expandable */}
                         <p className="mt-2 whitespace-pre-wrap break-words text-sm">
                           {expanded || !isLong
                             ? r.content
@@ -538,9 +538,9 @@ function StatusIcon({ status }: { status: string }) {
   return <Clock className="size-4 shrink-0 text-muted-foreground" />;
 }
 
-//      ==
+
 // PDF text extractor (browser-side, no server round-trip)
-//      ==
+
 async function extractPdfText(file: File): Promise<string> {
   // Lazy-load pdf.js only when a PDF is uploaded
   const pdfjs: any = await import(

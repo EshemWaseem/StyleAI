@@ -1,7 +1,7 @@
 // services/offers/estimate.js
-//      ==
+
 // POST /api/offers/estimate — dry-run totals, nothing saved
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError, computeOfferTotals } = require('./helpers');

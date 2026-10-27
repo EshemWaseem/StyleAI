@@ -1,26 +1,26 @@
 // services/ai/pricing.js
-//      ==
+
 // Known model pricing — USD per 1K tokens (or per call)
 // Used to estimate cost when providers don't return it.
-//      ==
+
 
 const PRICING = {
-  // ---- Ollama (local, free) ----
+  //  Ollama (local, free) 
   'ollama:qwen2.5:7b':             { inputPer1k: 0, outputPer1k: 0 },
   'ollama:qwen2.5:14b':            { inputPer1k: 0, outputPer1k: 0 },
   'ollama:llama3.1:8b':            { inputPer1k: 0, outputPer1k: 0 },
 
-  // ---- Gemini ----
+  //  Gemini 
   'gemini:gemini-flash-latest':    { inputPer1k: 0.000075, outputPer1k: 0.0003 },
   'gemini:gemini-1.5-flash':       { inputPer1k: 0.000075, outputPer1k: 0.0003 },
   'gemini:gemini-1.5-pro':         { inputPer1k: 0.00125,  outputPer1k: 0.005 },
   'gemini:gemini-embedding-001':   { inputPer1k: 0.000025, outputPer1k: 0 },
 
-  // ---- Groq (free tier) ----
+  //  Groq (free tier) 
   'groq:llama-3.3-70b-versatile':  { inputPer1k: 0, outputPer1k: 0 },
   'groq:llama-3.1-8b-instant':     { inputPer1k: 0, outputPer1k: 0 },
 
-  // ---- HuggingFace (per call) ----
+  //  HuggingFace (per call) 
   'huggingface:black-forest-labs/FLUX.1-Kontext-dev': { perCall: 0.01 },
   'huggingface:black-forest-labs/FLUX.1-schnell':     { perCall: 0.003 },
 };

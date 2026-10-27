@@ -1,10 +1,10 @@
 // services/websocket/handlers/campaignChat.js
-//      ==
+
 // Campaign chat events:
 //   - campaign:fetch   → load messages
 //   - campaign:join    → enter live room for a campaign
 //   - campaign:leave   → exit live room
-//      ==
+
 
 const prisma = require('../../../config/prisma');
 const { checkRate } = require('../rateLimit');

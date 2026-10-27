@@ -42,7 +42,7 @@ async function revokeBrand(req, res, next) {
 // PRODUCT PICKER
 async function searchProducts(req, res, next) { try { res.json({ products: await svc.searchApprovedProducts(req.user, req.query) }); } catch (e) { next(e); } }
 
-// ✅ NEW — EDITORIAL
+//  — EDITORIAL
 async function getEditorial(req, res, next) {
   try { res.json({ editorial: await svc.getEditorial(req.user) }); } catch (e) { next(e); }
 }
@@ -64,6 +64,6 @@ module.exports = {
   listSections, getSection, createSection, updateSection, deleteSection, setSectionProducts,
   listBrands, reviewBrand, revokeBrand,
   searchProducts,
-  // ✅ NEW
+  // 
   getEditorial, upsertEditorial, deleteEditorial,
 };

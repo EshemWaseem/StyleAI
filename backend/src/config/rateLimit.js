@@ -1,12 +1,12 @@
 // src/config/rateLimit.js
-//      ==
+
 // Centralized rate limiting
 // - Redis-backed (multi-instance safe)
 // - Each limiter gets its OWN store instance (v8 requirement)
 // - Per-user, per-email, per-IP strategies
 // - skipSuccessfulRequests for login
 // - Structured logging on block
-//      ==
+
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const crypto = require('crypto');
@@ -77,7 +77,7 @@ class RedisRateStore {
   }
 }
 
-// ✅ v8 requirement — fresh store instance per limiter (unique prefix)
+//  v8 requirement — fresh store instance per limiter (unique prefix)
 function makeStore(name) {
   return new RedisRateStore({
     client: redis,

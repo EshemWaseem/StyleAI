@@ -1,12 +1,12 @@
 // services/billing/cron.js
-//      ==
+
 // Trial lifecycle sweep — runs every 6 hours
 // 1. Send reminders 3 days + 1 day before expiry
 // 2. Notify on expiry
 // 3. Cleanup abandoned trials (30-day grace, then soft-mark)
 //
-// ✅ NEW: in-app notification + email for each event.
-//      ==
+// : in-app notification + email for each event.
+
 
 const prisma = require('../../config/prisma');
 const { notifyUser } = require('../notifications');
@@ -51,7 +51,7 @@ async function sendTrialReminderWindow({ daysLeft, minHours, maxHours }) {
           : `Trial ends in ${daysLeft} days`,
         body: `Your StyleAI trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Upgrade to keep full access.`,
         link: '/plans',
-        // ✅ EMAIL
+        //  EMAIL
         emailTemplate: 'trialExpiring',
         emailData: {
           name: u.name,
@@ -122,7 +122,7 @@ async function sendTrialExpiredNotifications() {
         title: 'Your trial has ended',
         body: 'Choose a plan to continue using StyleAI.',
         link: '/plans',
-        // ✅ EMAIL
+        //  EMAIL
         emailTemplate: 'trialExpired',
         emailData: {
           name: u.name,
@@ -210,12 +210,12 @@ module.exports = {
 
 //   02-10-2026     5:01
 // // services/billing/cron.js
-// //      ==
+// 
 // // Trial lifecycle sweep — runs daily
 // // 1. Send reminders 1 day before expiry
 // // 2. Notify on expiry
 // // 3. Cleanup abandoned trials (30-day grace, then soft-mark)
-// //      ==
+// 
 
 // const prisma = require('../../config/prisma');
 // const { notifyUser } = require('../notifications');

@@ -1,12 +1,12 @@
 // services/knowledge/llmClient.js
-//      ==
+
 // Node → FastAPI text-completion client.
 // Fixes:
 //   - Correct endpoint: /api/v1/chat/text
 //   - Correct field: num_predict (not max_tokens)
 //   - Emulated system prompt (AI service has no system prompt)
 //   - Enforced output truncation as safety net
-//      ==
+
 
 const AI_SERVICE_URL =
   process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';

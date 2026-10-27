@@ -23,7 +23,7 @@ export const paymentsApi = {
   createSubscriptionCheckout: (input: SubscriptionCheckoutInput) =>
     http.post<CheckoutSession>("/api/payments/subscription/checkout", input),
 
-  // ✅ Fallback when webhook doesn't arrive — manually fetch session and apply
+  //  Fallback when webhook doesn't arrive — manually fetch session and apply
   verifySession: (sessionId: string) =>
     http.post<VerifySessionResult>("/api/payments/subscription/verify-session", {
       sessionId,
@@ -31,6 +31,12 @@ export const paymentsApi = {
 
   createOrderCheckout: (input: OrderCheckoutInput) =>
     http.post<CheckoutSession>("/api/payments/order/checkout", input),
+
+  verifyOrderSession: (sessionId: string) =>
+    http.post<{ ok: boolean; applied: boolean; order: any }>(
+      "/api/payments/order/verify-session",
+      { sessionId }
+    ),
 
   confirmCod: (orderId: string) =>
     http.post<{ order: any }>("/api/payments/order/cod/confirm", { orderId }),

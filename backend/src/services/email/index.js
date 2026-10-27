@@ -1,9 +1,9 @@
 // services/email/index.js
-//      ==
+
 // Email service — barrel + high-level helpers.
 // sendToUser enforces user notification preferences,
 // BUT critical security templates bypass preferences.
-//      ==
+
 const { sendMail } = require('./send');
 const templates = require('./templates');
 const { EMAIL_ENABLED, getTransporter } = require('./transporter');
@@ -66,7 +66,7 @@ async function sendToUser(userId, templateName, data = {}, opts = {}) {
 
     const isCritical = CRITICAL_TEMPLATES.has(templateName);
 
-    // ---- Preference check (skipped for critical emails) ----
+    //  Preference check (skipped for critical emails) 
     const category = prefs.categoryForTemplate(templateName);
     if (category && !isCritical) {
       const allowed = await prefs.isEmailEnabled(userId, category);
@@ -84,7 +84,7 @@ async function sendToUser(userId, templateName, data = {}, opts = {}) {
       );
     }
 
-    // ---- Unsubscribe URL (only for non-critical) ----
+    //  Unsubscribe URL (only for non-critical) 
     let unsubscribeUrl = null;
     if (!isCritical) {
       const token = await prefs.getUnsubscribeToken(userId);

@@ -1,11 +1,11 @@
 // wallet.prisma
-//      ==
+
 // WALLET + LEDGER — every rupee tracked, nothing silent
-//      ==
+
 // Balance is DERIVED (sum of ledger). Never stored as source of truth.
 // `Wallet.balanceCache` is a fast-read cache — always rebuildable
 // via walletService.recalculateBalance(walletId).
-//      ==
+
 
 model Wallet {
   id String @id @default(uuid())

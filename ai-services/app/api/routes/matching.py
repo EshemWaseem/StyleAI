@@ -1,8 +1,4 @@
 # app/api/routes/matching.py
-#      ==
-# HTTP route: POST /api/v1/match/influencers
-#      ==
-
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,19 +14,8 @@ router = APIRouter(
     dependencies=[Depends(verify_internal_key)],
 )
 
-
 @router.post("/influencers", response_model=MatchResponse)
 async def match_influencers_endpoint(req: MatchRequest):
-    """
-    Score a product against a list of candidate influencers.
-
-    - Auth: `X-Internal-Key` header must match `INTERNAL_KEY`.
-    - Request: `{ product: {...}, candidates: [...] }`
-    - Response: ranked `results[]` with per-dimension scores + reasons.
-
-    The matching service automatically falls back to a heuristic
-    if the LLM is unavailable — the response always succeeds.
-    """
     try:
         return await match_influencers(req)
     except Exception as e:

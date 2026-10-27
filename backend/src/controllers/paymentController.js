@@ -33,8 +33,6 @@ async function subscriptionCheckout(req, res, next) {
 }
 
 // POST /api/payments/subscription/verify-session
-// Fallback when webhook doesn't arrive (local dev / public URL issues).
-// Fetches Stripe session, applies the same logic as webhook.
 async function verifySession(req, res, next) {
   try {
     const { sessionId } = req.body || {};
@@ -58,17 +56,14 @@ async function verifySession(req, res, next) {
       });
     }
 
-    // Apply same handler as webhook — idempotent
     const { handle } = require('../services/payments/stripe/handlers/checkoutCompleted');
     await handle(session);
 
-    // Clear trial gate cache so next request passes without 402
     try {
       const { clearTrialCache } = require('../middleware/trialGate');
       if (req.user?.id) clearTrialCache(req.user.id);
     } catch { /* trialGate may not be wired yet */ }
 
-    // Return fresh state
     const svc = require('../services/billing');
     const fresh = await svc.getMyBilling(req.user);
 
@@ -77,20 +72,50 @@ async function verifySession(req, res, next) {
 }
 
 // POST /api/payments/order/checkout
+// Accepts:
+//   Path A: { orderId, provider }              → existing order
+//   Path B: { cartItems, shippingAddress, currency, provider } → creates order first
 async function orderCheckout(req, res, next) {
   try {
-    const { orderId, provider = 'STRIPE' } = req.body || {};
+    const {
+      orderId,
+      cartItems,
+      shippingAddress,
+      currency,
+      provider = 'STRIPE',
+    } = req.body || {};
+
     const successUrl = `${payments.config.shared.FRONTEND_URL}/payments/result?status=success`;
     const cancelUrl  = `${payments.config.shared.FRONTEND_URL}/payments/result?status=cancel`;
 
+    let finalOrderId = orderId;
+
+    // If order doesn't exist yet, create it from cart items
+    if (!finalOrderId && Array.isArray(cartItems) && cartItems.length > 0) {
+      const orderSvc = require('../services/orders');
+      const order = await orderSvc.createOrderFromCart(req.user, {
+        cartItems,
+        shippingAddress,
+        currency,
+      });
+      finalOrderId = order.id;
+    }
+
+    if (!finalOrderId) {
+      return res.status(400).json({
+        message: 'Either orderId or cartItems is required',
+        code: 'MISSING_ORDER_INPUT',
+      });
+    }
+
     const session = await payments.orders.createOrderCheckout(req.user, {
-      orderId,
+      orderId: finalOrderId,
       provider,
       successUrl,
       cancelUrl,
     });
 
-    res.json(session);
+    res.json({ ...session, orderId: finalOrderId });
   } catch (e) { next(e); }
 }
 
@@ -127,10 +152,55 @@ async function createPortal(req, res, next) {
   } catch (e) { next(e); }
 }
 
+
+// paymentController.js — NAYA function
+async function verifyOrderSession(req, res, next) {
+  try {
+    const { sessionId } = req.body || {};
+    if (!sessionId) {
+      return res.status(400).json({ message: 'sessionId is required', code: 'MISSING_SESSION_ID' });
+    }
+
+    const stripe = require('../services/payments/stripe/client');
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found', code: 'SESSION_NOT_FOUND' });
+    }
+
+    if (session.payment_status !== 'paid') {
+      return res.status(400).json({
+        message: 'Payment not completed',
+        code: 'NOT_PAID',
+        payment_status: session.payment_status,
+      });
+    }
+
+    const { handle } = require('../services/payments/stripe/handlers/checkoutCompleted');
+    await handle(session);
+
+    const orderId = session.metadata?.orderId;
+    let order = null;
+    if (orderId) {
+      order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { items: true, payments: true },
+      });
+    }
+
+    res.json({ ok: true, applied: true, order });
+  } catch (e) {
+    next(e);
+  }
+}
+
+
+
 module.exports = {
   getMethods,
   subscriptionCheckout,
   verifySession,
+  verifyOrderSession,
   orderCheckout,
   confirmCod,
   createPortal,

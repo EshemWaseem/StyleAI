@@ -1,7 +1,7 @@
 // services/billing/helpers.js
-//      ==
+
 // Billing helpers — role-aware subscription management
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { getTrialPlanForRole, getDefaultPlanForRole } = require('./plans');
@@ -67,7 +67,7 @@ function computeEffectiveState(sub) {
   if (sub.status === 'PAST_DUE') return 'past_due';
   if (sub.status === 'CANCELLED' || sub.status === 'EXPIRED') return 'cancelled';
 
-  // ✅ FIX: If Stripe confirms active + paid plan, trust it.
+  //  FIX: If Stripe confirms active + paid plan, trust it.
   // This prevents "expired" when currentPeriodEnd is stale after upgrade.
   if (
     sub.stripeStatus === 'active' &&

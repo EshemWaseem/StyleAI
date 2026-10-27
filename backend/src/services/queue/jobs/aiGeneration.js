@@ -1,9 +1,9 @@
 // services/queue/jobs/aiGeneration.js
-//      ==
+
 // Async AI task runner — placeholder for future heavy jobs
 // (photo generation, batch content, video).
 // Currently: no-op unless task type implemented.
-//      ==
+
 
 async function processAITask(job) {
   const { taskType } = job.data;

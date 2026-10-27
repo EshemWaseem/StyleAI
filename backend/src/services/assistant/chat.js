@@ -1,7 +1,7 @@
 // services/assistant/chat.js
-//      ==
+
 // Main assistant chat — orchestrates RAG + memory + LLM + persistence
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');

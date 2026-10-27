@@ -20,7 +20,7 @@
 - AGENCY — manages multiple brands
 - SHOPPER — end customer (storefront)
 
----
+
 
 ## 🏗️ ARCHITECTURE
 [Frontend :3000] React 18 + Vite + TanStack + Tailwind
@@ -39,7 +39,7 @@
 4. Node is the only DB writer
 5. Multi-tenancy enforced — Brand A can't see Brand B
 
----
+
 
 ## 💻 TECH STACK (LOCKED)
 
@@ -62,9 +62,9 @@
 - Gemini (vision + embeddings)
 - Hugging Face (image gen — fallback)
 
----
 
-## ✅ WHAT'S COMPLETE (Sprints 1-27)
+
+##  WHAT'S COMPLETE (Sprints 1-27)
 
 ### Sprint 1-3 — Foundation
 - Auth (register/login/me) with JWT
@@ -180,7 +180,7 @@
 - Trial cron (6h sweep) — reminders + expiry
 - Trial guard middleware (frontend redirect)
 
----
+
 
 ## 🚧 WHAT'S PENDING (with reasons)
 
@@ -222,7 +222,7 @@
 - AI negotiation assistant
 - Stripe Connect for payouts
 
----
+
 
 ## 📁 FOLDER STRUCTURE
 
@@ -275,7 +275,7 @@ services/ (12 service modules)
 hugging_face/ (hf_image, hf_photography)
 
 
----
+
 
 ## 🔧 ENVIRONMENT SETUP
 

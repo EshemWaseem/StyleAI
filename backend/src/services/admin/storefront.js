@@ -28,9 +28,12 @@ async function createHero(adminUser, data, req) {
   });
 
   await writeAudit({
-    actorId: adminUser.id, action: 'storefront.hero.create',
-    targetType: 'StorefrontHero', targetId: hero.id,
-    meta: { headline: hero.headline }, ipAddress: req?.ip,
+    actorId: adminUser.id,
+    action: 'storefront.hero.create',
+    targetType: 'StorefrontHero',
+    targetId: hero.id,
+    meta: { headline: hero.headline },
+    ipAddress: req?.ip,
   });
 
   return hero;
@@ -54,8 +57,12 @@ async function updateHero(adminUser, id, data, req) {
   const hero = await prisma.storefrontHero.update({ where: { id }, data: patch });
 
   await writeAudit({
-    actorId: adminUser.id, action: 'storefront.hero.update',
-    targetType: 'StorefrontHero', targetId: id, meta: patch, ipAddress: req?.ip,
+    actorId: adminUser.id,
+    action: 'storefront.hero.update',
+    targetType: 'StorefrontHero',
+    targetId: id,
+    meta: patch,
+    ipAddress: req?.ip,
   });
 
   return hero;
@@ -68,9 +75,12 @@ async function deleteHero(adminUser, id, req) {
 
   await prisma.storefrontHero.delete({ where: { id } });
   await writeAudit({
-    actorId: adminUser.id, action: 'storefront.hero.delete',
-    targetType: 'StorefrontHero', targetId: id,
-    meta: { headline: existing.headline }, ipAddress: req?.ip,
+    actorId: adminUser.id,
+    action: 'storefront.hero.delete',
+    targetType: 'StorefrontHero',
+    targetId: id,
+    meta: { headline: existing.headline },
+    ipAddress: req?.ip,
   });
   return { id };
 }
@@ -82,9 +92,18 @@ async function listSections(adminUser) {
     include: { _count: { select: { products: true } } },
   });
   return sections.map((s) => ({
-    id: s.id, title: s.title, subtitle: s.subtitle, type: s.type, layout: s.layout,
-    rule: s.rule, productLimit: s.productLimit, sortOrder: s.sortOrder, isActive: s.isActive,
-    productCount: s._count.products, createdAt: s.createdAt, updatedAt: s.updatedAt,
+    id: s.id,
+    title: s.title,
+    subtitle: s.subtitle,
+    type: s.type,
+    layout: s.layout,
+    rule: s.rule,
+    productLimit: s.productLimit,
+    sortOrder: s.sortOrder,
+    isActive: s.isActive,
+    productCount: s._count.products,
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt,
   }));
 }
 
@@ -98,7 +117,12 @@ async function getSection(adminUser, id) {
         include: {
           product: {
             select: {
-              id: true, name: true, sku: true, price: true, currency: true, category: true,
+              id: true,
+              name: true,
+              sku: true,
+              price: true,
+              currency: true,
+              category: true,
               storefrontVisible: true,
               brand: { select: { id: true, name: true, slug: true } },
               images: { orderBy: { position: 'asc' }, take: 1 },
@@ -113,12 +137,17 @@ async function getSection(adminUser, id) {
   return {
     ...section,
     products: section.products.map((p) => ({
-      id: p.product.id, name: p.product.name, sku: p.product.sku,
+      id: p.product.id,
+      name: p.product.name,
+      sku: p.product.sku,
       price: p.product.price != null ? Number(p.product.price) : null,
-      currency: p.product.currency, category: p.product.category,
-      storefrontVisible: p.product.storefrontVisible, brand: p.product.brand,
+      currency: p.product.currency,
+      category: p.product.category,
+      storefrontVisible: p.product.storefrontVisible,
+      brand: p.product.brand,
       primaryImage: p.product.images[0]?.url ?? null,
-      sortOrder: p.sortOrder, linkId: p.id,
+      sortOrder: p.sortOrder,
+      linkId: p.id,
     })),
   };
 }
@@ -135,7 +164,8 @@ async function createSection(adminUser, data, req) {
     data: {
       title: data.title.trim(),
       subtitle: data.subtitle?.trim() || null,
-      type, layout,
+      type,
+      layout,
       rule: type === 'AUTO' ? data.rule : null,
       productLimit: Number(data.productLimit ?? 8),
       sortOrder: Number(data.sortOrder ?? 0),
@@ -144,9 +174,12 @@ async function createSection(adminUser, data, req) {
   });
 
   await writeAudit({
-    actorId: adminUser.id, action: 'storefront.section.create',
-    targetType: 'StorefrontSection', targetId: section.id,
-    meta: { title: section.title, type: section.type }, ipAddress: req?.ip,
+    actorId: adminUser.id,
+    action: 'storefront.section.create',
+    targetType: 'StorefrontSection',
+    targetId: section.id,
+    meta: { title: section.title, type: section.type },
+    ipAddress: req?.ip,
   });
 
   return section;
@@ -170,8 +203,12 @@ async function updateSection(adminUser, id, data, req) {
   const section = await prisma.storefrontSection.update({ where: { id }, data: patch });
 
   await writeAudit({
-    actorId: adminUser.id, action: 'storefront.section.update',
-    targetType: 'StorefrontSection', targetId: id, meta: patch, ipAddress: req?.ip,
+    actorId: adminUser.id,
+    action: 'storefront.section.update',
+    targetType: 'StorefrontSection',
+    targetId: id,
+    meta: patch,
+    ipAddress: req?.ip,
   });
 
   return section;
@@ -184,9 +221,12 @@ async function deleteSection(adminUser, id, req) {
 
   await prisma.storefrontSection.delete({ where: { id } });
   await writeAudit({
-    actorId: adminUser.id, action: 'storefront.section.delete',
-    targetType: 'StorefrontSection', targetId: id,
-    meta: { title: existing.title }, ipAddress: req?.ip,
+    actorId: adminUser.id,
+    action: 'storefront.section.delete',
+    targetType: 'StorefrontSection',
+    targetId: id,
+    meta: { title: existing.title },
+    ipAddress: req?.ip,
   });
   return { id };
 }
@@ -213,9 +253,12 @@ async function setSectionProducts(adminUser, sectionId, productIds, req) {
   });
 
   await writeAudit({
-    actorId: adminUser.id, action: 'storefront.section.setProducts',
-    targetType: 'StorefrontSection', targetId: sectionId,
-    meta: { count: ids.length }, ipAddress: req?.ip,
+    actorId: adminUser.id,
+    action: 'storefront.section.setProducts',
+    targetType: 'StorefrontSection',
+    targetId: sectionId,
+    meta: { count: ids.length },
+    ipAddress: req?.ip,
   });
 
   return { sectionId, count: ids.length };
@@ -238,7 +281,10 @@ async function listBrandsWithStatus(adminUser, filters = {}) {
     orderBy: [{ storefrontAppliedAt: 'desc' }, { createdAt: 'desc' }],
     take: 100,
     select: {
-      id: true, name: true, slug: true, logoUrl: true,
+      id: true,
+      name: true,
+      slug: true,
+      logoUrl: true,
       storefrontStatus: true,
       storefrontAppliedAt: true,
       storefrontReviewedAt: true,
@@ -251,7 +297,10 @@ async function listBrandsWithStatus(adminUser, filters = {}) {
   });
 
   return brands.map((b) => ({
-    id: b.id, name: b.name, slug: b.slug, logoUrl: b.logoUrl,
+    id: b.id,
+    name: b.name,
+    slug: b.slug,
+    logoUrl: b.logoUrl,
     storefrontStatus: b.storefrontStatus,
     appliedAt: b.storefrontAppliedAt,
     reviewedAt: b.storefrontReviewedAt,
@@ -322,7 +371,8 @@ async function reviewBrandApplication(adminUser, brandId, approve, reason, req) 
   await writeAudit({
     actorId: adminUser.id,
     action: shouldDecline ? 'storefront.brand.decline' : 'storefront.brand.approve',
-    targetType: 'Brand', targetId: brandId,
+    targetType: 'Brand',
+    targetId: brandId,
     meta: { brandName: brand.name, reason: reason ?? null, products: appliedIds.length },
     ipAddress: req?.ip,
   });
@@ -331,7 +381,7 @@ async function reviewBrandApplication(adminUser, brandId, approve, reason, req) 
     .then((owners) => {
       for (const owner of owners) {
         notifyUser(owner.id, {
-          type: shouldDecline ? 'STOREFRONT_APPLICATION_DECLINED' : 'STOREFRONT_APPLICATION_APPROVED',
+          type: 'SYSTEM',
           title: shouldDecline
             ? `Storefront application for ${brand.name} was not approved`
             : `🎉 ${brand.name} is live on StyleAI`,
@@ -339,7 +389,11 @@ async function reviewBrandApplication(adminUser, brandId, approve, reason, req) 
             ? (reason?.trim() || 'You can update your products and re-apply anytime.')
             : `${appliedIds.length} product${appliedIds.length === 1 ? '' : 's'} are now visible on the public storefront.`,
           link: shouldDecline ? '/dashboard' : '/products',
-          meta: { brandId: brand.id, status: shouldDecline ? 'DECLINED' : 'APPROVED' },
+          meta: {
+            brandId: brand.id,
+            event: shouldDecline ? 'STOREFRONT_DECLINED' : 'STOREFRONT_APPROVED',
+            status: shouldDecline ? 'DECLINED' : 'APPROVED',
+          },
           emailTemplate: shouldDecline ? 'brandApplicationDeclined' : 'brandApplicationApproved',
           emailData: shouldDecline
             ? { brandName: brand.name, reason: reason?.trim() || '' }
@@ -352,9 +406,12 @@ async function reviewBrandApplication(adminUser, brandId, approve, reason, req) 
   return prisma.brand.findUnique({
     where: { id: brandId },
     select: {
-      id: true, name: true,
-      storefrontStatus: true, storefrontReviewedAt: true,
-      storefrontReviewedBy: true, storefrontDeclineReason: true,
+      id: true,
+      name: true,
+      storefrontStatus: true,
+      storefrontReviewedAt: true,
+      storefrontReviewedBy: true,
+      storefrontDeclineReason: true,
     },
   });
 }
@@ -383,8 +440,10 @@ async function revokeBrandOptIn(adminUser, brandId, reason, req) {
   ]);
 
   await writeAudit({
-    actorId: adminUser.id, action: 'storefront.brand.revoke',
-    targetType: 'Brand', targetId: brandId,
+    actorId: adminUser.id,
+    action: 'storefront.brand.revoke',
+    targetType: 'Brand',
+    targetId: brandId,
     meta: { brandName: brand.name, reason: reason ?? null },
     ipAddress: req?.ip,
   });
@@ -415,7 +474,10 @@ async function searchApprovedProducts(adminUser, filters = {}) {
   });
 
   return products.map((p) => ({
-    id: p.id, name: p.name, sku: p.sku, category: p.category,
+    id: p.id,
+    name: p.name,
+    sku: p.sku,
+    category: p.category,
     price: p.price != null ? Number(p.price) : null,
     currency: p.currency,
     storefrontVisible: p.storefrontVisible,
@@ -456,9 +518,12 @@ async function upsertEditorial(adminUser, data, req) {
   }
 
   await writeAudit({
-    actorId: adminUser.id, action: 'storefront.editorial.upsert',
-    targetType: 'StorefrontEditorial', targetId: record.id,
-    meta: { title: record.title, steps: steps.length }, ipAddress: req?.ip,
+    actorId: adminUser.id,
+    action: 'storefront.editorial.upsert',
+    targetType: 'StorefrontEditorial',
+    targetId: record.id,
+    meta: { title: record.title, steps: steps.length },
+    ipAddress: req?.ip,
   });
 
   return record;
@@ -473,18 +538,33 @@ async function deleteEditorial(adminUser, req) {
 
   await prisma.storefrontEditorial.delete({ where: { id: existing.id } });
   await writeAudit({
-    actorId: adminUser.id, action: 'storefront.editorial.delete',
-    targetType: 'StorefrontEditorial', targetId: existing.id,
-    meta: {}, ipAddress: req?.ip,
+    actorId: adminUser.id,
+    action: 'storefront.editorial.delete',
+    targetType: 'StorefrontEditorial',
+    targetId: existing.id,
+    meta: {},
+    ipAddress: req?.ip,
   });
 
   return { id: existing.id };
 }
 
 module.exports = {
-  listHero, createHero, updateHero, deleteHero,
-  listSections, getSection, createSection, updateSection, deleteSection, setSectionProducts,
-  listBrandsWithStatus, reviewBrandApplication, revokeBrandOptIn,
+  listHero,
+  createHero,
+  updateHero,
+  deleteHero,
+  listSections,
+  getSection,
+  createSection,
+  updateSection,
+  deleteSection,
+  setSectionProducts,
+  listBrandsWithStatus,
+  reviewBrandApplication,
+  revokeBrandOptIn,
   searchApprovedProducts,
-  getEditorial, upsertEditorial, deleteEditorial,
+  getEditorial,
+  upsertEditorial,
+  deleteEditorial,
 };

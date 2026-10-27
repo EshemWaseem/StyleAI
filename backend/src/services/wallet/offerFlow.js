@@ -1,8 +1,8 @@
 // services/wallet/offerFlow.js
-//      ==
+
 // Money movement tied to CustomOffer lifecycle.
 // All operations run in Prisma transactions — atomic.
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
@@ -10,10 +10,10 @@ const {
   getFinanceRules, ensureWallet, postTransaction,
 } = require('./helpers');
 
-//      ==
+
 // OFFER_HOLD — brand funds escrow when submitting to admin
 // Debits brand wallet: full offer total (already includes brand fee)
-//      ==
+
 async function holdEscrowForOffer(actorUserId, offerId) {
   const offer = await prisma.customOffer.findUnique({
     where: { id: offerId },
@@ -45,9 +45,9 @@ async function holdEscrowForOffer(actorUserId, offerId) {
   });
 }
 
-//      ==
+
 // OFFER_RELEASE — influencer accepts → money flows
-//      ==
+
 async function releaseEscrowForOffer(actorUserId, offerId) {
   const offer = await prisma.customOffer.findUnique({
     where: { id: offerId },
@@ -106,9 +106,9 @@ async function releaseEscrowForOffer(actorUserId, offerId) {
   });
 }
 
-//      ==
+
 // OFFER_REFUND — admin rejects or offer expires → brand gets money back
-//      ==
+
 async function refundEscrowForOffer(actorUserId, offerId) {
   const offer = await prisma.customOffer.findUnique({
     where: { id: offerId },

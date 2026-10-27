@@ -353,9 +353,9 @@ function MiniStat({
   );
 }
 
-//      ==
+
 // DELIVER MODAL — Agency uploads files & marks delivered
-//      ==
+
 function DeliverModal({
   engagement, onClose, onDelivered,
 }: {
@@ -455,9 +455,9 @@ function DeliverModal({
   );
 }
 
-//      ==
+
 // REJECT MODAL
-//      ==
+
 function RejectEngagementModal({
   engagement, onClose, onRejected,
 }: {

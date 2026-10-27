@@ -1,7 +1,7 @@
 // platform.prisma
-//      ==
+
 // Platform-wide settings + audit log
-//      ==
+
 // Consumed by services/admin/helpers.js (getSetting, setSetting,
 // writeAudit) and services/offers/helpers.js (getFinanceRules).
 //
@@ -9,7 +9,7 @@
 //   finance → { brandCommissionPct: 2, bulkDiscountThreshold: 5, ... }
 //   limits  → { maxProductImages: 5, ... }
 //   features→ { enableAIMatching: true, ... }
-//      ==
+
 
 model PlatformSetting {
   id          String  @id @default(uuid())

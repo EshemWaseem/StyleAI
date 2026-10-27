@@ -292,9 +292,9 @@ function RegisterPage() {
     }
   }
 
-  //      ==
+  
   // TEAM MEMBER PENDING SCREEN
-  //      ==
+  
   if (requestSent) {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
@@ -344,9 +344,9 @@ function RegisterPage() {
     );
   }
 
-  //      ==
+  
   // VERIFY EMAIL SCREEN (normal user)
-  //      ==
+  
   if (verifySent) {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">

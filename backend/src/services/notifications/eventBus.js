@@ -1,8 +1,8 @@
 // services/notifications/eventBus.js
-//      ==
+
 // In-process event bus for notifications.
 // Notification writes publish here; SSE subscribers listen.
-//      ==
+
 
 const { EventEmitter } = require('events');
 

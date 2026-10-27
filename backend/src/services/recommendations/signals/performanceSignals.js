@@ -1,8 +1,8 @@
 // services/recommendations/signals/performanceSignals.js
-//      ==
+
 // Performance-driven signals — actual campaign results
 // This is the "learn from your own campaigns" piece.
-//      ==
+
 
 const { computeConfidence } = require('../confidence');
 

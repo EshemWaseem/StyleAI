@@ -1,7 +1,7 @@
 // services/chat/parties.js
-//      ==
+
 // Search parties (influencers + agencies) to start a chat with
-//      ==
+
 
 const prisma = require('../../config/prisma');
 

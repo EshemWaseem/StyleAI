@@ -111,7 +111,7 @@ function shapeInfluencer(i, optsOrSavedSet = null) {
     beautyScore: i.beautyScore,
     lifestyleScore: i.lifestyleScore,
     profileCompleted: i.profileCompleted,
-    profileCompleteness, // ✅ Dynamic completeness added
+    profileCompleteness, //  Dynamic completeness added
 
     socialAccounts: Array.isArray(i.socialAccounts)
       ? i.socialAccounts.map(shapeSocialAccount)

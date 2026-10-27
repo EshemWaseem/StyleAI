@@ -1,6 +1,5 @@
-//      ==
 // AGENCY — clients, tasks, profile, engagements
-//      ==
+
 
 model AgencyClient {
   id                   String             @id @default(uuid())
@@ -43,9 +42,9 @@ model AgencyTask {
   @@index([status])
 }
 
-//      ==
+
 // AGENCY PROFILE — service categories + rate card
-//      ==
+
 model AgencyProfile {
   id             String @id @default(uuid())
   organizationId String @unique
@@ -77,9 +76,9 @@ model AgencyProfile {
   @@index([isAcceptingNew])
 }
 
-//      ==
+
 // AGENCY ENGAGEMENT — hire requests from brands OR influencers
-//      ==
+
 model AgencyEngagement {
   id String @id @default(uuid())
 
@@ -103,14 +102,14 @@ model AgencyEngagement {
   notes        String?
   agencyNote   String?
 
-  // ---- Timeline ----
+  //  Timeline 
   acceptedAt   DateTime?
   startedAt    DateTime?
   completedAt  DateTime?
   cancelledAt  DateTime?
   cancelReason String?
 
-  // ✅ NEW: Agency deliverable + campaign bridge
+  //  Agency deliverable + campaign bridge
   deliverableFiles    Json?      // [{ url, publicId, type, name }]
   deliveredAt         DateTime?
   linkedCampaignId    String?    // campaign jisme forward hoga
@@ -126,4 +125,27 @@ model AgencyEngagement {
   @@index([hiredByUserId])
   @@index([serviceType])
   @@index([status])
+}
+
+
+// AGENCY AD ACCOUNTS (Meta / Google Integration)
+
+model AgencyAdAccount {
+  id                   String   @id @default(uuid())
+  agencyOrganizationId String
+  provider             String   // "META" | "GOOGLE"
+  accountId            String   // e.g. act_12345678
+  accountName          String
+  accessToken          String   @db.Text
+  refreshToken         String?  @db.Text
+  tokenExpiresAt       DateTime?
+  isActive             Boolean  @default(true)
+
+  organization         Organization @relation("OrganizationAdAccounts", fields: [agencyOrganizationId], references: [id], onDelete: Cascade)
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@unique([agencyOrganizationId, provider])
+  @@index([agencyOrganizationId])
 }

@@ -1,8 +1,8 @@
 // services/recommendations/forBrand.js
-//      ==
+
 // Main orchestrator — REAL data-driven recommendations
 // Priority-sorted, performance-aware.
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { product, campaign, offer, performance, tips } = require('./signals');
@@ -20,7 +20,7 @@ async function forBrand(user) {
   });
   if (!brand) return empty;
 
-  // ---- Fetch real data (parallel) ----
+  //  Fetch real data (parallel) 
   const [
     campaigns,
     products,
@@ -73,7 +73,7 @@ async function forBrand(user) {
     influencerName: o.influencer?.displayName,
   }));
 
-  // ---- Signals (ordered by impact) ----
+  //  Signals (ordered by impact) 
   const signals = [
     // 🔴 Critical — blockers
     safeSignal(performance.lowRoiCampaigns, campaigns),

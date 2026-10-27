@@ -240,7 +240,7 @@ async function applyForStorefront(user, payload = {}) {
     notes: typeof payload?.notes === 'string' ? payload.notes.trim().slice(0, 500) : '',
   };
 
-  const updated = await prisma.brand.update({
+  await prisma.brand.update({
     where: { id: brand.id },
     data: {
       storefrontStatus: 'REQUESTED',
@@ -250,14 +250,10 @@ async function applyForStorefront(user, payload = {}) {
       storefrontDeclineReason: null,
       storefrontApplication: application,
     },
-    select: {
-      id: true, name: true, storefrontStatus: true, storefrontAppliedAt: true,
-      storefrontApplication: true,
-    },
   });
 
   notifyAdmins({
-    type: 'STOREFRONT_APPLICATION_RECEIVED',
+    type: 'SYSTEM',
     title: `Storefront application — ${brand.name}`,
     body: `${products.length} product${products.length === 1 ? '' : 's'} submitted for review.`,
     link: '/admin/storefront',
@@ -270,7 +266,7 @@ async function applyForStorefront(user, payload = {}) {
     },
   }).catch((e) => console.error('[storefront.apply.notify]', e.message));
 
-  return updated;
+  return getMyBrandStorefrontStatus(user);
 }
 
 async function withdrawApplication(user) {
@@ -282,15 +278,16 @@ async function withdrawApplication(user) {
     throw err;
   }
 
-  return prisma.brand.update({
+  await prisma.brand.update({
     where: { id: brand.id },
     data: {
       storefrontStatus: 'NOT_REQUESTED',
       storefrontAppliedAt: null,
       storefrontApplication: null,
     },
-    select: { id: true, name: true, storefrontStatus: true },
   });
+
+  return getMyBrandStorefrontStatus(user);
 }
 
 async function toggleMyProductVisibility(user, productId, visible) {

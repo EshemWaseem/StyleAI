@@ -1,8 +1,8 @@
 // ai.prisma
-//      ==
+
 // AI Model Registry + Usage Tracking
 // SRS §48 (AI Dashboard), §49 (Model Management)
-//      ==
+
 
 model AIModel {
   id          String   @id @default(uuid())

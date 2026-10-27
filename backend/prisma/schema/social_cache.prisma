@@ -1,7 +1,7 @@
 // social_cache.prisma
-//      ==
+
 // Cache for Apify social profile scrapes (24h TTL)
-//      ==
+
 
 model SocialScrapeCache {
   id        String   @id @default(uuid())

@@ -1,3 +1,4 @@
+// frontend/src/routes/admin/payments.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CreditCard, AlertCircle, Loader2, TrendingUp } from "lucide-react";

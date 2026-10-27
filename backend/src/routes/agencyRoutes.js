@@ -2,12 +2,42 @@
 const router = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const agency = require('../services/agency');
+const agencyCampaign = require('../services/agency/aiCampaign'); 
+
+function frontendBase() {
+  return (process.env.FRONTEND_URL || 'http://localhost:3000').split(',')[0].trim();
+}
+
+router.get('/integrations/:provider/callback', async (req, res) => {
+  const provider = String(req.params.provider || '').toUpperCase();
+  const base = frontendBase();
+
+  function redirect(success, extra = {}) {
+    const url = new URL(`${base}/agency`);
+    url.searchParams.set('connected', success ? 'true' : 'false');
+    url.searchParams.set('provider', provider);
+    for (const [k, v] of Object.entries(extra)) {
+      if (v) url.searchParams.set(k, String(v).slice(0, 200));
+    }
+    return res.redirect(302, url.toString());
+  }
+
+  const { code, state, error, error_reason, error_description } = req.query;
+
+  if (error) return redirect(false, { error: error_description || error_reason || error });
+  if (!code || !state) return redirect(false, { error: 'missing_code_or_state' });
+
+  try {
+    await agency.handleOAuthCallback(provider, String(code), String(state));
+    return redirect(true);
+  } catch (err) {
+    console.error(`[agency/${provider}/callback]`, err.message);
+    return redirect(false, { error: err.message || 'callback_failed' });
+  }
+});
 
 router.use(authenticate);
 
-//      ==
-// AGENCY PROFILE
-//      ==
 router.get('/me/profile', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
   try {
     const profile = await agency.getMyProfile(req.user);
@@ -22,27 +52,17 @@ router.patch('/me/profile', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res,
   } catch (err) { next(err); }
 });
 
-//      ==
-// AGENCY DIRECTORY
-//      ==
-router.get(
-  '/browse',
-  authorize('BRAND_OWNER', 'BRAND_TEAM_MEMBER', 'INFLUENCER', 'AGENCY', 'SUPER_ADMIN'),
-  async (req, res, next) => {
-    try {
-      const agencies = await agency.listAgenciesForService({
-        serviceType: req.query.serviceType,
-        serviceGroup: req.query.serviceGroup,   // ✅ NEW: "BRAND" | "INFLUENCER"
-        limit: req.query.limit,
-      });
-      res.json({ agencies });
-    } catch (err) { next(err); }
-  }
-);
+router.get('/browse', authorize('BRAND_OWNER', 'BRAND_TEAM_MEMBER', 'INFLUENCER', 'AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const agencies = await agency.listAgenciesForService({
+      serviceType: req.query.serviceType,
+      serviceGroup: req.query.serviceGroup,  
+      limit: req.query.limit,
+    });
+    res.json({ agencies });
+  } catch (err) { next(err); }
+});
 
-//      ==
-// CLIENTS (existing)
-//      ==
 router.get('/clients', async (req, res, next) => {
   try {
     const clients = await agency.listAgencyClients(req.user);
@@ -50,9 +70,6 @@ router.get('/clients', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-//      ==
-// SERVICE TYPE CATALOG
-//      ==
 router.get('/service-types', (req, res) => {
   res.json({
     all: agency.VALID_SERVICE_TYPES,
@@ -61,11 +78,70 @@ router.get('/service-types', (req, res) => {
   });
 });
 
-//      ==
-// ENGAGEMENTS — HIRE FLOW
-//      ==
+router.get('/integrations', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const accounts = await agency.listAdAccounts(req.user);
+    res.json({ accounts });
+  } catch (err) { next(err); }
+});
 
-// Agency inbox — received requests
+router.get('/integrations/:provider/connect', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const url = await agency.getOAuthUrl(req.user, req.params.provider.toUpperCase());
+    res.json({ url });
+  } catch (err) { next(err); }
+});
+
+router.delete('/integrations/:provider', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    await agency.disconnectAdAccount(req.user, req.params.provider.toUpperCase());
+    res.json({ message: 'Disconnected' });
+  } catch (err) { next(err); }
+});
+
+router.post('/meta-campaigns', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const result = await agency.createMetaCampaign(req.user, req.body);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+router.post('/google-campaigns', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const result = await agency.createGoogleCampaign(req.user, req.body);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+router.get('/meta-campaigns', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const result = await agency.listMetaCampaigns(req.user);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+router.patch('/meta-campaigns/:id/status', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const result = await agency.toggleCampaignStatus(req.user, req.params.id, status);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+router.post('/meta-campaigns/generate-text', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const result = await agency.generateAdText(req.body);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+router.post('/meta-campaigns/generate-image', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const result = await agency.generateAdImage(req.body);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
 router.get('/engagements/inbox', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
   try {
     const result = await agency.listAgencyInbox(req.user, req.query);
@@ -73,7 +149,6 @@ router.get('/engagements/inbox', authorize('AGENCY', 'SUPER_ADMIN'), async (req,
   } catch (err) { next(err); }
 });
 
-// Client — sent requests
 router.get('/engagements/mine', async (req, res, next) => {
   try {
     const result = await agency.listMyEngagements(req.user, req.query);
@@ -81,7 +156,6 @@ router.get('/engagements/mine', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Client — create request
 router.post('/engagements', async (req, res, next) => {
   try {
     const engagement = await agency.createEngagement(req.user, req.body);
@@ -89,7 +163,6 @@ router.post('/engagements', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Get one
 router.get('/engagements/:id', async (req, res, next) => {
   try {
     const engagement = await agency.getEngagement(req.user, req.params.id);
@@ -97,7 +170,13 @@ router.get('/engagements/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Agency — accept
+router.get('/meta-campaigns/:id/insights', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const result = await agency.getMetaCampaignInsights(req.user, req.params.id);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
 router.post('/engagements/:id/accept', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
   try {
     const engagement = await agency.acceptEngagement(req.user, req.params.id, req.body);
@@ -105,7 +184,6 @@ router.post('/engagements/:id/accept', authorize('AGENCY', 'SUPER_ADMIN'), async
   } catch (err) { next(err); }
 });
 
-// Agency — reject
 router.post('/engagements/:id/reject', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
   try {
     const engagement = await agency.rejectEngagement(req.user, req.params.id, req.body);
@@ -113,7 +191,6 @@ router.post('/engagements/:id/reject', authorize('AGENCY', 'SUPER_ADMIN'), async
   } catch (err) { next(err); }
 });
 
-// Agency — start
 router.post('/engagements/:id/start', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
   try {
     const engagement = await agency.startEngagement(req.user, req.params.id);
@@ -121,7 +198,6 @@ router.post('/engagements/:id/start', authorize('AGENCY', 'SUPER_ADMIN'), async 
   } catch (err) { next(err); }
 });
 
-// Agency — complete
 router.post('/engagements/:id/complete', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
   try {
     const engagement = await agency.completeEngagement(req.user, req.params.id, req.body);
@@ -129,7 +205,6 @@ router.post('/engagements/:id/complete', authorize('AGENCY', 'SUPER_ADMIN'), asy
   } catch (err) { next(err); }
 });
 
-// Client — cancel
 router.post('/engagements/:id/cancel', async (req, res, next) => {
   try {
     const engagement = await agency.cancelEngagement(req.user, req.params.id, req.body);
@@ -149,6 +224,15 @@ router.post('/engagements/:id/link', async (req, res, next) => {
     const engagement = await agency.linkEngagementToCampaign(req.user, req.params.id, req.body);
     res.json({ message: 'Engagement linked', engagement });
   } catch (err) { next(err); }
+});
+
+router.post('/meta-campaigns/generate-strategy', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+  try {
+    const result = await agencyCampaign.generateCampaignStrategy(req.body);
+    res.json(result);
+  } catch (err) { 
+    next(err); 
+  }
 });
 
 module.exports = router;

@@ -1,5 +1,4 @@
 import { swalError , swalConfirm } from "@/lib/swal";
-// routes/admin/users.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Search, Users, AlertCircle, UserX, UserCheck, Trash2, Loader2 } from "lucide-react";
@@ -26,7 +25,6 @@ function AdminUsersPage() {
     setLoading(true);
     setError("");
     try {
-      // Build params conditionally (exactOptionalPropertyTypes)
       const params: { search?: string; role?: string; limit: number } = { limit: 100 };
       if (search) params.search = search;
       if (roleFilter) params.role = roleFilter;
@@ -60,14 +58,14 @@ function AdminUsersPage() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <>
+      <div className="w-full max-w-full flex flex-col gap-6 pb-12">
         <PageHeader
           eyebrow="Platform"
           title="All users"
           description="Manage every account across the platform. Restrict or reactivate access, or delete permanently."
         />
 
-        <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-1 items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm sm:w-96">
             <Search className="size-4 text-muted-foreground" />
             <input
@@ -92,40 +90,40 @@ function AdminUsersPage() {
         </div>
 
         {error && (
-          <div className="mt-6 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <div className="ui-error flex items-start gap-2">
             <AlertCircle className="mt-0.5 size-4 shrink-0" /> <span>{error}</span>
           </div>
         )}
 
         {loading ? (
-          <div className="mt-12 flex items-center justify-center">
+          <div className="flex items-center justify-center py-12">
             <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Loading users…</span>
           </div>
         ) : users.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-dashed border-border p-12 text-center">
+          <div className="ui-empty">
             <Users className="mx-auto size-6 text-muted-foreground" />
             <p className="mt-3 text-sm text-muted-foreground">No users found.</p>
           </div>
         ) : (
-          <Panel className="mt-6 overflow-hidden">
+          <Panel className="w-full max-w-full overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="pb-3 font-medium">Name</th>
-                    <th className="pb-3 font-medium">Email</th>
-                    <th className="pb-3 font-medium">Roles</th>
-                    <th className="pb-3 font-medium">Status</th>
-                    <th className="pb-3 font-medium text-right">Actions</th>
+                    <th className="p-3 font-medium">Name</th>
+                    <th className="p-3 font-medium">Email</th>
+                    <th className="p-3 font-medium">Roles</th>
+                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {users.map((u) => (
                     <tr key={u.id}>
-                      <td className="py-3 font-medium">{u.name}</td>
-                      <td className="py-3 text-muted-foreground">{u.email}</td>
-                      <td className="py-3">
+                      <td className="p-3 font-medium">{u.name}</td>
+                      <td className="p-3 text-muted-foreground">{u.email}</td>
+                      <td className="p-3">
                         <div className="flex flex-wrap gap-1">
                           {u.roles.map((r: string) => (
                             <span
@@ -137,12 +135,12 @@ function AdminUsersPage() {
                           ))}
                         </div>
                       </td>
-                      <td className="py-3">
+                      <td className="p-3">
                         <span className={u.isActive ? "text-xs text-emerald-500" : "text-xs text-destructive"}>
                           {u.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="py-3 text-right">
+                      <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {u.isActive ? (
                             <TooltipIconButton
@@ -177,7 +175,7 @@ function AdminUsersPage() {
             </div>
           </Panel>
         )}
-      </>
+      </div>
     </ProtectedRoute>
   );
 }

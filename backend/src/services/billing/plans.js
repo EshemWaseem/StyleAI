@@ -1,7 +1,7 @@
 // services/billing/plans.js
-//      ==
+
 // Plan catalog — role-aware SaaS plans
-//      ==
+
 
 // Helper to reduce repetition
 function pickStripe(envPrefix) {

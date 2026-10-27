@@ -1,5 +1,4 @@
 import { swalError , swalConfirm } from "@/lib/swal";
-// routes/admin/influencers.tsx
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -76,14 +75,14 @@ function AdminInfluencersPage() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <>
+      <div className="w-full max-w-full flex flex-col gap-6 pb-12">
         <PageHeader
           eyebrow="Platform"
           title="All influencers"
           description="Moderate the platform's creator pool. Pause or remove policy-violating profiles."
         />
 
-        <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-1 items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm sm:w-96">
             <Search className="size-4 text-muted-foreground" />
             <input
@@ -108,23 +107,23 @@ function AdminInfluencersPage() {
         </div>
 
         {error && (
-          <div className="ui-error mt-6 flex items-start gap-2">
+          <div className="ui-error flex items-start gap-2">
             <AlertCircle className="mt-0.5 size-4 shrink-0" /> <span>{error}</span>
-            </div>
+          </div>
         )}
 
         {loading ? (
-          <div className="mt-12 flex items-center justify-center">
+          <div className="flex items-center justify-center py-12">
             <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Loading influencers…</span>
           </div>
         ) : influencers.length === 0 ? (
-          <div className="ui-empty mt-8">
+          <div className="ui-empty">
             <Users className="mx-auto size-6 text-muted-foreground" />
             <p className="mt-3 text-sm text-muted-foreground">No influencers found.</p>
           </div>
         ) : (
-          <Panel className="mt-6 overflow-hidden">
+          <Panel className="w-full max-w-full overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-sm">
                 <thead>
@@ -308,7 +307,7 @@ function AdminInfluencersPage() {
             </div>
           </div>
         )}
-      </>
+      </div>
     </ProtectedRoute>
   );
 }

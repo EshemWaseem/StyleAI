@@ -1,9 +1,9 @@
 // services/campaigns/shipping.js
-//      ==
+
 // Shipping flow:
 //   influencer submits address → brand ships → influencer receives
 //   + content deadline set by brand
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
@@ -41,9 +41,9 @@ function validateAddress(raw = {}) {
   };
 }
 
-//      ==
+
 // 1. INFLUENCER submits shipping address
-//      ==
+
 async function submitShippingAddress(user, campaignId, payload = {}) {
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },
@@ -116,9 +116,9 @@ async function submitShippingAddress(user, campaignId, payload = {}) {
   return shapeCampaign(updated);
 }
 
-//      ==
+
 // 2. BRAND marks as SHIPPED
-//      ==
+
 async function markShipped(user, campaignId, payload = {}) {
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },
@@ -177,9 +177,9 @@ async function markShipped(user, campaignId, payload = {}) {
   return shapeCampaign(updated);
 }
 
-//      ==
+
 // 3. INFLUENCER marks as RECEIVED
-//      ==
+
 async function markReceived(user, campaignId, payload = {}) {
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },
@@ -252,9 +252,9 @@ async function markReceived(user, campaignId, payload = {}) {
   return shapeCampaign(updated);
 }
 
-//      ==
+
 // 4. BRAND sets content deadline
-//      ==
+
 async function setContentDeadline(user, campaignId, payload = {}) {
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },

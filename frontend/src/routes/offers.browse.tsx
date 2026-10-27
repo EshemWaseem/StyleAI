@@ -51,7 +51,7 @@ function BrowseOffersPage() {
     setBusy(l.id);
     try {
       const r = await listingsApi.claim(l.id, { brandId });
-      // ✅ Success popup
+      //  Success popup
       await swalSuccess(
         "Offer claimed!",
         "A draft offer has been created. Review and send it to the creator."

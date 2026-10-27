@@ -17,6 +17,8 @@ router.post('/subscription/checkout', ctrl.subscriptionCheckout);
 // Fallback for when webhook doesn't arrive (local dev, or public URL issues)
 router.post('/subscription/verify-session', ctrl.verifySession);
 
+router.post('/order/verify-session', ctrl.verifyOrderSession);
+
 // POST /api/payments/order/checkout
 router.post('/order/checkout', ctrl.orderCheckout);
 

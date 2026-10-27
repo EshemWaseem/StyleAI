@@ -107,17 +107,17 @@ class GeminiPhotography:
         context_injected = bool(getattr(req, "brand_context", None) and str(req.brand_context).strip())
         logger.info("[GEMINI:photo] brand_context injected: %s", context_injected)
 
-        # ---- Attempt 1 ----
+        #  Attempt 1 
         image_bytes = await self._generate_with_retry(product_bytes, prompt, "gen1")
         if not image_bytes:
             raise ValueError("Image generation failed after retries")
 
-        # ---- QA ----
+        #  QA 
         quality = await check_quality(product_bytes, image_bytes)
 
         regenerated = False
 
-        # ---- If QA failed → regenerate once with stricter prompt ----
+        #  If QA failed → regenerate once with stricter prompt 
         if not quality.passed:
             regenerated = True
             stricter = (

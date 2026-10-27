@@ -8,7 +8,7 @@ const {
   shapeDirectMessage,
 } = require('./helpers');
 
-// ── WebSocket broadcast (soft dependency — never blocks send) ──
+//  WebSocket broadcast (soft dependency — never blocks send) 
 let broadcastDirectMessage = null;
 try {
   broadcastDirectMessage = require('../websocket/broadcast').broadcastDirectMessage;
@@ -91,7 +91,7 @@ async function sendMessage(user, conversationId, payload = {}) {
 
   const shaped = shapeDirectMessage(result, { currentUserId: user.id });
 
-  // ── Push to the other party over WebSocket (fire-and-forget) ──
+  //  Push to the other party over WebSocket (fire-and-forget) 
   if (broadcastDirectMessage) {
     broadcastDirectMessage(conv, shaped, user.id).catch((err) => {
       console.warn('[chat.messages] WS broadcast failed:', err.message);

@@ -64,9 +64,6 @@ export interface UpdateAgencyProfileInput {
   isAcceptingNew?: boolean;
 }
 
-//      ==
-// ENGAGEMENTS (Sprint C — Hire flow)
-//      ==
 export interface AgencyEngagement {
   id: string;
   agencyOrganizationId: string;
@@ -91,7 +88,6 @@ export interface AgencyEngagement {
   cancelReason: string | null;
   createdAt: string;
   updatedAt: string;
-  // Enriched when listing "mine"
   agencyOrganization?: { id: string; name: string; slug: string } | null;
 }
 
@@ -107,9 +103,19 @@ export interface CreateEngagementInput {
   notes?: string;
 }
 
-//      ==
-// LABELS
-//      ==
+export type IntegrationProvider = "META" | "GOOGLE";
+
+export interface AgencyAdAccount {
+  id: string;
+  provider: IntegrationProvider;
+  accountId: string;
+  accountName: string;
+  tokenExpiresAt: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const AGENCY_SERVICE_LABELS: Record<AgencyServiceType, string> = {
   BRAND_SYSTEM_MANAGEMENT: "System management",
   BRAND_WEBSITE: "Website handling",

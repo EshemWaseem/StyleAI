@@ -1,7 +1,7 @@
 // services/assistant/index.js
-//      ==
+
 // Barrel — public surface of the assistant domain
-//      ==
+
 
 const { chat } = require('./chat');
 const {

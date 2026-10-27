@@ -1,7 +1,7 @@
 // services/billing/roles.js
-//      ==
+
 // Determine the billing role for a user
-//      ==
+
 
 /**
  * Priority order:

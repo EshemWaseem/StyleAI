@@ -5,7 +5,7 @@ const { shapeCampaign } = require('./helpers');
 
 const DEFAULT_DURATION_DAYS = 14;
 
-// ✅ FIX: Accept both new + legacy accepted statuses
+//  FIX: Accept both new + legacy accepted statuses
 const ACCEPTED_STATUSES = ['IN_PROGRESS', 'INFLUENCER_ACCEPTED'];
 
 async function createCampaignFromOffer(offerId, actorUserId) {

@@ -1,8 +1,8 @@
 // services/knowledge/ingest.js
-//      ==
+
 // Ingest: document → chunk → embed → store
 // Uses raw SQL for vector insert (Prisma can't write Unsupported)
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');

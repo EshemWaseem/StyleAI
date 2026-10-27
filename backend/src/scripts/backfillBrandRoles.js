@@ -33,7 +33,7 @@ async function main() {
 
     if (afterCount > beforeCount) {
       created += afterCount - beforeCount;
-      console.log(`✅ ${brand.name}: created ${afterCount - beforeCount} role(s)`);
+      console.log(` ${brand.name}: created ${afterCount - beforeCount} role(s)`);
     } else {
       skipped++;
       console.log(`⏭  ${brand.name}: already has ${afterCount} role(s)`);

@@ -1,7 +1,7 @@
 // services/payments/core/errors.js
-//      ==
+
 // Payment error types + factory helpers.
-//      ==
+
 
 class PaymentError extends Error {
   constructor(message, status = 400, code = 'PAYMENT_ERROR', meta = null) {

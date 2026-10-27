@@ -1,8 +1,8 @@
 // listing.prisma
-//      ==
+
 // INFLUENCER LISTING — public offer published by creator
 // Brands browse and claim → creates a CustomOffer DRAFT
-//      ==
+
 
 model InfluencerListing {
   id           String     @id @default(uuid())

@@ -1,10 +1,10 @@
 // services/email/send.js
-//      ==
+
 // Send an email.
 // - If queue enabled → enqueue on failure (Redis-backed, survives restart)
 // - Else → fall back to in-memory retry
 // Silent-fail — never crashes the calling request.
-//      ==
+
 const { getTransporter, fromAddress, EMAIL_ENABLED } = require('./transporter');
 
 async function sendMail({ to, subject, html, text, replyTo, meta, _noRetry }) {
@@ -28,7 +28,7 @@ async function sendMail({ to, subject, html, text, replyTo, meta, _noRetry }) {
       text: text || stripHtml(html),
       replyTo: replyTo || undefined,
     });
-    console.log(`[email] ✅ "${subject}" → ${to} (${info.messageId})`, meta || '');
+    console.log(`[email]  "${subject}" → ${to} (${info.messageId})`, meta || '');
     return { ok: true, id: info.messageId };
   } catch (err) {
     console.error(`[email] ❌ "${subject}" → ${to}:`, err.message);

@@ -64,7 +64,7 @@ async function handle(invoice) {
     });
     paymentInvoiceNumber = payment.invoiceNumber;
 
-    // ✅ FIX: Update subscription period on renewal
+    //  FIX: Update subscription period on renewal
     if (periodStart && periodEnd) {
       await tx.subscription.updateMany({
         where: { organizationId },

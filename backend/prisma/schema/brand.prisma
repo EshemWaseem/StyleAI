@@ -1,7 +1,7 @@
 // brand.prisma
-//      ==
+
 // BRAND + TEAM ROLES + MEMBERS + JOIN/INVITE
-//      ==
+
 
 model Brand {
   id             String  @id @default(uuid())
@@ -38,6 +38,8 @@ model Brand {
   offers      CustomOffer[]
   campaigns   Campaign[]
   orders      Order[]
+
+  adminCampaignRequests AdminCampaignRequest[] @relation("BrandAdminCampaignRequests")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

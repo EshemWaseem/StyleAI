@@ -1,8 +1,8 @@
 // middleware/errorHandler.js
-//      ==
+
 // Global error handler — every error that reaches the client
 // is sanitized. Raw Prisma / DB / filesystem messages never leak.
-//      ==
+
 
 function notFound(req, res) {
   res.status(404).json({
@@ -64,11 +64,11 @@ function genericMessageFor(status) {
   return 'Request could not be processed. Please check your input.';
 }
 
-//      ==
+
 // MAIN HANDLER
-//      ==
+
 function errorHandler(err, req, res, next) {
-  // ---- DB unreachable → 503 with friendly message ----
+  //  DB unreachable → 503 with friendly message 
   if (isDbConnectionError(err)) {
     console.error(
       `[503] ${req.method} ${req.originalUrl} — DB unreachable:`,
@@ -81,14 +81,14 @@ function errorHandler(err, req, res, next) {
     });
   }
 
-  // ---- Prisma — duplicate ----
+  //  Prisma — duplicate 
   if (err.code === 'P2002') {
     return res.status(409).json({
       message: 'This record already exists.',
       code: 'DUPLICATE',
     });
   }
-  // ---- Prisma — record not found ----
+  //  Prisma — record not found 
   if (err.code === 'P2025') {
     return res.status(404).json({
       message: 'The item you requested could not be found.',
@@ -96,7 +96,7 @@ function errorHandler(err, req, res, next) {
     });
   }
 
-  // ---- Prisma — validation ----
+  //  Prisma — validation 
   if (err.name === 'PrismaClientValidationError') {
     return res.status(400).json({
       message: 'Invalid input. Please check the values you entered.',
@@ -104,7 +104,7 @@ function errorHandler(err, req, res, next) {
     });
   }
 
-  // ---- Prisma — runtime errors ----
+  //  Prisma — runtime errors 
   if (
     err.name === 'PrismaClientKnownRequestError' ||
     err.name === 'PrismaClientUnknownRequestError' ||
@@ -137,7 +137,7 @@ function errorHandler(err, req, res, next) {
     });
   }
 
-  // ---- JWT ----
+  //  JWT 
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
       message: 'Your session is invalid. Please sign in again.',
@@ -151,7 +151,7 @@ function errorHandler(err, req, res, next) {
     });
   }
 
-  // ---- Multer ----
+  //  Multer 
   if (err.name === 'MulterError') {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
@@ -165,7 +165,7 @@ function errorHandler(err, req, res, next) {
     });
   }
 
-  // ---- Fallback ----
+  //  Fallback 
   const status = err.status || err.statusCode || 500;
 
   if (process.env.NODE_ENV !== 'test') {
@@ -173,7 +173,7 @@ function errorHandler(err, req, res, next) {
     if (status >= 500) console.error(err.stack);
   }
 
-  // ---- Sanitize the outgoing message ----
+  //  Sanitize the outgoing message 
   let raw = String(err.message || '').trim();
 
   // Detect infrastructure leaks OR empty messages → replace

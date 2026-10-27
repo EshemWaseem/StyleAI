@@ -1,7 +1,7 @@
 // services/matching/filters.js
-//      ==
+
 // Hard filters — runs BEFORE scoring to keep the pool small
-//      ==
+
 
 const prisma = require('../../config/prisma');
 

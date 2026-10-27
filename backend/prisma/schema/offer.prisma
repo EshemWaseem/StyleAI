@@ -1,5 +1,5 @@
 // offer.prisma
-//      ==
+
 // CUSTOM OFFER — brand bundles items for an influencer
 // Lifecycle (see enums.prisma for OfferStatus enum):
 // DRAFT → PENDING → IN_PROGRESS → COMPLETED
@@ -8,7 +8,7 @@
 // Admin review lifecycle:
 // DRAFT → PENDING_ADMIN → ADMIN_APPROVED → INFLUENCER_ACCEPTED
 //      (or ADMIN_REJECTED / INFLUENCER_DECLINED)
-//      ==
+
 
 model CustomOffer {
   id String @id @default(uuid())

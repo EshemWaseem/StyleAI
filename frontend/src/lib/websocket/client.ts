@@ -6,10 +6,6 @@ const BASE_URL =
 
 let socket: Socket | null = null;
 
-/**
- * Connect (or reuse) the WebSocket.
- * Call this once after login. Returns null if no token.
- */
 export function connectSocket(token?: string): Socket | null {
   const authToken =
     token ||
@@ -17,13 +13,9 @@ export function connectSocket(token?: string): Socket | null {
 
   if (!authToken) return null;
 
-  // Already connected — reuse
-  if (socket?.connected) return socket;
-
-  // Cleanup stale socket
+  // FIXED: If a socket instance already exists, return it immediately
   if (socket) {
-    socket.disconnect();
-    socket = null;
+    return socket;
   }
 
   socket = io(BASE_URL, {
@@ -52,12 +44,10 @@ export function connectSocket(token?: string): Socket | null {
   return socket;
 }
 
-/** Get the active socket (may be null before login). */
 export function getSocket(): Socket | null {
   return socket;
 }
 
-/** Disconnect on logout. */
 export function disconnectSocket() {
   if (socket) {
     socket.disconnect();

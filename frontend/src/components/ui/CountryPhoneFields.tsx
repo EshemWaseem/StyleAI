@@ -1,10 +1,10 @@
 // components/ui/CountryPhoneFields.tsx
-//      ==
+
 // Searchable country/state/city + phone input
 // - Flags via flagcdn.com images (Windows-safe)
 // - Auto-selects country from IP on first mount
 // - Defensive ISO2 matching across library versions
-//      ==
+
 
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
@@ -35,9 +35,9 @@ function getIso2(c: any): string {
     .toUpperCase();
 }
 
-//      ==
+
 // Flag image (reliable on Windows)
-//      ==
+
 function FlagImg({
   iso2,
   className = "h-3.5 w-5",
@@ -79,9 +79,9 @@ interface Props {
   countryLabel?: string;
 }
 
-//      ==
+
 // Searchable Combobox
-//      ==
+
 function SearchableSelect({
   value,
   onChange,
@@ -181,9 +181,9 @@ function SearchableSelect({
   );
 }
 
-//      ==
+
 // MAIN COMPONENT
-//      ==
+
 export function CountryPhoneFields({
   value,
   onChange,
@@ -206,7 +206,7 @@ export function CountryPhoneFields({
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
 
-  // ---- Load countries ----
+  //  Load countries 
   useEffect(() => {
     GetCountries()
       .then((list: any[]) => {
@@ -220,7 +220,7 @@ export function CountryPhoneFields({
       .finally(() => setLoadingCountries(false));
   }, []);
 
-  // ---- Auto-detect from IP ----
+  //  Auto-detect from IP 
   useEffect(() => {
     if (!ipIso2) return;
     if (userTouchedRef.current) return;    // user manually picked — respect
@@ -248,7 +248,7 @@ export function CountryPhoneFields({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ipIso2, countries.length]);
 
-  // ---- Load states ----
+  //  Load states 
   useEffect(() => {
     if (!value.country?.id) {
       setStates([]);
@@ -261,7 +261,7 @@ export function CountryPhoneFields({
       .finally(() => setLoadingStates(false));
   }, [value.country?.id]);
 
-  // ---- Load cities ----
+  //  Load cities 
   useEffect(() => {
     if (!value.country?.id || !value.state?.id) {
       setCities([]);
@@ -380,9 +380,9 @@ export function CountryPhoneFields({
   );
 }
 
-//      ==
+
 // Validation helper
-//      ==
+
 export function validateCountryPhone(
   v: CountryPhoneFieldsValue,
   {

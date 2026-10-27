@@ -1,7 +1,7 @@
 // services/recommendations/signals/productSignals.js
-//      ==
+
 // Product-related recommendation signals — DYNAMIC confidence
-//      ==
+
 
 const { computeConfidence } = require('../confidence');
 

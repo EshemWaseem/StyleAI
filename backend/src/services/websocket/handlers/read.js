@@ -1,7 +1,7 @@
 // services/websocket/handlers/read.js
-//      ==
+
 // Read receipts — mark message read via WS.
-//      ==
+
 
 const { checkRate } = require('../rateLimit');
 const { emitToUsers, resolveConversationUserIds } = require('../broadcast');

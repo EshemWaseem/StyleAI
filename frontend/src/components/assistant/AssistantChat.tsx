@@ -55,7 +55,7 @@ export function AssistantChat({
     );
   }, [messages]);
 
-  // ---- ESC to close ----
+  //  ESC to close 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -64,14 +64,14 @@ export function AssistantChat({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // ---- Body scroll lock ----
+  //  Body scroll lock 
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  // ---- Send message ----
+  //  Send message 
   async function send(textArg?: string) {
     const text = (textArg ?? input).trim();
     if (!text || sending) return;
@@ -119,7 +119,7 @@ export function AssistantChat({
     }
   }
 
-  // ---- Resume past conversation ----
+  //  Resume past conversation 
   async function resume(id: string) {
     setError("");
     setSources([]);
@@ -133,7 +133,7 @@ export function AssistantChat({
     }
   }
 
-  // ---- New chat ----
+  //  New chat 
   function newChat() {
     setConversationId(undefined);
     setMessages([]);
@@ -142,7 +142,7 @@ export function AssistantChat({
     setShowSidebar(false);
   }
 
-  // ---- Delete ----
+  //  Delete 
   async function deleteConv(id: string) {
     try {
       await assistantApi.deleteConversation(id);

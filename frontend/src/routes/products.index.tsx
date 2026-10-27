@@ -1,10 +1,10 @@
 // frontend/src/routes/products.index.tsx
-import { swalError, swalConfirm } from "@/lib/swal";
+import { swalError, swalConfirm, swalSuccess } from "@/lib/swal";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Plus, Search, AlertCircle, Trash2, Lock,
-  Eye, EyeOff, Loader2, Store,
+  Eye, EyeOff, Loader2, Store, Send
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui-kit";
@@ -13,6 +13,7 @@ import { ProductFormModal } from "@/components/ProductForm";
 import { productsApi, type Product } from "@/lib/products";
 import { brandStorefrontApi, type MyStorefrontStatus } from "@/lib/storefront";
 import { cn } from "@/lib/utils";
+import { ApplyForStorefrontModal } from "@/components/storefront/ApplyForStorefrontModal";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
@@ -34,9 +35,10 @@ function Products() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
 
-  // ✅ Storefront state
+  // Storefront state
   const [storefront, setStorefront] = useState<MyStorefrontStatus | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [showApplyModal, setShowApplyModal] = useState(false);
 
   const canCreate = !!user?.permissions.includes("product.create");
   const canDelete = !!user?.permissions.includes("product.delete");
@@ -63,14 +65,18 @@ function Products() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user, navigate]);
 
-  // ✅ Load storefront status
+  // Load storefront status
   useEffect(() => {
     if (authLoading || !user) return;
+    refreshStorefrontStatus();
+  }, [authLoading, user]);
+
+  async function refreshStorefrontStatus() {
     brandStorefrontApi
       .getMyStatus()
       .then((r) => setStorefront(r.status))
       .catch(() => setStorefront(null));
-  }, [authLoading, user]);
+  }
 
   async function load() {
     setLoading(true);
@@ -95,7 +101,7 @@ function Products() {
     }
   }
 
-  // ✅ Toggle storefront visibility
+  // Toggle storefront visibility
   async function toggleVisibility(productId: string, current: boolean) {
     if (!storefront || storefront.status !== "APPROVED") return;
     setTogglingId(productId);
@@ -106,11 +112,7 @@ function Products() {
           p.id === productId ? { ...p, storefrontVisible: !current } : p
         )
       );
-      // Refresh status counts
-      brandStorefrontApi
-        .getMyStatus()
-        .then((r) => setStorefront(r.status))
-        .catch(() => {});
+      refreshStorefrontStatus();
     } catch (e: any) {
       swalError(e?.message || "Toggle failed");
     } finally {
@@ -125,6 +127,7 @@ function Products() {
   if (!user || user.pendingApproval) return null;
 
   const storefrontApproved = storefront?.status === "APPROVED";
+  const canApply = !storefront || storefront.status === "NOT_REQUESTED" || storefront.status === "DECLINED";
 
   return (
     <>
@@ -150,17 +153,24 @@ function Products() {
         }
       />
 
-      {/* ✅ Storefront status banner */}
+      {/* Storefront Status Banner */}
       {storefront && !storefrontApproved && (
-        <div className="mt-6 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
-          <Store className="size-4 text-muted-foreground" />
-          <span className="text-muted-foreground">
-            {storefront.status === "REQUESTED"
-              ? "Storefront application under review — products can be toggled once approved."
-              : storefront.status === "DECLINED"
-              ? "Storefront application was declined. Re-apply from your dashboard."
-              : "Apply for the public storefront from your dashboard to feature products publicly."}
-          </span>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
+          <div className="flex items-center gap-3">
+            <Store className="size-4 text-muted-foreground" />
+            <span className="text-muted-foreground">
+              {storefront.status === "REQUESTED"
+                ? "Storefront application under review — products can be toggled once approved."
+                : storefront.status === "DECLINED"
+                ? "Storefront application was declined. You can re-apply."
+                : "Apply for the public storefront to feature products publicly."}
+            </span>
+          </div>
+          {canApply && (
+            <Button size="sm" onClick={() => setShowApplyModal(true)}>
+              <Send className="mr-1.5 size-3.5" /> Apply Now
+            </Button>
+          )}
         </div>
       )}
 
@@ -171,6 +181,7 @@ function Products() {
         </div>
       )}
 
+      {/* Search Bar */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="flex w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm sm:w-80">
           <Search className="size-4 text-muted-foreground" />
@@ -183,8 +194,8 @@ function Products() {
             className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
           />
         </div>
-        <Button variant="outline" size="sm" onClick={load}>
-          Apply
+        <Button variant="secondary" size="sm" onClick={load}>
+          Search
         </Button>
       </div>
 
@@ -209,7 +220,7 @@ function Products() {
                 key={p.id}
                 className="group overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lift"
               >
-                {/* ✅ Storefront toggle header */}
+                {/* Storefront toggle header */}
                 {storefrontApproved ? (
                   <div className="flex items-center justify-between border-b border-border bg-muted/20 px-3 py-2">
                     <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -331,6 +342,18 @@ function Products() {
           onSaved={(p) => {
             setProducts((prev) => [p, ...prev]);
             setShowCreate(false);
+          }}
+        />
+      )}
+
+      {/* Storefront Apply Modal */}
+      {showApplyModal && (
+        <ApplyForStorefrontModal
+          onClose={() => setShowApplyModal(false)}
+          onSubmitted={() => {
+            setShowApplyModal(false);
+            refreshStorefrontStatus();
+            swalSuccess("Application submitted successfully!");
           }}
         />
       )}

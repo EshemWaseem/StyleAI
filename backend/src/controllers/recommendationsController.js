@@ -1,7 +1,7 @@
 // controllers/recommendationsController.js
-//      ==
+
 // Recommendations controller
-//      ==
+
 
 const svc = require('../services/recommendations');
 

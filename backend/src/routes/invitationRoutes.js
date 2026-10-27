@@ -2,14 +2,14 @@ const router = require('express').Router();
 const { authenticate } = require('../middleware/auth');
 const ctrl = require('../controllers/invitationController');
 
-//      ==
+
 // PUBLIC — token lookup (no auth)
-//      ==
+
 router.get('/token/:token', ctrl.getByToken);
 
-//      ==
+
 // AUTHENTICATED
-//      ==
+
 router.use(authenticate);
 
 // For current user (received invitations)

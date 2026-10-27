@@ -1,9 +1,9 @@
 // services/websocket/auth.js
-//      ==
+
 // JWT authentication at Socket.IO handshake
 // Runs BEFORE the connection is established.
 // Rejects invalid/expired tokens immediately.
-//      ==
+
 
 const { verifyToken } = require('../../utils/jwt');
 const prisma = require('../../config/prisma');

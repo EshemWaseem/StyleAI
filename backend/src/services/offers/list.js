@@ -1,10 +1,10 @@
 // services/offers/list.js
-//      ==
+
 // GET /api/offers — role-aware listing
 //   SUPER_ADMIN        → all offers
 //   BRAND_*            → offers for brands in own org
 //   INFLUENCER         → own offers only
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const {

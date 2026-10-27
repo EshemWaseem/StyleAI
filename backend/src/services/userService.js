@@ -2,9 +2,9 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../config/prisma');
 
-//      ==
+
 // UPDATE OWN PROFILE
-//      ==
+
 async function updateOwnProfile(userId, data = {}) {
   const updateData = {};
 
@@ -37,19 +37,19 @@ async function updateOwnProfile(userId, data = {}) {
     updateData.email = email;
   }
 
-  // ✅ NEW — phone
+  //  — phone
   if (data.phone !== undefined) {
     const phone = data.phone ? String(data.phone).trim() : null;
     updateData.phone = phone || null;
   }
 
-  // ✅ NEW — country
+  //  — country
   if (data.country !== undefined) {
     const country = data.country ? String(data.country).trim() : null;
     updateData.country = country || null;
   }
 
-  // ✅ NEW — countryCode
+  //  — countryCode
   if (data.countryCode !== undefined) {
     const code = data.countryCode
       ? String(data.countryCode).trim().toUpperCase()
@@ -78,9 +78,9 @@ async function updateOwnProfile(userId, data = {}) {
   });
 }
 
-//      ==
+
 // CHANGE OWN PASSWORD
-//      ==
+
 async function changeOwnPassword(userId, currentPassword, newPassword) {
   if (!currentPassword || !newPassword) {
     const err = new Error('Current and new password are required');

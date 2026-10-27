@@ -1,9 +1,9 @@
 // campaigns.index.tsx
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { AlertCircle, Loader2, Megaphone, Plus } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { AlertCircle, Loader2, Megaphone, Plus, TrendingUp, DollarSign, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/ui-kit";
+import { PageHeader, Panel } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { campaignsApi, type Campaign } from "@/lib/campaigns";
 
@@ -33,14 +33,29 @@ function CampaignsListPage() {
     }
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [statusFilter]);
+  useEffect(() => { load(); }, [statusFilter]);
+
+  const globalStats = useMemo(() => {
+    let spend = 0;
+    let revenue = 0;
+    let totalReach = 0;
+    
+    campaigns.forEach(c => {
+      spend += c.totalAmount || 0;
+      revenue += c.revenue || 0;
+      totalReach += c.reach || 0;
+    });
+
+    const roi = spend > 0 ? (revenue / spend).toFixed(2) : "0.00";
+    return { spend, revenue, roi, totalReach };
+  }, [campaigns]);
 
   return (
     <ProtectedRoute>
       <PageHeader
         eyebrow="Marketing"
-        title="Campaigns"
-        description="Live campaigns created from accepted offers. Track deliverables and progress."
+        title="Campaigns Overview"
+        description="Track creator deliverables, performance, and ROI across all campaigns."
         actions={
           <Button asChild>
             <Link to="/offers/new">
@@ -50,7 +65,43 @@ function CampaignsListPage() {
         }
       />
 
-      <div className="mt-6 flex items-center gap-2">
+      {/* Global Performance Dashboard */}
+      {campaigns.length > 0 && (
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <Panel className="p-5 flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Total Spend</p>
+              <p className="mt-1 font-display text-2xl font-medium tabular-nums">${globalStats.spend.toLocaleString()}</p>
+            </div>
+            <div className="grid size-10 place-items-center rounded-lg bg-amber-500/10 text-amber-500">
+              <Target className="size-5" />
+            </div>
+          </Panel>
+
+          <Panel className="p-5 flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Attributed Revenue</p>
+              <p className="mt-1 font-display text-2xl font-medium tabular-nums text-emerald-500">${globalStats.revenue.toLocaleString()}</p>
+            </div>
+            <div className="grid size-10 place-items-center rounded-lg bg-emerald-500/10 text-emerald-500">
+              <DollarSign className="size-5" />
+            </div>
+          </Panel>
+
+          <Panel className="p-5 flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Overall ROI</p>
+              <p className="mt-1 font-display text-2xl font-medium tabular-nums text-blue-500">{globalStats.roi}×</p>
+            </div>
+            <div className="grid size-10 place-items-center rounded-lg bg-blue-500/10 text-blue-500">
+              <TrendingUp className="size-5" />
+            </div>
+          </Panel>
+        </div>
+      )}
+
+      <div className="mt-8 flex items-center justify-between">
+        <h2 className="font-display text-xl font-medium">All Campaigns</h2>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -59,14 +110,9 @@ function CampaignsListPage() {
           <option value="">All statuses</option>
           <option value="ACTIVE">Active</option>
           <option value="IN_REVIEW">In review</option>
-          <option value="DELIVERED">Delivered</option>
           <option value="COMPLETED">Completed</option>
           <option value="CANCELLED">Cancelled</option>
-          <option value="DISPUTED">Disputed</option>
-          {/* New shipping flow statuses */}
           <option value="AWAITING_ADDRESS">Awaiting address</option>
-          <option value="ADDRESS_SUBMITTED">Address submitted</option>
-          <option value="SHIPPED">Shipped</option>
           <option value="IN_PRODUCTION">In production</option>
         </select>
       </div>
@@ -89,14 +135,9 @@ function CampaignsListPage() {
           <p className="mt-1 text-xs text-muted-foreground">
             Campaigns appear automatically when an offer is accepted by the influencer.
           </p>
-          <Button asChild className="mt-4">
-            <Link to="/offers/new">
-              <Plus className="mr-1 size-4" /> Create offer
-            </Link>
-          </Button>
         </div>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {campaigns.map((c) => (
             <CampaignCard key={c.id} campaign={c} />
           ))}
@@ -112,15 +153,12 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
     ["APPROVED", "BRAND_APPROVED", "PUBLISHED", "METRICS_ENTERED", "COMPLETED"].includes(d.status)
   ).length;
   const progress = total > 0 ? (approved / total) * 100 : 0;
-  const daysLeft = campaign.dueDate
-    ? Math.max(0, Math.ceil((new Date(campaign.dueDate).getTime() - Date.now()) / 86400000))
-    : null;
 
   return (
     <Link
       to="/campaigns/$id"
       params={{ id: campaign.id }}
-      className="group rounded-xl border border-border bg-card transition-shadow hover:shadow-lift"
+      className="group rounded-xl border border-border bg-card transition-all hover:border-accent/40 hover:shadow-lift"
     >
       <div className="p-5">
         <div className="flex items-start justify-between gap-2">
@@ -133,10 +171,10 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
           <CampaignStatusBadge status={campaign.status} />
         </div>
 
-        <div className="mt-4 space-y-1.5">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Progress</span>
-            <span className="tabular-nums">{approved}/{total} approved</span>
+        <div className="mt-5 space-y-2">
+          <div className="flex justify-between text-[11px]">
+            <span className="text-muted-foreground">Deliverables Progress</span>
+            <span className="tabular-nums font-medium">{approved}/{total}</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
@@ -146,13 +184,19 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between text-[11px] text-muted-foreground">
-          <span className="tabular-nums font-medium text-foreground">
-            {campaign.currency} {campaign.totalAmount.toFixed(2)}
-          </span>
-          {daysLeft !== null && (
-            <span>{daysLeft > 0 ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : "Past due"}</span>
-          )}
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-[11px]">
+          <div className="flex flex-col">
+            <span className="text-muted-foreground">Budget</span>
+            <span className="tabular-nums font-medium text-foreground">
+              {campaign.currency} {campaign.totalAmount.toFixed(2)}
+            </span>
+          </div>
+          <div className="flex flex-col text-right">
+            <span className="text-muted-foreground">Revenue</span>
+            <span className="tabular-nums font-medium text-emerald-500">
+              {campaign.currency} {(campaign.revenue || 0).toFixed(2)}
+            </span>
+          </div>
         </div>
       </div>
     </Link>
@@ -161,12 +205,10 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
 
 function CampaignStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    // Shipping flow (new)
     AWAITING_ADDRESS: "bg-amber-500/15 text-amber-500",
     ADDRESS_SUBMITTED: "bg-amber-500/15 text-amber-500",
     SHIPPED: "bg-purple-500/15 text-purple-500",
     IN_PRODUCTION: "bg-blue-500/15 text-blue-500",
-    // Legacy
     ACTIVE: "bg-blue-500/15 text-blue-500",
     IN_REVIEW: "bg-amber-500/15 text-amber-500",
     DELIVERED: "bg-purple-500/15 text-purple-500",
@@ -175,11 +217,7 @@ function CampaignStatusBadge({ status }: { status: string }) {
     DISPUTED: "bg-destructive/15 text-destructive",
   };
   return (
-    <span
-      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${
-        styles[status] || "bg-muted text-muted-foreground"
-      }`}
-    >
+    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${styles[status] || "bg-muted text-muted-foreground"}`}>
       {status.replace(/_/g, " ")}
     </span>
   );

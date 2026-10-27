@@ -66,7 +66,7 @@ def generate_variants(image_bytes: bytes) -> List[Dict]:
 
     variants = []
 
-    # ---- View 1: Front ----
+    #  View 1: Front 
     front = _clean(src)
     variants.append({
         "label": "Front",
@@ -76,7 +76,7 @@ def generate_variants(image_bytes: bytes) -> List[Dict]:
         "height": OUTPUT_SIZE,
     })
 
-    # ---- View 2: Side (mirrored) ----
+    #  View 2: Side (mirrored) 
     mirrored = _clean(ImageOps.mirror(src))
     variants.append({
         "label": "Side",
@@ -86,7 +86,7 @@ def generate_variants(image_bytes: bytes) -> List[Dict]:
         "height": OUTPUT_SIZE,
     })
 
-    # ---- View 3: Detail (center crop, zoomed) ----
+    #  View 3: Detail (center crop, zoomed) 
     w, h = src.size
     cw, ch = int(w * 0.6), int(h * 0.6)
     cx, cy = w // 2, h // 2

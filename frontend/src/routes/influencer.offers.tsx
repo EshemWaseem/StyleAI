@@ -159,7 +159,7 @@ function ListingCard({ listing, onCancel }: { listing: Listing; onCancel: (id: s
         </div>
       </div>
 
-      {/* ✅ Status footer — claimed / cancelled / expiry */}
+      {/*  Status footer — claimed / cancelled / expiry */}
       <div className="border-t border-border px-4 py-3 text-xs">
         {isClaimed ? (
           <span className="inline-flex items-center gap-1 text-blue-500">

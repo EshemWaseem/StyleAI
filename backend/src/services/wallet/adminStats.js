@@ -1,8 +1,8 @@
 // services/wallet/adminStats.js
-//      ==
+
 // Admin analytics over wallets + transactions
 // Platform currency: PKR (all revenue normalized to PKR)
-//      ==
+
 
 const prisma = require('../../config/prisma');
 
@@ -66,7 +66,7 @@ async function getWalletStats() {
       influencerFees: Math.round(totalInfFees * 100) / 100,
       subscriptionIncome: Math.round(totalSubscription * 100) / 100,
       total: Math.round(platformTotal * 100) / 100,
-      currency: PLATFORM_CURRENCY, // ✅ PKR — not hardcoded USD
+      currency: PLATFORM_CURRENCY, //  PKR — not hardcoded USD
     },
     volume: Math.round(totalVolume * 100) / 100,
     escrow: {

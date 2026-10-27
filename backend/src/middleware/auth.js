@@ -2,9 +2,9 @@
 const { verifyToken } = require('../utils/jwt');
 const prisma = require('../config/prisma');
 
-//      ==
+
 // Routes that pending users CAN still access
-//      ==
+
 const PENDING_SAFE_PATHS = ['/api/auth/me', '/api/auth/logout'];
 
 function isPendingSafePath(req) {

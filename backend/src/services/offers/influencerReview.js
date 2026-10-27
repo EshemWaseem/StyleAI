@@ -1,10 +1,10 @@
 // services/offers/influencerReview.js
-//      ==
+
 // PENDING → IN_PROGRESS | DECLINED
 // Only the target influencer can act.
 // Accept → release escrow (payout) + auto-create campaign.
 // Decline → refund brand's escrow.
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError, shapeOffer } = require('./helpers');
@@ -62,7 +62,7 @@ async function influencerReviewOffer(user, offerId, payload = {}) {
     try {
       const campaign = await createCampaignFromOffer(offerId, user.id);
       console.log(
-        `[offers.influencerReview] ✅ campaign auto-created: ${campaign.id} for offer ${offerId}`
+        `[offers.influencerReview]  campaign auto-created: ${campaign.id} for offer ${offerId}`
       );
     } catch (err) {
       console.error(
@@ -161,7 +161,7 @@ async function influencerReviewOffer(user, offerId, payload = {}) {
     });
   }
 
-    // ✅ Real-time: notify brand + agency + influencer
+    //  Real-time: notify brand + agency + influencer
   await emitOfferUpdated({
     id: updated.id,
     status: updated.status,

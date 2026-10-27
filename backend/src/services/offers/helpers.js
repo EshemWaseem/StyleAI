@@ -1,7 +1,7 @@
 // services/offers/helpers.js
-//      ==
+
 // Shared offer utilities — validation, totals, shaping
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { getAllSettings, parsePagination } = require('../admin/helpers');

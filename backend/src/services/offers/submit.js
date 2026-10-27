@@ -1,8 +1,8 @@
 // services/offers/submit.js
-//      ==
+
 // DRAFT → PENDING_ADMIN transition
 // Holds escrow from brand wallet before flipping status.
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError, shapeOffer } = require('./helpers');

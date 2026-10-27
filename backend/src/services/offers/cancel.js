@@ -1,9 +1,9 @@
 // services/offers/cancel.js
-//      ==
+
 // Cancel an offer — brand-side only, before influencer reviews.
 // Allowed only: DRAFT, PENDING (influencer hasn't responded yet).
 // Escrow is released back to brand wallet.
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { httpError, shapeOffer } = require('./helpers');
@@ -37,7 +37,7 @@ async function cancelOffer(user, offerId, options = {}) {
     throw httpError('Offer not found.', 404, 'NOT_FOUND');
   }
 
-  // ---- Permission ----
+  //  Permission 
   const isAdmin = user.roles?.includes('SUPER_ADMIN');
   const isBrandOwner = user.organizationId === offer.brand.organizationId;
 
@@ -49,7 +49,7 @@ async function cancelOffer(user, offerId, options = {}) {
     );
   }
 
-  // ---- Status checks with user-friendly messages ----
+  //  Status checks with user-friendly messages 
   if (offer.status === 'CANCELLED') {
     throw httpError(
       'This offer is already cancelled.',
@@ -100,7 +100,7 @@ async function cancelOffer(user, offerId, options = {}) {
     );
   }
 
-  // ---- Release escrow if it was held ----
+  //  Release escrow if it was held 
   // Escrow is held during createOffer.
   // Refund the full amount back to brand wallet.
   let escrowRefunded = false;
@@ -122,7 +122,7 @@ async function cancelOffer(user, offerId, options = {}) {
     }
   }
 
-  // ---- Update status ----
+  //  Update status 
   const updated = await prisma.customOffer.update({
     where: { id: offerId },
     data: {

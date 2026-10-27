@@ -1,3 +1,4 @@
+// routes/index.tsx
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
@@ -70,7 +71,7 @@ const DEFAULT_EDITORIAL: StorefrontEditorial = {
   isActive: true,
 };
 
-// ✅ Fixed — NO filter, all 3 always show
+//  Fixed — NO filter, all 3 always show
 const SECTIONS = [
   { id: "shop", label: "Shop" },
   { id: "edit", label: "Editorial" },
@@ -246,7 +247,7 @@ function Storefront() {
     scrollTo(id, () => setMobileNavOpen(false));
   }
 
-  // ✅ Always show something — custom OR fallback
+  //  Always show something — custom OR fallback
   const editorialToShow: StorefrontEditorial =
     editorial && editorial.steps && editorial.steps.length > 0
       ? editorial
@@ -427,11 +428,14 @@ function Storefront() {
                     </span>
                   </div>
                   <Button
-                    className="w-full"
-                    disabled={cart.items.length === 0}
-                  >
-                    Checkout <ArrowRight />
-                  </Button>
+                          asChild
+                          className="w-full"
+                          disabled={cart.items.length === 0}
+                        >
+                          <Link to="/checkout">
+                            Checkout <ArrowRight />
+                          </Link>
+                        </Button>
                   <p className="text-center text-[11px] text-muted-foreground">
                     Shipping and taxes calculated at checkout.
                   </p>
@@ -780,18 +784,26 @@ function Storefront() {
       <footer className="border-t border-border py-8 sm:py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 text-center text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:justify-between sm:gap-4 sm:px-6 sm:text-left">
           <span>© 2026 StyleAI</span>
-          <span>
-            AI style matches are estimates — always trust your own eye.
-          </span>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/privacy"
+              className="hover:text-foreground transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <span>
+              AI style matches are estimates — always trust your own eye.
+            </span>
+          </div>
         </div>
       </footer>
     </div>
   );
 }
 
-//      ==
+
 // BRANDING HERO
-//      ==
+
 function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
   return (
     <section className="relative overflow-hidden border-b border-border">
@@ -848,9 +860,9 @@ function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
   );
 }
 
-//      ==
+
 // ABOUT
-//      ==
+
 function AboutSection() {
   const items = [
     {
@@ -909,9 +921,9 @@ function AboutSection() {
   );
 }
 
-//      ==
+
 // COMING SOON
-//      ==
+
 function ComingSoon() {
   return (
     <div className="mt-10 rounded-xl border border-dashed border-border bg-card/30 px-6 py-14 text-center sm:mt-12 sm:py-16">
@@ -929,9 +941,9 @@ function ComingSoon() {
   );
 }
 
-//      ==
+
 // HERO CAROUSEL
-//      ==
+
 function HeroCarousel({
   slides,
   onScrollToShop,
@@ -1048,9 +1060,9 @@ function HeroCarousel({
   );
 }
 
-//      ==
+
 // HELPERS
-//      ==
+
 function ChipButton({
   active,
   onClick,

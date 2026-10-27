@@ -1,9 +1,9 @@
 // lib/notifications/sse.ts
-//      ==
+
 // SSE client for live notifications.
 // Singleton — one EventSource per browser tab.
 // Auto-reconnects with exponential backoff.
-//      ==
+
 
 import type { Notification } from './types';
 

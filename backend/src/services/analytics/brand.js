@@ -1,8 +1,8 @@
 // services/analytics/brand.js
-//      ==
+
 // Brand analytics — single organization's campaigns
 // Returns business metrics (spend/campaigns) + performance (reach/revenue)
-//      ==
+
 
 const prisma = require('../../config/prisma');
 const { sumCampaignTotals, rollupBy, shapeRecentCampaigns } = require('./helpers');
@@ -24,7 +24,7 @@ async function getBrandAnalytics(organizationId) {
 
   const totals = sumCampaignTotals(campaigns);
 
-  // ---- Business-level metrics (available immediately after campaign create) ----
+  //  Business-level metrics (available immediately after campaign create) 
   const totalSpend = campaigns.reduce(
     (sum, c) => sum + (Number(c.totalAmount) || 0),
     0

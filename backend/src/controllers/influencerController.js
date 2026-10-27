@@ -3,17 +3,17 @@ const multer = require('multer');
 const service = require('../services/influencer');
 const { uploadBufferToCloudinary } = require('../config/cloudinary');
 
-//      ==
+
 // AVATAR UPLOAD MIDDLEWARE
-//      ==
+
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-//      ==
+
 // CONTROLLERS
-//      ==
+
 async function list(req, res, next) {
   try {
     const result = await service.listInfluencers(req.user, req.query);
@@ -111,10 +111,10 @@ async function uploadAvatar(req, res, next) {
 
 
 
-// ── Add this import at the top of influencerController.js ──
+//  Add this import at the top of influencerController.js 
 const { scrapeSocialProfile } = require('../services/influencer/apifyScraper');
 
-// ── Add this new controller function ──
+//  Add this new controller function 
 async function scrapeProfile(req, res, next) {
   try {
     const { platform, handle } = req.body;
@@ -148,7 +148,7 @@ async function scrapeProfile(req, res, next) {
   }
 }
 
-// ── Update module.exports ──
+//  Update module.exports 
 module.exports = {
   list,
   getOne,

@@ -1,8 +1,8 @@
 // services/matching/scoring.js
-//      ==
+
 // Explainable scoring functions for product → influencer matching
 // Every score returns { value: 0-100, reasons: [] }
-//      ==
+
 
 //       
 // Normalize category strings for comparison

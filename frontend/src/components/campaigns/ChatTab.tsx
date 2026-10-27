@@ -44,7 +44,7 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
 
-  // ---- WebSocket: JOIN room + listen for events (with retry) ----
+  //  WebSocket: JOIN room + listen for events (with retry) 
   useEffect(() => {
     let off: (() => void) | null = null;
     let intervalId: any = null;
@@ -111,7 +111,7 @@ export function ChatTab({ campaignId, currentUserId }: Props) {
     };
   }, [campaignId]);
 
-  // ---- Polling fallback — only when WS is disconnected ----
+  //  Polling fallback — only when WS is disconnected 
   useEffect(() => {
     if (wsConnected) return;
 

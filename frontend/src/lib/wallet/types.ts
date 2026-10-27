@@ -6,7 +6,7 @@ export type WalletTxType =
   | "OFFER_RELEASE"
   | "OFFER_REFUND"
   | "PLATFORM_FEE"
-  | "SUBSCRIPTION_INCOME"   // ✅ NEW
+  | "SUBSCRIPTION_INCOME"   // 
   | "ADJUSTMENT";
 
 export interface Wallet {

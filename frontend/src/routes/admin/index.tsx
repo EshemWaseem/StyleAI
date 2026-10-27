@@ -1,9 +1,7 @@
 // frontend/src/routes/admin/index.tsx
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  Users, Building2, Store, ShoppingBag, Briefcase, Megaphone, AlertCircle, Loader2, Cpu,
-} from "lucide-react";
+import { Users, Building2, Store, ShoppingBag, Briefcase, Megaphone, AlertCircle, Loader2, Cpu, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -28,41 +26,46 @@ function AdminDashboard() {
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <>
+      <div className="w-full max-w-full flex flex-col gap-6 pb-12">
         <PageHeader
           eyebrow="Super admin"
           title="Platform overview"
           description="Real-time operational health across all users, brands, and organizations."
           actions={
-            <div className="flex gap-2">
-              <Button asChild variant="outline">
-                <Link to="/admin/ai">
-                  <Cpu className="mr-2 size-4" /> AI operations
-                </Link>
-              </Button>
-              <Button asChild>
-                <Link to="/admin/users">Manage users</Link>
-              </Button>
-            </div>
-          }
+                    <div className="flex gap-2">
+                      <Button asChild variant="outline">
+                        <Link to="/admin/orders">
+                          <Package className="mr-2 size-4" /> Orders
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline">
+                        <Link to="/admin/ai">
+                          <Cpu className="mr-2 size-4" /> AI operations
+                        </Link>
+                      </Button>
+                      <Button asChild>
+                        <Link to="/admin/users">Manage users</Link>
+                      </Button>
+                    </div>
+                  }
         />
 
         {loading && (
-          <div className="mt-12 flex items-center justify-center">
+          <div className="flex items-center justify-center py-12">
             <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Loading platform stats…</span>
           </div>
         )}
 
         {error && (
-          <div className="mt-6 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <div className="ui-error flex items-start gap-2">
             <AlertCircle className="mt-0.5 size-4 shrink-0" /> <span>{error}</span>
           </div>
         )}
 
         {stats && (
           <>
-            <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard icon={Users} label="Total users" value={stats.users.total} note={`${stats.users.active} active`} />
               <StatCard icon={Building2} label="Organizations" value={stats.organizations} note="Multi-tenant" />
               <StatCard icon={Store} label="Brands" value={stats.brands} note="Active brands" />
@@ -73,8 +76,8 @@ function AdminDashboard() {
               <StatCard icon={Megaphone} label="Campaigns" value={stats.campaigns} note="All-time" />
             </section>
 
-            <section className="mt-8">
-              <Panel>
+            <section>
+              <Panel className="w-full max-w-full">
                 <SectionTitle
                   title="Recently registered"
                   description="Last 5 signups."
@@ -107,7 +110,7 @@ function AdminDashboard() {
             </section>
           </>
         )}
-      </>
+      </div>
     </ProtectedRoute>
   );
 }

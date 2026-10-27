@@ -32,7 +32,7 @@ class ProductContent(BaseModel):
     seo_title: str = Field(..., min_length=5, max_length=60)
     seo_description: str = Field(..., min_length=20, max_length=160)
 
-    # ---- Price prediction ----
+    #  Price prediction 
     suggested_price: Optional[float] = Field(default=None, ge=0)
     price_currency: Optional[str] = Field(default="USD", max_length=3)
     price_confidence: Optional[float] = Field(default=0.0, ge=0.0, le=1.0)

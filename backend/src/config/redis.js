@@ -1,9 +1,9 @@
 // src/config/redis.js
-//      ==
+
 // Reuses the SAME Redis connection as the queue service.
 // Falls back to a dedicated connection if queue is disabled
 // or the shared connection is invalid.
-//      ==
+
 const Redis = require('ioredis');
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';

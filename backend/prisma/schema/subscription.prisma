@@ -1,9 +1,9 @@
 // subscription.prisma 01-10
-//      ==
+
 // SUBSCRIPTION + PAYMENT — Role-aware SaaS
 // Brands & Agencies: tied to organizationId
 // Influencers: tied to userId
-//      ==
+
 
 model Subscription {
   id             String       @id @default(uuid())
@@ -13,13 +13,13 @@ model Subscription {
   userId         String?      @unique
   user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // ---- Plan + Role ----
+  //  Plan + Role 
   role       BillingRole      @default(BRAND)
   planName   String           @default("trial")   // trial | starter | growth | studio | free | creator | pro | elite | solo | scale | enterprise
   status     SubscriptionStatus @default(ACTIVE)
   currency   String           @default("USD")
 
-  // ---- Trial tracking ----
+  //  Trial tracking 
   isTrial      Boolean   @default(false)
   trialEndsAt  DateTime?
 
@@ -29,13 +29,13 @@ model Subscription {
   cancelAtPeriodEnd Boolean   @default(false)
   cancelledAt       DateTime?
 
-  // ---- Stripe ----
+  //  Stripe 
   stripeCustomerId       String?
   stripeSubscriptionId   String?
   stripeStatus           String?
   stripeCurrentPeriodEnd DateTime?
 
-  // ---- Generic billing metadata ----
+  //  Generic billing metadata 
   provider             PaymentProvider @default(STRIPE)
   billingCycle         BillingCycle?
   defaultPaymentMethod String?

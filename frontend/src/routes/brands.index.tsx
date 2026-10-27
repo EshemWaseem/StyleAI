@@ -32,9 +32,9 @@ function BrandPage() {
   const [error, setError] = useState("");
   const [showCreate, setShowCreate] = useState(false);
 
-  //      ==
+  
   // PERMISSIONS
-  //      ==
+  
   const isOwner = !!user?.roles.some((r) =>
     ["SUPER_ADMIN", "BRAND_OWNER", "AGENCY"].includes(r)
   );
@@ -42,9 +42,9 @@ function BrandPage() {
   const canUpdate = !!user?.permissions.includes("brand.update");
   const canDelete = !!user?.permissions.includes("brand.delete") && isOwner;
 
-  //      ==
+  
   // PENDING + PERMISSION GUARDS
-  //      ==
+  
   useEffect(() => {
     if (authLoading || !user) return;
 
@@ -313,9 +313,9 @@ function BrandPage() {
   );
 }
 
-//      ==
+
 // CREATE MODAL
-//      ==
+
 
 
 

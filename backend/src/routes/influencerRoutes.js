@@ -10,7 +10,7 @@ const {
 const ctrl = require('../controllers/influencerController');
 const pricingCtrl = require('../controllers/pricingController');
 
-// ✅ Use centralized Redis store + IPv6-safe key generator
+//  Use centralized Redis store + IPv6-safe key generator
 const { makeStore, ipKeyGenerator } = require('../config/rateLimit');
 
 router.use(authenticate);
@@ -27,11 +27,11 @@ const scrapeLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  store: makeStore('influencer-scrape'), // ✅ Redis-backed + unique prefix
+  store: makeStore('influencer-scrape'), //  Redis-backed + unique prefix
   keyGenerator: (req) =>
     req.user?.id
       ? `u:${req.user.id}`
-      : `ip:${ipKeyGenerator(req.ip)}`, // ✅ IPv6-safe
+      : `ip:${ipKeyGenerator(req.ip)}`, //  IPv6-safe
   message: {
     message: 'Too many profile verifications. Please try again later.',
     code: 'SCRAPE_RATE_LIMIT',
@@ -47,7 +47,7 @@ router.post(
 );
 
 //   Scrape social profile (Apify) — rate limited  
-// ✅ FIX: Allowed BRAND_OWNER and BRAND_TEAM_MEMBER to use this route
+//  FIX: Allowed BRAND_OWNER and BRAND_TEAM_MEMBER to use this route
 router.post(
   '/scrape-social',
   scrapeLimiter,

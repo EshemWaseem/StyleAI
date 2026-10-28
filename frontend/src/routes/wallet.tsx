@@ -14,7 +14,8 @@ import { walletApi } from "@/lib/wallet";
 import type { Wallet, WalletTransaction, WalletTxType } from "@/lib/wallet";
 
 export const Route = createFileRoute("/wallet")({
-  head: () => ({ meta: [{ title: "Wallet — StyleAI" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "Wallet — StyleAI" }] }),
   component: WalletPage,
 });
 

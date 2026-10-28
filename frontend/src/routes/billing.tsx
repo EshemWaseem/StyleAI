@@ -22,7 +22,8 @@ import { useRole, getDashboardPath } from "@/lib/role";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/billing")({
-  head: () => ({ meta: [{ title: "Billing — StyleAI" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "Billing — StyleAI" }] }),
   component: BillingPage,
 });
 

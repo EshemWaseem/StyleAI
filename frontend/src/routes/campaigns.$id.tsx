@@ -31,7 +31,8 @@ import { campaignsApi, type Campaign, type Deliverable } from "@/lib/campaigns";
 import { useRole } from "@/lib/role";
 
 export const Route = createFileRoute("/campaigns/$id")({
-  head: () => ({ meta: [{ title: "Campaign — StyleAI" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "Campaign — StyleAI" }] }),
   component: CampaignDetailPage,
 });
 

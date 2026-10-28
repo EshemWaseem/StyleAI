@@ -14,7 +14,8 @@ import { useRole } from "@/lib/role";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/messages")({
-  head: () => ({ meta: [{ title: "Messages — StyleAI" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "Messages — StyleAI" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     c: typeof s["c"] === "string" ? s["c"] : undefined,
   }),

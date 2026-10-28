@@ -235,10 +235,13 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    clearStoredAuth();
-    setUser(null);
-    if (typeof window !== "undefined") window.location.href = "/login";
-  }, []);
+  clearStoredAuth();
+  // Hard reload bypassing SPA state entirely — instant transition, zero flash.
+  // Socket dies with page, no need to disconnectSocket() first.
+  if (typeof window !== "undefined") {
+    window.location.replace("/login");
+  }
+}, []);
 
   // NEW (D3): sign out of all other devices
   // Backend increments tokenVersion → all other JWTs revoked.

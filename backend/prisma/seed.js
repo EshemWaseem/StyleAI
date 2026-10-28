@@ -1,14 +1,16 @@
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+// backend/prisma/seed.js
+// Main seed — ONLY roles + permissions. Deterministic, no secrets.
+// Safe to commit and run multiple times (idempotent via upsert).
 
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...');
+  console.log('Seeding database (roles + permissions)...');
 
-  //  
+  // ═══════════════════════════════════════════════════════
   // 1. Create all 6 roles
-  //  
+  // ═══════════════════════════════════════════════════════
   const roles = [
     { name: 'SUPER_ADMIN', description: 'Platform super admin' },
     { name: 'BRAND_OWNER', description: 'Owns an organization/brand' },
@@ -24,12 +26,12 @@ async function main() {
       update: {},
       create: role,
     });
-    console.log(`  Role: ${role.name}`);
   }
+  console.log(`  ✅ ${roles.length} roles ensured`);
 
-  //  
+  // ═══════════════════════════════════════════════════════
   // 2. Create permissions
-  //  
+  // ═══════════════════════════════════════════════════════
   const permissions = [
     // User management
     { name: 'user.create' },
@@ -65,12 +67,12 @@ async function main() {
     { name: 'order.create' },
     { name: 'order.read' },
     { name: 'profile.update' },
-    // Agency — NEW BLOCK
+    // Agency
     { name: 'agency.read' },
     { name: 'agency.create' },
     { name: 'agency.update' },
     { name: 'agency.delete' },
-      // Influencer 
+    // Influencer
     { name: 'influencer.read' },
     { name: 'influencer.create' },
     { name: 'influencer.update' },
@@ -86,157 +88,173 @@ async function main() {
       create: perm,
     });
   }
-  console.log(`  ${permissions.length} permissions created`);
+  console.log(`  ✅ ${permissions.length} permissions ensured`);
 
-  //  
+  // ═══════════════════════════════════════════════════════
   // 3. Assign permissions to roles
-  //  
-  const superAdminRole = await prisma.role.findUnique({ where: { name: 'SUPER_ADMIN' } });
-  const brandOwnerRole = await prisma.role.findUnique({ where: { name: 'BRAND_OWNER' } });
-  const teamMemberRole = await prisma.role.findUnique({ where: { name: 'BRAND_TEAM_MEMBER' } });
-  const shopperRole = await prisma.role.findUnique({ where: { name: 'SHOPPER' } });
-  const agencyRole = await prisma.role.findUnique({ where: { name: 'AGENCY' } });   // ← NEW
+  // ═══════════════════════════════════════════════════════
+  const [
+    superAdminRole,
+    brandOwnerRole,
+    teamMemberRole,
+    influencerRole,
+    shopperRole,
+    agencyRole,
+  ] = await Promise.all([
+    prisma.role.findUnique({ where: { name: 'SUPER_ADMIN' } }),
+    prisma.role.findUnique({ where: { name: 'BRAND_OWNER' } }),
+    prisma.role.findUnique({ where: { name: 'BRAND_TEAM_MEMBER' } }),
+    prisma.role.findUnique({ where: { name: 'INFLUENCER' } }),
+    prisma.role.findUnique({ where: { name: 'SHOPPER' } }),
+    prisma.role.findUnique({ where: { name: 'AGENCY' } }),
+  ]);
 
   const allPermissions = await prisma.permission.findMany();
 
-  //  - SUPER_ADMIN: everything  -
+  // ─── SUPER_ADMIN: all permissions ───
   for (const perm of allPermissions) {
     await prisma.rolePermission.upsert({
       where: {
-        roleId_permissionId: { roleId: superAdminRole.id, permissionId: perm.id },
+        roleId_permissionId: {
+          roleId: superAdminRole.id,
+          permissionId: perm.id,
+        },
       },
       update: {},
       create: { roleId: superAdminRole.id, permissionId: perm.id },
     });
   }
-  console.log(`  SUPER_ADMIN: all permissions`);
+  console.log(`  ✅ SUPER_ADMIN: ${allPermissions.length} permissions`);
 
-  //  - BRAND_OWNER: brand, product, team, billing, organization  -
-    //  - BRAND_OWNER: brand, product, team, billing, organization, influencer  -
+  // ─── BRAND_OWNER: brand, product, team, billing, organization, influencer ───
   const ownerPermissions = allPermissions.filter((p) =>
-    ['brand', 'product', 'team', 'billing', 'organization', 'influencer'].some((prefix) =>
-      p.name.startsWith(prefix)
+    ['brand', 'product', 'team', 'billing', 'organization', 'influencer'].some(
+      (prefix) => p.name.startsWith(prefix)
     )
   );
-  
   for (const perm of ownerPermissions) {
     await prisma.rolePermission.upsert({
       where: {
-        roleId_permissionId: { roleId: brandOwnerRole.id, permissionId: perm.id },
+        roleId_permissionId: {
+          roleId: brandOwnerRole.id,
+          permissionId: perm.id,
+        },
       },
       update: {},
       create: { roleId: brandOwnerRole.id, permissionId: perm.id },
     });
   }
-  console.log(`  BRAND_OWNER: ${ownerPermissions.length} permissions`);
+  console.log(`  ✅ BRAND_OWNER: ${ownerPermissions.length} permissions`);
 
-
-    //  - INFLUENCER role  -
-  const influencerRole = await prisma.role.findUnique({ where: { name: 'INFLUENCER' } });
-  if (influencerRole) {
-    const influencerPermissions = allPermissions.filter((p) =>
-      ['influencer.read', 'influencer.update'].includes(p.name)
-    );
-    for (const perm of influencerPermissions) {
-      await prisma.rolePermission.upsert({
-        where: { roleId_permissionId: { roleId: influencerRole.id, permissionId: perm.id } },
-        update: {},
-        create: { roleId: influencerRole.id, permissionId: perm.id },
-      });
-    }
-    console.log(`  INFLUENCER: ${influencerPermissions.length} permissions`);
+  // ─── INFLUENCER: influencer.read, influencer.update ───
+  const influencerPermissions = allPermissions.filter((p) =>
+    ['influencer.read', 'influencer.update'].includes(p.name)
+  );
+  for (const perm of influencerPermissions) {
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: influencerRole.id,
+          permissionId: perm.id,
+        },
+      },
+      update: {},
+      create: { roleId: influencerRole.id, permissionId: perm.id },
+    });
   }
+  console.log(`  ✅ INFLUENCER: ${influencerPermissions.length} permissions`);
 
+  // ─── BRAND_TEAM_MEMBER: team.read, brand.read ───
   const memberPermissions = allPermissions.filter((p) =>
-  ['team.read', 'brand.read'].includes(p.name)
+    ['team.read', 'brand.read'].includes(p.name)
   );
   for (const perm of memberPermissions) {
     await prisma.rolePermission.upsert({
       where: {
-        roleId_permissionId: { roleId: teamMemberRole.id, permissionId: perm.id },
+        roleId_permissionId: {
+          roleId: teamMemberRole.id,
+          permissionId: perm.id,
+        },
       },
       update: {},
       create: { roleId: teamMemberRole.id, permissionId: perm.id },
     });
   }
-  console.log(`  BRAND_TEAM_MEMBER: ${memberPermissions.length} permissions`);
+  console.log(`  ✅ BRAND_TEAM_MEMBER: ${memberPermissions.length} permissions`);
 
-  //  - SHOPPER: browse, cart, order, profile  -
+  // ─── SHOPPER: browse, cart, order, profile ───
   const shopperPermissions = allPermissions.filter((p) =>
-    ['product.browse', 'product.read', 'cart.manage', 'order.create', 'order.read', 'profile.update'].includes(p.name)
+    [
+      'product.browse',
+      'product.read',
+      'cart.manage',
+      'order.create',
+      'order.read',
+      'profile.update',
+    ].includes(p.name)
   );
   for (const perm of shopperPermissions) {
     await prisma.rolePermission.upsert({
       where: {
-        roleId_permissionId: { roleId: shopperRole.id, permissionId: perm.id },
+        roleId_permissionId: {
+          roleId: shopperRole.id,
+          permissionId: perm.id,
+        },
       },
       update: {},
       create: { roleId: shopperRole.id, permissionId: perm.id },
     });
   }
-  console.log(`  SHOPPER: ${shopperPermissions.length} permissions`);
+  console.log(`  ✅ SHOPPER: ${shopperPermissions.length} permissions`);
 
-  //  - AGENCY: full agency management  ← NEW BLOCK  -
+  // ─── AGENCY: full agency management ───
   const agencyPermissions = allPermissions.filter((p) =>
-  [
-    'agency.read', 'agency.create', 'agency.update', 'agency.delete',
-    'brand.read', 'brand.create', 'brand.update', 'brand.delete',
-    'product.read', 'product.create', 'product.update', 'product.delete',
-    'team.read', 'team.create', 'team.update', 'team.delete',
-    'user.read',
-    'billing.read',
-  ].includes(p.name)
-);
-
+    [
+      'agency.read',
+      'agency.create',
+      'agency.update',
+      'agency.delete',
+      'brand.read',
+      'brand.create',
+      'brand.update',
+      'brand.delete',
+      'product.read',
+      'product.create',
+      'product.update',
+      'product.delete',
+      'team.read',
+      'team.create',
+      'team.update',
+      'team.delete',
+      'user.read',
+      'billing.read',
+    ].includes(p.name)
+  );
   for (const perm of agencyPermissions) {
     await prisma.rolePermission.upsert({
       where: {
-        roleId_permissionId: { roleId: agencyRole.id, permissionId: perm.id },
+        roleId_permissionId: {
+          roleId: agencyRole.id,
+          permissionId: perm.id,
+        },
       },
       update: {},
       create: { roleId: agencyRole.id, permissionId: perm.id },
     });
   }
-  console.log(`  AGENCY: ${agencyPermissions.length} agency permissions`);
+  console.log(`  ✅ AGENCY: ${agencyPermissions.length} permissions`);
 
-  //  
-  // 4. Create SUPER_ADMIN user
-  //  
-  const hashedPassword = await bcrypt.hash('Admin@123', 10);
-
-  const superAdmin = await prisma.user.upsert({
-    where: { email: 'admin@styleai.com' },
-    update: {},
-    create: {
-      name: 'Super Admin',
-      email: 'admin@styleai.com',
-      password: hashedPassword,
-      isActive: true,
-      organizationId: null,
-    },
-  });
-  console.log(`  Super Admin: ${superAdmin.email}`);
-
-  await prisma.userRole.upsert({
-    where: {
-      userId_roleId: { userId: superAdmin.id, roleId: superAdminRole.id },
-    },
-    update: {},
-    create: { userId: superAdmin.id, roleId: superAdminRole.id },
-  });
-  console.log(`  SUPER_ADMIN role assigned`);
-
+  console.log('\n✅ Seeding complete (roles + permissions).');
   console.log('');
-  console.log('Seeding complete!');
-  console.log('');
-  console.log('Login credentials:');
-  console.log('   Email:    admin@styleai.com');
-  console.log('   Password: Admin@123');
+  console.log('⚠️  No admin user created by this seed.');
+  console.log('   To create the first admin, run:');
+  console.log('     npm run seed:admin');
+  console.log('   (Uses SEED_ADMIN_EMAIL + SEED_ADMIN_PASSWORD from .env)');
 }
 
 main()
   .catch((e) => {
-    console.error('Seed error:', e);
+    console.error('❌ Seed error:', e);
     process.exit(1);
   })
   .finally(async () => {

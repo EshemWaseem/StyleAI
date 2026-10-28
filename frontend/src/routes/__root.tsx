@@ -21,6 +21,9 @@ import { AppShell } from "../components/app-shell";
 // Public paths — no auth required, no shell
 const PUBLIC_PATHS = [
   "/",
+  "/shop",              
+  "/cart", 
+  "/why-styleai", 
   "/login",
   "/register",
   "/forgot-password",
@@ -212,18 +215,15 @@ function AppShellGate() {
     if (isDashboard) {
       if (user.roles.includes("SUPER_ADMIN")) return "/admin";
       if (user.roles.includes("AGENCY")) return "/agency";
-
       const isOnlyShopper =
         user.roles.includes("SHOPPER") &&
         user.roles.every((r) => r === "SHOPPER");
       if (isOnlyShopper) return "/";
-
       const isBrandUser = user.roles.some((r) =>
         ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
       );
       if (isBrandUser && !user.organizationId) return "/brands";
     }
-
     return null;
   })();
 
@@ -233,12 +233,17 @@ function AppShellGate() {
     }
   }, [redirectTarget, navigate]);
 
-  const blockShell = !isPublic && (loading || !!redirectTarget || !user);
-
-  if (blockShell) {
+  // ─── INITIAL LOAD: only auth hydration shows loader
+  if (loading) {
     return <FullScreenLoader />;
   }
 
+  // ─── LOGOUT TRANSITION: user just cleared, protected page — return null (no loader flash)
+  if (!isPublic && !user) {
+    return null;
+  }
+
+  // ─── PUBLIC SHELL
   if (isPublic) {
     return (
       <div data-public-shell className="min-h-dvh">
@@ -247,6 +252,7 @@ function AppShellGate() {
     );
   }
 
+  // ─── APP SHELL
   return (
     <AppShell>
       <Outlet />

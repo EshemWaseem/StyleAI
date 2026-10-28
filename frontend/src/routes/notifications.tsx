@@ -13,7 +13,8 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/notifications")({
-  head: () => ({ meta: [{ title: "Notifications — StyleAI" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "Notifications — StyleAI" }] }),
   component: NotificationsPage,
 });
 

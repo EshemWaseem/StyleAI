@@ -19,7 +19,8 @@ import { swalConfirm, swalError, swalSuccess } from "@/lib/swal";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/orders")({
-  head: () => ({ meta: [{ title: "Orders — Admin" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "Orders — Admin" }] }),
   component: AdminOrdersPage,
 });
 

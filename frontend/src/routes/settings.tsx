@@ -43,6 +43,7 @@ import {
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex" },
       { title: "Settings — StyleAI" },
       { name: "description", content: "Account, security, and preferences." },
     ],

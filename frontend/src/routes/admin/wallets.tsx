@@ -10,7 +10,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { http } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/wallets")({
-  head: () => ({ meta: [{ title: "Admin · Wallets — StyleAI" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "Admin · Wallets — StyleAI" }] }),
   component: AdminWalletsPage,
 });
 

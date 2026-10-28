@@ -9,6 +9,12 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { adminApi } from "@/lib/admin";
 
 export const Route = createFileRoute("/admin/campaigns")({
+  head: () => ({
+    meta: [
+      { title: "Admin · Campaigns — StyleAI" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: AdminCampaignsPage,
 });
 

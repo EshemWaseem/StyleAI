@@ -12,3 +12,59 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+
+
+
+
+
+# StyleAI — robots.txt
+# Public pages are crawlable; auth-required and transactional pages are not.
+
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /shop/
+Allow: /shop/category/
+Allow: /shop/gender/
+Allow: /shop/product/
+Allow: /privacy
+
+# Authenticated app shell — no SEO value, no indexing
+Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /checkout
+Disallow: /cart
+Disallow: /orders
+Disallow: /wallet
+Disallow: /billing
+Disallow: /plans
+Disallow: /settings
+Disallow: /messages
+Disallow: /notifications
+Disallow: /team
+Disallow: /teams
+Disallow: /campaigns
+Disallow: /offers
+Disallow: /influencer
+Disallow: /studio
+Disallow: /matching
+Disallow: /knowledge
+Disallow: /agency
+Disallow: /engagement
+Disallow: /invite
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /pending
+Disallow: /trial-expired
+Disallow: /payments
+
+# Crawl-delay (be polite to the origin)
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://styleai.com/sitemap.xml

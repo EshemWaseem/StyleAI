@@ -1,12 +1,11 @@
 // components/ProtectedRoute.tsx
-
 // Frontend route guard — AUTH & ROLE ONLY.
 // Trial enforcement is on the BACKEND (trialGate middleware).
-
 
 import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useRole, type RoleName } from "@/lib/role";
+import { PageSkeleton } from "@/components/ui/skeletons";
 
 interface Props {
   roles?: RoleName[];
@@ -61,14 +60,7 @@ export function ProtectedRoute({
     hasPermission,
   ]);
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-muted-foreground">Loading…</div>
-      </div>
-    );
-  }
-
+  if (loading) return <PageSkeleton />;
   if (!user) return null;
   if (user.pendingApproval) return null;
 

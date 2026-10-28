@@ -1,69 +1,55 @@
 // routes/index.tsx
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import {
-  ArrowRight,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
-  Minus,
-  Plus,
-  Search,
-  ShoppingBag,
-  Sparkles,
-  Trash2,
-  Package,
-  Palette,
-  Store,
-  UsersRound,
+  ArrowRight, Check, ChevronLeft, ChevronRight, Menu, Minus, Plus,
+  Search, ShoppingBag, Sparkles, Trash2, Package, Palette, Store, UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet";
 import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import {
-  publicProductsApi,
-  publicStorefrontApi,
-  type PublicProduct,
-  type PublicBrand,
-  type StorefrontHeroSlide,
-  type StorefrontSectionPublic,
-  type StorefrontEditorial,
-  type StorefrontCreator,
+  publicProductsApi, publicStorefrontApi,
+  type PublicProduct, type PublicBrand, type StorefrontHeroSlide,
+  type StorefrontSectionPublic, type StorefrontEditorial, type StorefrontCreator,
 } from "@/lib/products";
-import { ProductImageSlider } from "@/components/ProductImageSlider";
+import { deriveCategories } from "@/lib/categories";
+import type { GenderStat, CategoryStat } from "@/lib/categories";
+import { SEO } from "@/lib/seo";
+import { ProductCard } from "@/components/shop/product-card";
+import { CategoryGrid } from "@/components/shop/category-grid";
+import {
+  CategoryGridSkeleton, ProductGridSkeleton,
+} from "@/components/ui/skeletons";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "StyleAI — Shop the AI-styled fashion atelier" },
-      {
-        name: "description",
-        content:
-          "Shop the StyleAI collection — dresses, outerwear, bags and footwear styled by AI, matched with creators, and delivered worldwide.",
-      },
+      { name: "description", content: "Shop the StyleAI collection — dresses, outerwear, bags and footwear styled by AI, matched with creators, and delivered worldwide." },
+      { property: "og:title", content: "StyleAI — AI-styled fashion atelier" },
+      { property: "og:description", content: "AI-curated fashion from real creators and brands." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: SEO.siteUrl + "/" },
+      { property: "og:image", content: SEO.siteUrl + "/og-default.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "StyleAI — AI-styled fashion atelier" },
+      { name: "twitter:description", content: "AI-curated fashion from real creators and brands." },
+    ],
+    links: [{ rel: "canonical", href: SEO.siteUrl + "/" }],
+    scripts: [
+      { type: "application/ld+json", children: JSON.stringify(SEO.website) },
+      { type: "application/ld+json", children: JSON.stringify(SEO.organization) },
     ],
   }),
   component: Storefront,
 });
 
-const categories = [
-  "All",
-  "Clothing",
-  "Footwear",
-  "Accessories",
-  "Bags",
-  "Outerwear",
-];
-
-// Fallback editorial — used when admin hasn't configured one
 const DEFAULT_EDITORIAL: StorefrontEditorial = {
   id: "default-editorial",
   title: "Behind every piece: the StyleAI loop.",
@@ -71,7 +57,6 @@ const DEFAULT_EDITORIAL: StorefrontEditorial = {
   isActive: true,
 };
 
-//  Fixed — NO filter, all 3 always show
 const SECTIONS = [
   { id: "shop", label: "Shop" },
   { id: "edit", label: "Editorial" },
@@ -81,93 +66,56 @@ const SECTIONS = [
 const NAV_OFFSET = 80;
 
 function useSmoothScrollTo(offset = NAV_OFFSET) {
-  return useCallback(
-    (id: string | null, onDone?: () => void) => {
-      if (typeof window === "undefined") return;
-
-      if (!id || id === "top" || id === "home") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        if (history.replaceState) {
-          history.replaceState(null, "", window.location.pathname);
-        }
-        onDone?.();
-        return;
-      }
-
-      const el = document.getElementById(id);
-      if (!el) {
-        onDone?.();
-        return;
-      }
-
-      const top = el.getBoundingClientRect().top + window.scrollY - offset;
-      window.scrollTo({ top, behavior: "smooth" });
-
-      if (history.replaceState) {
-        history.replaceState(null, "", `#${id}`);
-      }
-
-      window.setTimeout(() => onDone?.(), 350);
-    },
-    [offset]
-  );
+  return useCallback((id: string | null, onDone?: () => void) => {
+    if (typeof window === "undefined") return;
+    if (!id || id === "top" || id === "home") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (history.replaceState) history.replaceState(null, "", window.location.pathname);
+      onDone?.();
+      return;
+    }
+    const el = document.getElementById(id);
+    if (!el) { onDone?.(); return; }
+    const top = el.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: "smooth" });
+    if (history.replaceState) history.replaceState(null, "", `#${id}`);
+    window.setTimeout(() => onDone?.(), 350);
+  }, [offset]);
 }
 
 function useScrollSpy(ids: readonly string[], offset = NAV_OFFSET) {
   const [activeId, setActiveId] = useState<string>("");
-
   useEffect(() => {
     if (typeof window === "undefined" || ids.length === 0) return;
-
     let rafId: number | null = null;
-
     const update = () => {
       rafId = null;
-
-      if (window.scrollY < 80) {
-        setActiveId("");
-        return;
-      }
-
-      const atBottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 40;
-
-      if (atBottom) {
-        setActiveId(ids[ids.length - 1]);
-        return;
-      }
-
+      if (window.scrollY < 80) { setActiveId(""); return; }
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 40;
+      if (atBottom) { setActiveId(ids[ids.length - 1]); return; }
       const probeY = window.scrollY + offset + 60;
       let current = "";
-
       for (const id of ids) {
         const el = document.getElementById(id);
         if (!el) continue;
         const top = el.getBoundingClientRect().top + window.scrollY;
-        if (top <= probeY) current = id;
-        else break;
+        if (top <= probeY) current = id; else break;
       }
-
       setActiveId(current);
     };
-
     const onScroll = () => {
       if (rafId !== null) return;
       rafId = window.requestAnimationFrame(update);
     };
-
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
-
     return () => {
       if (rafId !== null) window.cancelAnimationFrame(rafId);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
   }, [ids.join(","), offset]);
-
   return activeId;
 }
 
@@ -186,49 +134,57 @@ function Storefront() {
   const [editorial, setEditorial] = useState<StorefrontEditorial | null>(null);
   const [creators, setCreators] = useState<StorefrontCreator[]>([]);
 
-  const cart = useCart();
+  const [genders, setGenders] = useState<GenderStat[]>([]);
+  const [categoriesStat, setCategoriesStat] = useState<CategoryStat[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
+  const cart = useCart();
   const scrollTo = useSmoothScrollTo(NAV_OFFSET);
-  const activeSection = useScrollSpy(
-    SECTIONS.map((s) => s.id),
-    NAV_OFFSET
-  );
+  const activeSection = useScrollSpy(SECTIONS.map((s) => s.id), NAV_OFFSET);
 
   useEffect(() => {
-    publicProductsApi
-      .brands()
-      .then((res) => setBrands(res.brands))
-      .catch(() => {});
+    publicProductsApi.brands().then((res) => setBrands(res.brands)).catch(() => {});
   }, []);
 
   useEffect(() => {
     setLoading(true);
-    publicProductsApi
-      .list({
-        brand: activeBrand || undefined,
-        category: filter !== "All" ? filter : undefined,
-        search: query.trim() || undefined,
-      })
+    publicProductsApi.list({
+      brand: activeBrand || undefined,
+      category: filter !== "All" ? filter : undefined,
+      search: query.trim() || undefined,
+    })
       .then((res) => setProducts(res.products))
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, [activeBrand, filter, query]);
 
   useEffect(() => {
-    publicStorefrontApi
-      .get()
+    setCategoriesLoading(true);
+    publicProductsApi.list({ limit: 500 })
       .then((r) => {
-        setHeroSlides(r.hero || []);
-        setSections(r.sections || []);
-        setEditorial(r.editorial || null);
-        setCreators(r.creators || []);
+        const derived = deriveCategories(r.products);
+        setGenders(derived.genders);
+        setCategoriesStat(derived.categories);
       })
       .catch(() => {
-        setHeroSlides([]);
-        setSections([]);
-        setEditorial(null);
-        setCreators([]);
-      });
+        setGenders([]);
+        setCategoriesStat([]);
+      })
+      .finally(() => setCategoriesLoading(false));
+  }, []);
+
+  useEffect(() => {
+    publicStorefrontApi.get().then((r) => {
+      setHeroSlides(r.hero || []);
+      setSections(r.sections || []);
+      setEditorial(r.editorial || null);
+      setCreators(r.creators || []);
+    }).catch(() => {
+      setHeroSlides([]);
+      setSections([]);
+      setEditorial(null);
+      setCreators([]);
+    });
   }, []);
 
   function addToCart(p: PublicProduct) {
@@ -247,17 +203,24 @@ function Storefront() {
     scrollTo(id, () => setMobileNavOpen(false));
   }
 
-  //  Always show something — custom OR fallback
   const editorialToShow: StorefrontEditorial =
     editorial && editorial.steps && editorial.steps.length > 0
       ? editorial
       : DEFAULT_EDITORIAL;
 
-  const hasHeroSlides = heroSlides.length > 0;
+  const validHeroSlides = useMemo(
+    () => heroSlides.filter((s) => s && s.imageUrl),
+    [heroSlides]
+  );
+  const hasHeroSlides = validHeroSlides.length > 0;
+
+  const filterChips = useMemo(
+    () => ["All", ...categoriesStat.map((c) => c.name)],
+    [categoriesStat]
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* HEADER — all 3 nav items ALWAYS visible */}
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
           <button
@@ -269,15 +232,10 @@ function Storefront() {
             <span className="grid size-8 place-items-center rounded-md bg-foreground text-background">
               <span className="font-display text-sm leading-none">S</span>
             </span>
-            <span className="font-display text-[15px] font-medium tracking-tight">
-              StyleAI
-            </span>
+            <span className="font-display text-[15px] font-medium tracking-tight">StyleAI</span>
           </button>
 
-          <nav
-            className="ml-6 hidden items-center gap-6 text-sm lg:flex"
-            aria-label="Main"
-          >
+          <nav className="ml-6 hidden items-center gap-6 text-sm lg:flex" aria-label="Main">
             {SECTIONS.map((s) => {
               const isActive = activeSection === s.id;
               return (
@@ -288,9 +246,7 @@ function Storefront() {
                   aria-current={isActive ? "true" : undefined}
                   className={cn(
                     "relative py-1 transition-colors",
-                    isActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                    isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {s.label}
@@ -304,34 +260,26 @@ function Storefront() {
                 </button>
               );
             })}
+            <Link to="/shop" className="text-muted-foreground transition-colors hover:text-foreground">
+              All products
+            </Link>
+            <Link to="/why-styleai" className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-sm font-medium text-accent transition-all hover:bg-accent/20 hover:scale-105">
+            Why StyleAI?
+            <ArrowRight className="size-3.5" />
+            </Link>
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className="hidden lg:inline-flex"
-            >
+            <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex">
               <Link to="/login">Login</Link>
             </Button>
-
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className="hidden lg:inline-flex"
-            >
-              <Link to="/register" search={{ role: "SHOPPER" }}>
-                Just shopping?
-              </Link>
+            <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex">
+              <Link to="/register" search={{ role: "SHOPPER" } as any}>Just shopping?</Link>
             </Button>
-
             <Button asChild className="hidden sm:inline-flex">
               <Link to="/register">Register</Link>
             </Button>
 
-            {/* CART */}
             <Sheet>
               <SheetTrigger asChild>
                 <button
@@ -346,104 +294,9 @@ function Storefront() {
                   ) : null}
                 </button>
               </SheetTrigger>
-              <SheetContent className="flex w-full flex-col sm:max-w-md">
-                <SheetHeader>
-                  <SheetTitle className="font-display text-xl font-medium">
-                    Your bag
-                  </SheetTitle>
-                </SheetHeader>
-
-                {cart.items.length === 0 ? (
-                  <p className="mt-8 px-4 text-sm text-muted-foreground">
-                    Your bag is empty. Add a piece from the collection to begin.
-                  </p>
-                ) : (
-                  <ul className="mt-4 flex-1 space-y-4 overflow-y-auto px-4">
-                    {cart.items.map((item) => (
-                      <li
-                        key={item.slug}
-                        className="flex gap-3 border-b border-border pb-4"
-                      >
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            loading="lazy"
-                            className="size-20 rounded-md object-cover"
-                          />
-                        ) : (
-                          <div className="size-20 rounded-md bg-muted" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">
-                            {item.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.category}
-                          </p>
-                          <div className="mt-2 flex items-center gap-2">
-                            <button
-                              onClick={() =>
-                                cart.setQty(item.slug, item.qty - 1)
-                              }
-                              aria-label={`Decrease ${item.name}`}
-                              className="grid size-7 place-items-center rounded-md border border-border hover:bg-accent/10"
-                            >
-                              <Minus className="size-3" aria-hidden="true" />
-                            </button>
-                            <span className="w-6 text-center text-sm tabular-nums">
-                              {item.qty}
-                            </span>
-                            <button
-                              onClick={() =>
-                                cart.setQty(item.slug, item.qty + 1)
-                              }
-                              aria-label={`Increase ${item.name}`}
-                              className="grid size-7 place-items-center rounded-md border border-border hover:bg-accent/10"
-                            >
-                              <Plus className="size-3" aria-hidden="true" />
-                            </button>
-                            <button
-                              onClick={() => cart.remove(item.slug)}
-                              aria-label={`Remove ${item.name}`}
-                              className="ml-auto text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="size-4" aria-hidden="true" />
-                            </button>
-                          </div>
-                        </div>
-                        <span className="text-sm font-medium tabular-nums">
-                          ${item.price * item.qty}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <div className="mt-auto space-y-3 border-t border-border p-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-display text-xl tabular-nums">
-                      ${cart.total}
-                    </span>
-                  </div>
-                  <Button
-                          asChild
-                          className="w-full"
-                          disabled={cart.items.length === 0}
-                        >
-                          <Link to="/checkout">
-                            Checkout <ArrowRight />
-                          </Link>
-                        </Button>
-                  <p className="text-center text-[11px] text-muted-foreground">
-                    Shipping and taxes calculated at checkout.
-                  </p>
-                </div>
-              </SheetContent>
+              <CartSheet cart={cart} />
             </Sheet>
 
-            {/* MOBILE MENU */}
             <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
               <SheetTrigger asChild>
                 <button
@@ -453,70 +306,50 @@ function Storefront() {
                   <Menu className="size-4" aria-hidden="true" />
                 </button>
               </SheetTrigger>
-              <SheetContent
-                side="right"
-                className="flex w-[280px] flex-col sm:max-w-xs"
-              >
+              <SheetContent side="right" className="flex w-[280px] flex-col sm:max-w-xs">
                 <SheetHeader>
-                  <SheetTitle className="font-display text-lg font-medium">
-                    Menu
-                  </SheetTitle>
+                  <SheetTitle className="font-display text-lg font-medium">Menu</SheetTitle>
                 </SheetHeader>
-
                 <nav className="mt-6 flex flex-col gap-1">
-                  {SECTIONS.map((s) => {
-                    const isActive = activeSection === s.id;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => handleMobileNavClick(s.id)}
-                        className={cn(
-                          "flex items-center justify-between rounded-md px-3 py-2.5 text-left text-sm transition-colors",
-                          isActive
-                            ? "bg-accent/10 text-foreground"
-                            : "text-muted-foreground hover:bg-accent/5 hover:text-foreground"
-                        )}
-                      >
-                        <span>{s.label}</span>
-                        {isActive && (
-                          <span className="size-1.5 rounded-full bg-foreground" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </nav>
-
-                <div className="mt-auto space-y-2 border-t border-border pt-4">
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="w-full justify-center"
-                  >
-                    <Link to="/login" onClick={() => setMobileNavOpen(false)}>
-                      Login
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className="w-full justify-center"
-                  >
-                    <Link
-                      to="/register"
-                      search={{ role: "SHOPPER" }}
-                      onClick={() => setMobileNavOpen(false)}
+                  {SECTIONS.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleMobileNavClick(s.id)}
+                      className={cn(
+                        "flex items-center justify-between rounded-md px-3 py-2.5 text-left text-sm",
+                        activeSection === s.id
+                          ? "bg-accent/10 text-foreground"
+                          : "text-muted-foreground hover:bg-accent/5 hover:text-foreground"
+                      )}
                     >
+                      <span>{s.label}</span>
+                    </button>
+                  ))}
+                 <Link
+                        to="/shop"
+                        onClick={() => setMobileNavOpen(false)}
+                        className="rounded-md px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-accent/5 hover:text-foreground">
+                        All products
+                      </Link>
+                      <Link
+                        to="/why-styleai"
+                        onClick={() => setMobileNavOpen(false)}
+                        className="rounded-md px-3 py-2.5 text-left text-sm font-medium text-accent hover:bg-accent/5">
+                        Why StyleAI?
+                      </Link>
+                      </nav>
+                <div className="mt-auto space-y-2 border-t border-border pt-4">
+                  <Button asChild variant="outline" className="w-full">
+                    <Link to="/login" onClick={() => setMobileNavOpen(false)}>Login</Link>
+                  </Button>
+                  <Button asChild variant="ghost" className="w-full">
+                    <Link to="/register" search={{ role: "SHOPPER" } as any} onClick={() => setMobileNavOpen(false)}>
                       Just shopping?
                     </Link>
                   </Button>
-                  <Button asChild className="w-full justify-center">
-                    <Link
-                      to="/register"
-                      onClick={() => setMobileNavOpen(false)}
-                    >
-                      Register
-                    </Link>
+                  <Button asChild className="w-full">
+                    <Link to="/register" onClick={() => setMobileNavOpen(false)}>Register</Link>
                   </Button>
                 </div>
               </SheetContent>
@@ -526,23 +359,36 @@ function Storefront() {
       </header>
 
       <main>
-        {/* HERO */}
         {hasHeroSlides ? (
-          <HeroCarousel
-            slides={heroSlides}
-            onScrollToShop={() => scrollTo("shop")}
-          />
+          <HeroCarousel slides={validHeroSlides} onScrollToShop={() => scrollTo("shop")} />
         ) : (
           <BrandingHero onScrollToShop={() => scrollTo("shop")} />
         )}
 
-        {/* SHOP — always */}
+        {categoriesLoading ? (
+          <section className="border-t border-border">
+            <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+              <div className="mb-6 space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+                  Browse
+                </p>
+                <h2 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">
+                  Shop by category
+                </h2>
+              </div>
+              <CategoryGridSkeleton />
+            </div>
+          </section>
+        ) : (
+          <CategoryGrid genders={genders} categories={categoriesStat} />
+        )}
+
         <section id="shop" className="scroll-mt-20 border-t border-border">
           <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
               <div>
                 <h2 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">
-                  Shop the collection
+                  Featured pieces
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {loading
@@ -552,21 +398,25 @@ function Storefront() {
                     : `${products.length} piece${products.length === 1 ? "" : "s"} available now.`}
                 </p>
               </div>
-              {products.length > 0 && (
-                <div className="flex w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm sm:w-72">
-                  <Search
-                    className="size-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <input
-                    aria-label="Search the collection"
-                    placeholder="Search pieces…"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
-                  />
-                </div>
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {products.length > 0 && (
+                  <div className="flex w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm sm:w-64">
+                    <Search className="size-4 text-muted-foreground" aria-hidden="true" />
+                    <input
+                      aria-label="Search the collection"
+                      placeholder="Search pieces…"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
+                    />
+                  </div>
+                )}
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/shop">
+                    Browse all <ArrowRight className="ml-1 size-3.5" />
+                  </Link>
+                </Button>
+              </div>
             </div>
 
             {brands.length > 0 && (
@@ -575,10 +425,7 @@ function Storefront() {
                   Brands
                 </p>
                 <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-                  <ChipButton
-                    active={activeBrand === ""}
-                    onClick={() => setActiveBrand("")}
-                  >
+                  <ChipButton active={activeBrand === ""} onClick={() => setActiveBrand("")}>
                     All brands
                   </ChipButton>
                   {brands.map((b) => (
@@ -588,24 +435,17 @@ function Storefront() {
                       onClick={() => setActiveBrand(b.slug)}
                     >
                       {b.name}
-                      <span className="ml-1.5 text-xs opacity-60">
-                        {b.productCount}
-                      </span>
+                      <span className="ml-1.5 text-xs opacity-60">{b.productCount}</span>
                     </ChipButton>
                   ))}
                 </div>
               </div>
             )}
 
-            {products.length > 0 && (
+            {filterChips.length > 1 && (
               <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-                {categories.map((c) => (
-                  <ChipButton
-                    key={c}
-                    accent
-                    active={filter === c}
-                    onClick={() => setFilter(c)}
-                  >
+                {filterChips.map((c) => (
+                  <ChipButton key={c} accent active={filter === c} onClick={() => setFilter(c)}>
                     {c}
                   </ChipButton>
                 ))}
@@ -613,27 +453,23 @@ function Storefront() {
             )}
 
             {loading ? (
-              <p className="mt-10 rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground sm:mt-12 sm:p-12">
-                Loading products…
-              </p>
+              <div className="mt-6 sm:mt-8">
+                <ProductGridSkeleton count={8} />
+              </div>
             ) : products.length === 0 ? (
               <ComingSoon />
             ) : (
-              <ProductGrid
-                products={products}
-                justAdded={justAdded}
-                onAdd={addToCart}
-              />
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-5 lg:grid-cols-4">
+                {products.map((p) => (
+                  <ProductCard key={p.id} p={p} added={justAdded === p.id} onAdd={addToCart} />
+                ))}
+              </div>
             )}
           </div>
         </section>
 
-        {/* ADMIN SECTIONS */}
         {sections.map((sec) => (
-          <section
-            key={sec.id}
-            className="scroll-mt-20 border-t border-border bg-card/30"
-          >
+          <section key={sec.id} className="scroll-mt-20 border-t border-border bg-card/30">
             <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
               <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
                 <div>
@@ -641,39 +477,35 @@ function Storefront() {
                     {sec.title}
                   </h2>
                   {sec.subtitle && (
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {sec.subtitle}
-                    </p>
+                    <p className="mt-2 text-sm text-muted-foreground">{sec.subtitle}</p>
                   )}
                 </div>
-                {products.length > 0 && (
-                  <Button asChild variant="outline" size="sm">
-                    <Link to="/products">View all</Link>
-                  </Button>
-                )}
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/shop">View all</Link>
+                </Button>
               </div>
               {sec.layout === "CAROUSEL" ? (
-                <ProductCarousel
-                  products={sec.products}
-                  justAdded={justAdded}
-                  onAdd={addToCart}
-                />
+                <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+                  <div className="flex gap-3 sm:gap-4">
+                    {sec.products.map((p) => (
+                      <div key={p.id} className="w-[160px] shrink-0 sm:w-[220px]">
+                        <ProductCard p={p} added={justAdded === p.id} onAdd={addToCart} compact />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ) : (
-                <ProductGrid
-                  products={sec.products}
-                  justAdded={justAdded}
-                  onAdd={addToCart}
-                />
+                <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+                  {sec.products.map((p) => (
+                    <ProductCard key={p.id} p={p} added={justAdded === p.id} onAdd={addToCart} />
+                  ))}
+                </div>
               )}
             </div>
           </section>
         ))}
 
-        {/* EDITORIAL — ALWAYS renders (custom or default) */}
-        <section
-          id="edit"
-          className="scroll-mt-20 border-t border-border bg-card/50"
-        >
+        <section id="edit" className="scroll-mt-20 border-t border-border bg-card/50">
           <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
             <h2 className="max-w-lg font-display text-2xl font-medium tracking-tight sm:text-3xl">
               {editorialToShow.title}
@@ -685,10 +517,7 @@ function Storefront() {
                     {step}
                   </span>
                   {i < editorialToShow.steps.length - 1 && (
-                    <ArrowRight
-                      className="size-3.5 text-muted-foreground sm:size-4"
-                      aria-hidden="true"
-                    />
+                    <ArrowRight className="size-3.5 text-muted-foreground sm:size-4" aria-hidden="true" />
                   )}
                 </li>
               ))}
@@ -696,11 +525,7 @@ function Storefront() {
           </div>
         </section>
 
-        {/* CREATORS — ALWAYS renders (real creators OR join CTA) */}
-        <section
-          id="creators"
-          className="mx-auto max-w-6xl scroll-mt-20 px-4 py-12 sm:px-6 sm:py-16"
-        >
+        <section id="creators" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-12 sm:px-6 sm:py-16">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">
               Styled by our creators
@@ -736,9 +561,7 @@ function Storefront() {
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium sm:text-base">
-                      {c.displayName}
-                    </p>
+                    <p className="truncate text-sm font-medium sm:text-base">{c.displayName}</p>
                     <p className="truncate text-xs text-muted-foreground">
                       {c.followerCount >= 1_000_000
                         ? `${(c.followerCount / 1_000_000).toFixed(1)}M`
@@ -759,25 +582,26 @@ function Storefront() {
                   <UsersRound className="size-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-display text-lg font-medium">
-                    Be among the first creators.
-                  </p>
+                  <p className="font-display text-lg font-medium">Be among the first creators.</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    StyleAI features real creators styling real products. Apply
-                    to join our creator program — brands will discover you.
+                    StyleAI features real creators styling real products. Apply to join our creator program — brands will discover you.
                   </p>
                 </div>
-                <Button asChild>
-                  <Link to="/register" search={{ role: "INFLUENCER" }}>
-                    Join as creator <ArrowRight className="ml-1 size-4" />
-                  </Link>
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button asChild>
+                      <Link to="/register" search={{ role: "INFLUENCER" } as any}>
+                        Join as creator <ArrowRight className="ml-1 size-4" />
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link to="/why-styleai">Learn more</Link>
+                    </Button>
+                  </div>
               </div>
             </div>
           )}
         </section>
 
-        {/* ABOUT — always */}
         <AboutSection />
       </main>
 
@@ -785,15 +609,10 @@ function Storefront() {
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 text-center text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:justify-between sm:gap-4 sm:px-6 sm:text-left">
           <span>© 2026 StyleAI</span>
           <div className="flex items-center gap-4">
-            <Link
-              to="/privacy"
-              className="hover:text-foreground transition-colors"
-            >
+            <Link to="/privacy" className="hover:text-foreground transition-colors">
               Privacy Policy
             </Link>
-            <span>
-              AI style matches are estimates — always trust your own eye.
-            </span>
+            <span>AI style matches are estimates — always trust your own eye.</span>
           </div>
         </div>
       </footer>
@@ -801,8 +620,84 @@ function Storefront() {
   );
 }
 
-
-// BRANDING HERO
+function CartSheet({ cart }: { cart: ReturnType<typeof useCart> }) {
+  return (
+    <SheetContent className="flex w-full flex-col sm:max-w-md">
+      <SheetHeader>
+        <SheetTitle className="font-display text-xl font-medium">Your bag</SheetTitle>
+      </SheetHeader>
+      {cart.items.length === 0 ? (
+        <p className="mt-8 px-4 text-sm text-muted-foreground">
+          Your bag is empty. Add a piece from the collection to begin.
+        </p>
+      ) : (
+        <ul className="mt-4 flex-1 space-y-4 overflow-y-auto px-4">
+          {cart.items.map((item) => (
+            <li key={item.slug} className="flex gap-3 border-b border-border pb-4">
+              {item.image ? (
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  loading="lazy"
+                  className="size-20 rounded-md object-cover"
+                />
+              ) : (
+                <div className="size-20 rounded-md bg-muted" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{item.name}</p>
+                <p className="text-xs text-muted-foreground">{item.category}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    onClick={() => cart.setQty(item.slug, item.qty - 1)}
+                    aria-label={`Decrease ${item.name}`}
+                    className="grid size-7 place-items-center rounded-md border border-border hover:bg-accent/10"
+                  >
+                    <Minus className="size-3" aria-hidden="true" />
+                  </button>
+                  <span className="w-6 text-center text-sm tabular-nums">{item.qty}</span>
+                  <button
+                    onClick={() => cart.setQty(item.slug, item.qty + 1)}
+                    aria-label={`Increase ${item.name}`}
+                    className="grid size-7 place-items-center rounded-md border border-border hover:bg-accent/10"
+                  >
+                    <Plus className="size-3" aria-hidden="true" />
+                  </button>
+                  <button
+                    onClick={() => cart.remove(item.slug)}
+                    aria-label={`Remove ${item.name}`}
+                    className="ml-auto text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+              <span className="text-sm font-medium tabular-nums">
+                ${(item.price * item.qty).toFixed(2)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-auto space-y-3 border-t border-border p-4">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Subtotal</span>
+          <span className="font-display text-xl tabular-nums">
+            ${cart.total.toFixed(2)}
+          </span>
+        </div>
+        <Button asChild className="w-full" disabled={cart.items.length === 0}>
+          <Link to="/checkout">
+            Checkout <ArrowRight />
+          </Link>
+        </Button>
+        <p className="text-center text-[11px] text-muted-foreground">
+          Shipping and taxes calculated at checkout.
+        </p>
+      </div>
+    </SheetContent>
+  );
+}
 
 function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
   return (
@@ -815,7 +710,6 @@ function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
         aria-hidden="true"
         className="pointer-events-none absolute -right-40 -top-40 size-[500px] rounded-full bg-accent/10 blur-3xl"
       />
-
       <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:py-32">
         <div className="max-w-3xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
@@ -825,9 +719,7 @@ function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
             Fashion, curated by intelligence.
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground">
-            StyleAI reads every piece, matches it with the right creators, and
-            delivers a shopping experience shaped by real understanding — not
-            algorithms alone.
+            StyleAI reads every piece, matches it with the right creators, and delivers a shopping experience shaped by real understanding — not algorithms alone.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button size="lg" onClick={onScrollToShop}>
@@ -837,7 +729,6 @@ function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
               <Link to="/register">Become a creator</Link>
             </Button>
           </div>
-
           <dl className="mt-14 grid max-w-lg grid-cols-3 gap-6 border-t border-border pt-6">
             {[
               ["AI-matched", "Every piece, understood"],
@@ -845,12 +736,8 @@ function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
               ["Global", "Shipping worldwide"],
             ].map(([title, desc]) => (
               <div key={title}>
-                <dt className="font-display text-lg font-medium tracking-tight sm:text-xl">
-                  {title}
-                </dt>
-                <dd className="mt-1 text-[11px] leading-4 text-muted-foreground sm:text-xs sm:leading-5">
-                  {desc}
-                </dd>
+                <dt className="font-display text-lg font-medium tracking-tight sm:text-xl">{title}</dt>
+                <dd className="mt-1 text-[11px] leading-4 text-muted-foreground sm:text-xs sm:leading-5">{desc}</dd>
               </div>
             ))}
           </dl>
@@ -860,59 +747,32 @@ function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
   );
 }
 
-
-// ABOUT
-
 function AboutSection() {
   const items = [
-    {
-      icon: Package,
-      title: "Read every piece",
-      body: "StyleAI understands fabric, cut, silhouette, and mood — not just tags and titles.",
-    },
-    {
-      icon: Palette,
-      title: "Styled by creators",
-      body: "Real influencers style products from your favourite brands and share the look.",
-    },
-    {
-      icon: Store,
-      title: "One atelier",
-      body: "Discover, match, and shop — all from a single AI-curated fashion experience.",
-    },
+    { icon: Package, title: "Read every piece", body: "StyleAI understands fabric, cut, silhouette, and mood — not just tags and titles." },
+    { icon: Palette, title: "Styled by creators", body: "Real influencers style products from your favourite brands and share the look." },
+    { icon: Store, title: "One atelier", body: "Discover, match, and shop — all from a single AI-curated fashion experience." },
   ];
-
   return (
     <section className="border-t border-border bg-card/40">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <div className="max-w-2xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-            Why StyleAI
-          </p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">Why StyleAI</p>
           <h2 className="mt-4 font-display text-2xl font-medium tracking-tight sm:text-3xl">
             A different kind of fashion store.
           </h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            We're building an atelier where every product is understood, every
-            creator is real, and every recommendation is earned.
+            We're building an atelier where every product is understood, every creator is real, and every recommendation is earned.
           </p>
         </div>
-
         <div className="mt-10 grid gap-5 sm:grid-cols-3">
           {items.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-xl border border-border bg-card p-6"
-            >
+            <div key={item.title} className="rounded-xl border border-border bg-card p-6">
               <span className="grid size-10 place-items-center rounded-lg bg-accent/15 text-accent">
                 <item.icon className="size-5" />
               </span>
-              <h3 className="mt-4 font-display text-lg font-medium">
-                {item.title}
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {item.body}
-              </p>
+              <h3 className="mt-4 font-display text-lg font-medium">{item.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.body}</p>
             </div>
           ))}
         </div>
@@ -920,9 +780,6 @@ function AboutSection() {
     </section>
   );
 }
-
-
-// COMING SOON
 
 function ComingSoon() {
   return (
@@ -934,15 +791,11 @@ function ComingSoon() {
         The first collection is on its way.
       </h3>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-        Our team is hand-picking the launch lineup. New pieces drop soon —
-        check back or follow us to be the first to know.
+        Our team is hand-picking the launch lineup. New pieces drop soon — check back or follow us to be the first to know.
       </p>
     </div>
   );
 }
-
-
-// HERO CAROUSEL
 
 function HeroCarousel({
   slides,
@@ -1037,13 +890,14 @@ function HeroCarousel({
                       aria-label={`Slide ${i + 1}`}
                       className={cn(
                         "h-1.5 rounded-full transition-all",
-                        i === active
-                          ? "w-6 bg-foreground"
-                          : "w-1.5 bg-foreground/40 hover:bg-foreground/70"
+                        i === active ? "w-6 bg-foreground" : "w-1.5 bg-foreground/40 hover:bg-foreground/70"
                       )}
                     />
                   ))}
                 </div>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {active + 1} / {slides.length}
+                </span>
                 <button
                   onClick={() => go((active + 1) % slides.length)}
                   className="grid size-9 place-items-center rounded-full border border-border bg-background/85 backdrop-blur-sm transition-colors hover:bg-background"
@@ -1059,9 +913,6 @@ function HeroCarousel({
     </section>
   );
 }
-
-
-// HELPERS
 
 function ChipButton({
   active,
@@ -1088,123 +939,5 @@ function ChipButton({
     >
       {children}
     </button>
-  );
-}
-
-function ProductGrid({
-  products,
-  justAdded,
-  onAdd,
-}: {
-  products: PublicProduct[];
-  justAdded: string | null;
-  onAdd: (p: PublicProduct) => void;
-}) {
-  return (
-    <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-5 lg:grid-cols-4">
-      {products.map((p) => (
-        <ProductCard
-          key={p.id}
-          p={p}
-          added={justAdded === p.id}
-          onAdd={onAdd}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ProductCarousel({
-  products,
-  justAdded,
-  onAdd,
-}: {
-  products: PublicProduct[];
-  justAdded: string | null;
-  onAdd: (p: PublicProduct) => void;
-}) {
-  return (
-    <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-      <div className="flex gap-3 sm:gap-4">
-        {products.map((p) => (
-          <div key={p.id} className="w-[160px] shrink-0 sm:w-[220px]">
-            <ProductCard
-              p={p}
-              added={justAdded === p.id}
-              onAdd={onAdd}
-              compact
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ProductCard({
-  p,
-  added,
-  onAdd,
-  compact,
-}: {
-  p: PublicProduct;
-  added: boolean;
-  onAdd: (p: PublicProduct) => void;
-  compact?: boolean;
-}) {
-  return (
-    <article className="group overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lift">
-      <div className="relative">
-        <ProductImageSlider
-          images={p.images ?? []}
-          alt={p.name}
-          aspect="aspect-[3/4]"
-          size="sm"
-          showDots={false}
-          showCounter={(p.images ?? []).length > 1}
-          rounded="rounded-none"
-        />
-        <span className="pointer-events-none absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-medium text-accent sm:right-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
-          <Sparkles className="size-3" aria-hidden="true" /> {p.brand.name}
-        </span>
-      </div>
-
-      <div className={cn("space-y-2.5 p-3 sm:space-y-3 sm:p-5", compact && "sm:p-3")}>
-        <div>
-          <h3
-            className={cn(
-              "font-display font-medium leading-snug",
-              compact ? "text-sm sm:text-base" : "text-sm sm:text-lg"
-            )}
-          >
-            {p.name}
-          </h3>
-          <p className="mt-0.5 text-[11px] text-muted-foreground sm:mt-1 sm:text-xs">
-            {p.category}
-          </p>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium tabular-nums sm:text-base">
-            {p.currency} {p.price?.toFixed(2)}
-          </span>
-          <Button
-            size="sm"
-            variant={added ? "secondary" : "default"}
-            onClick={() => onAdd(p)}
-            className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
-          >
-            {added ? (
-              <>
-                <Check className="size-3.5" /> Added
-              </>
-            ) : (
-              <>
-                <Plus className="size-3.5" /> Add
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    </article>
   );
 }

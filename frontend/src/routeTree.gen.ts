@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as BillingRouteImport } from './routes/billing'
+import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EngagementsRouteImport } from './routes/engagements'
@@ -34,6 +35,7 @@ import { Route as TeamRouteImport } from './routes/team'
 import { Route as TrialExpiredRouteImport } from './routes/trial-expired'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as WalletRouteImport } from './routes/wallet'
+import { Route as WhyStyleaiRouteImport } from './routes/why-styleai'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAgenciesRouteImport } from './routes/admin/agencies'
 import { Route as AdminAiRouteImport } from './routes/admin/ai'
@@ -75,9 +77,13 @@ import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 import { Route as PaymentsResultRouteImport } from './routes/payments.result'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
+import { Route as ShopIndexRouteImport } from './routes/shop/index'
 import { Route as StudioContentRouteImport } from './routes/studio.content'
 import { Route as StudioPhotographyRouteImport } from './routes/studio.photography'
 import { Route as TeamsTeamIdRouteImport } from './routes/teams.$teamId'
+import { Route as ShopCategorySlugRouteImport } from './routes/shop/category.$slug'
+import { Route as ShopGenderSlugRouteImport } from './routes/shop/gender.$slug'
+import { Route as ShopProductSlugRouteImport } from './routes/shop/product.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -92,6 +98,11 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
 const BillingRoute = BillingRouteImport.update({
   id: '/billing',
   path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutRoute = CheckoutRouteImport.update({
@@ -202,6 +213,11 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WhyStyleaiRoute = WhyStyleaiRouteImport.update({
+  id: '/why-styleai',
+  path: '/why-styleai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -409,6 +425,11 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
   path: '/products/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopIndexRoute = ShopIndexRouteImport.update({
+  id: '/shop/',
+  path: '/shop/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudioContentRoute = StudioContentRouteImport.update({
   id: '/studio/content',
   path: '/studio/content',
@@ -424,11 +445,27 @@ const TeamsTeamIdRoute = TeamsTeamIdRouteImport.update({
   path: '/teams/$teamId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopCategorySlugRoute = ShopCategorySlugRouteImport.update({
+  id: '/shop/category/$slug',
+  path: '/shop/category/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopGenderSlugRoute = ShopGenderSlugRouteImport.update({
+  id: '/shop/gender/$slug',
+  path: '/shop/gender/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
+  id: '/shop/product/$slug',
+  path: '/shop/product/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
+  '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/engagements': typeof EngagementsRoute
@@ -451,6 +488,7 @@ export interface FileRoutesByFullPath {
   '/trial-expired': typeof TrialExpiredRoute
   '/verify-email': typeof VerifyEmailRoute
   '/wallet': typeof WalletRoute
+  '/why-styleai': typeof WhyStyleaiRoute
   '/admin/agencies': typeof AdminAgenciesRoute
   '/admin/ai': typeof AdminAiRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -495,11 +533,16 @@ export interface FileRoutesByFullPath {
   '/offers/': typeof OffersIndexRoute
   '/orders/': typeof OrdersIndexRoute
   '/products/': typeof ProductsIndexRoute
+  '/shop/': typeof ShopIndexRoute
+  '/shop/category/$slug': typeof ShopCategorySlugRoute
+  '/shop/gender/$slug': typeof ShopGenderSlugRoute
+  '/shop/product/$slug': typeof ShopProductSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
+  '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/engagements': typeof EngagementsRoute
@@ -522,6 +565,7 @@ export interface FileRoutesByTo {
   '/trial-expired': typeof TrialExpiredRoute
   '/verify-email': typeof VerifyEmailRoute
   '/wallet': typeof WalletRoute
+  '/why-styleai': typeof WhyStyleaiRoute
   '/admin/agencies': typeof AdminAgenciesRoute
   '/admin/ai': typeof AdminAiRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -566,12 +610,17 @@ export interface FileRoutesByTo {
   '/offers': typeof OffersIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/products': typeof ProductsIndexRoute
+  '/shop': typeof ShopIndexRoute
+  '/shop/category/$slug': typeof ShopCategorySlugRoute
+  '/shop/gender/$slug': typeof ShopGenderSlugRoute
+  '/shop/product/$slug': typeof ShopProductSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
+  '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/engagements': typeof EngagementsRoute
@@ -594,6 +643,7 @@ export interface FileRoutesById {
   '/trial-expired': typeof TrialExpiredRoute
   '/verify-email': typeof VerifyEmailRoute
   '/wallet': typeof WalletRoute
+  '/why-styleai': typeof WhyStyleaiRoute
   '/admin/agencies': typeof AdminAgenciesRoute
   '/admin/ai': typeof AdminAiRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -638,6 +688,10 @@ export interface FileRoutesById {
   '/offers/': typeof OffersIndexRoute
   '/orders/': typeof OrdersIndexRoute
   '/products/': typeof ProductsIndexRoute
+  '/shop/': typeof ShopIndexRoute
+  '/shop/category/$slug': typeof ShopCategorySlugRoute
+  '/shop/gender/$slug': typeof ShopGenderSlugRoute
+  '/shop/product/$slug': typeof ShopProductSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -645,6 +699,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/billing'
+    | '/cart'
     | '/checkout'
     | '/dashboard'
     | '/engagements'
@@ -667,6 +722,7 @@ export interface FileRouteTypes {
     | '/trial-expired'
     | '/verify-email'
     | '/wallet'
+    | '/why-styleai'
     | '/admin/agencies'
     | '/admin/ai'
     | '/admin/audit'
@@ -711,11 +767,16 @@ export interface FileRouteTypes {
     | '/offers/'
     | '/orders/'
     | '/products/'
+    | '/shop/'
+    | '/shop/category/$slug'
+    | '/shop/gender/$slug'
+    | '/shop/product/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/analytics'
     | '/billing'
+    | '/cart'
     | '/checkout'
     | '/dashboard'
     | '/engagements'
@@ -738,6 +799,7 @@ export interface FileRouteTypes {
     | '/trial-expired'
     | '/verify-email'
     | '/wallet'
+    | '/why-styleai'
     | '/admin/agencies'
     | '/admin/ai'
     | '/admin/audit'
@@ -782,11 +844,16 @@ export interface FileRouteTypes {
     | '/offers'
     | '/orders'
     | '/products'
+    | '/shop'
+    | '/shop/category/$slug'
+    | '/shop/gender/$slug'
+    | '/shop/product/$slug'
   id:
     | '__root__'
     | '/'
     | '/analytics'
     | '/billing'
+    | '/cart'
     | '/checkout'
     | '/dashboard'
     | '/engagements'
@@ -809,6 +876,7 @@ export interface FileRouteTypes {
     | '/trial-expired'
     | '/verify-email'
     | '/wallet'
+    | '/why-styleai'
     | '/admin/agencies'
     | '/admin/ai'
     | '/admin/audit'
@@ -853,12 +921,17 @@ export interface FileRouteTypes {
     | '/offers/'
     | '/orders/'
     | '/products/'
+    | '/shop/'
+    | '/shop/category/$slug'
+    | '/shop/gender/$slug'
+    | '/shop/product/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
   BillingRoute: typeof BillingRoute
+  CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
   EngagementsRoute: typeof EngagementsRoute
@@ -881,6 +954,7 @@ export interface RootRouteChildren {
   TrialExpiredRoute: typeof TrialExpiredRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   WalletRoute: typeof WalletRoute
+  WhyStyleaiRoute: typeof WhyStyleaiRoute
   AdminAgenciesRoute: typeof AdminAgenciesRoute
   AdminAiRoute: typeof AdminAiRoute
   AdminAuditRoute: typeof AdminAuditRoute
@@ -925,6 +999,10 @@ export interface RootRouteChildren {
   OffersIndexRoute: typeof OffersIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
+  ShopIndexRoute: typeof ShopIndexRoute
+  ShopCategorySlugRoute: typeof ShopCategorySlugRoute
+  ShopGenderSlugRoute: typeof ShopGenderSlugRoute
+  ShopProductSlugRoute: typeof ShopProductSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -948,6 +1026,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/billing'
       preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout': {
@@ -1102,6 +1187,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/why-styleai': {
+      id: '/why-styleai'
+      path: '/why-styleai'
+      fullPath: '/why-styleai'
+      preLoaderRoute: typeof WhyStyleaiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1391,6 +1483,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop/': {
+      id: '/shop/'
+      path: '/shop'
+      fullPath: '/shop/'
+      preLoaderRoute: typeof ShopIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/studio/content': {
       id: '/studio/content'
       path: '/studio/content'
@@ -1412,6 +1511,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeamsTeamIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop/category/$slug': {
+      id: '/shop/category/$slug'
+      path: '/shop/category/$slug'
+      fullPath: '/shop/category/$slug'
+      preLoaderRoute: typeof ShopCategorySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/gender/$slug': {
+      id: '/shop/gender/$slug'
+      path: '/shop/gender/$slug'
+      fullPath: '/shop/gender/$slug'
+      preLoaderRoute: typeof ShopGenderSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/product/$slug': {
+      id: '/shop/product/$slug'
+      path: '/shop/product/$slug'
+      fullPath: '/shop/product/$slug'
+      preLoaderRoute: typeof ShopProductSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1419,6 +1539,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
   BillingRoute: BillingRoute,
+  CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
   EngagementsRoute: EngagementsRoute,
@@ -1441,6 +1562,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrialExpiredRoute: TrialExpiredRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   WalletRoute: WalletRoute,
+  WhyStyleaiRoute: WhyStyleaiRoute,
   AdminAgenciesRoute: AdminAgenciesRoute,
   AdminAiRoute: AdminAiRoute,
   AdminAuditRoute: AdminAuditRoute,
@@ -1485,6 +1607,10 @@ const rootRouteChildren: RootRouteChildren = {
   OffersIndexRoute: OffersIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   ProductsIndexRoute: ProductsIndexRoute,
+  ShopIndexRoute: ShopIndexRoute,
+  ShopCategorySlugRoute: ShopCategorySlugRoute,
+  ShopGenderSlugRoute: ShopGenderSlugRoute,
+  ShopProductSlugRoute: ShopProductSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

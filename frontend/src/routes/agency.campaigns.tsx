@@ -8,7 +8,8 @@ import { campaignsApi, type Campaign } from "@/lib/campaigns";
 import { useAgency } from "@/lib/agency/context";
 
 export const Route = createFileRoute("/agency/campaigns")({
-  head: () => ({ meta: [{ title: "Agency · Campaigns — StyleAI" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "Agency · Campaigns — StyleAI" }] }),
   component: AgencyCampaignsPage,
 });
 

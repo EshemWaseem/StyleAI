@@ -1,3 +1,5 @@
+// src\lib\products.ts
+
 import { http } from "./api";
 
 export interface ProductImage {
@@ -180,13 +182,32 @@ export const publicProductsApi = {
     return res.json();
   },
 
+  get: async (id: string): Promise<{ product: PublicProduct }> => {
+    // Try dedicated endpoint (if backend supports it)
+    try {
+      const res = await fetch(`${PUBLIC_BASE}/api/products/public/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.product) return data;
+      }
+    } catch {
+      // fall through to list-based lookup
+    }
+    // Fallback: fetch list and find by id (safe, no backend change needed)
+    const listRes = await fetch(`${PUBLIC_BASE}/api/products/public?limit=500`);
+    if (!listRes.ok) throw new Error("Failed to load product");
+    const list = (await listRes.json()) as { products: PublicProduct[] };
+    const found = list.products.find((p) => p.id === id);
+    if (!found) throw new Error("Product not found");
+    return { product: found };
+  },
+
   brands: async (): Promise<{ count: number; brands: PublicBrand[] }> => {
     const res = await fetch(`${PUBLIC_BASE}/api/products/public/brands`);
     if (!res.ok) throw new Error("Failed to load brands");
     return res.json();
   },
 };
-
 
 // STOREFRONT (admin-controlled public sections)
 

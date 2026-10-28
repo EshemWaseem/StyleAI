@@ -17,7 +17,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ordersApi, type Order, type OrderStatus } from "@/lib/orders/api";
 
 export const Route = createFileRoute("/orders/")({
-  head: () => ({ meta: [{ title: "My Orders — StyleAI" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "My Orders — StyleAI" }] }),
   component: OrdersListPage,
 });
 

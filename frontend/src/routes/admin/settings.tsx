@@ -7,7 +7,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { settingsApi, type PlatformSettings } from "@/lib/admin/finance";
 
 export const Route = createFileRoute("/admin/settings")({
-  head: () => ({ meta: [{ title: "Admin · Settings — StyleAI" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "Admin · Settings — StyleAI" }] }),
   component: AdminSettingsPage,
 });
 

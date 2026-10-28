@@ -100,7 +100,7 @@ prisma/schema/*.backup
 /reset_password.js
 /test-cloudinary.js
 /test-sse.js
-
+scripts/
 #      ==
 # OPS / DEBUG SCRIPTS FOLDER
 #      ==
@@ -119,10 +119,12 @@ docker-compose.override.yml
 *.pid.lock
 
 
-
+login.json
+register.json
 
 # ....................
 
+schema.prisma.backup
 
 .env
 .env.local

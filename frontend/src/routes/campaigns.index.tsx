@@ -8,7 +8,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { campaignsApi, type Campaign } from "@/lib/campaigns";
 
 export const Route = createFileRoute("/campaigns/")({
-  head: () => ({ meta: [{ title: "Campaigns — StyleAI" }] }),
+  head: () => ({ meta: [
+      { name: "robots", content: "noindex" },{ title: "Campaigns — StyleAI" }] }),
   component: CampaignsListPage,
 });
 

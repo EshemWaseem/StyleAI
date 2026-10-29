@@ -1,7 +1,6 @@
 // routes/dashboard.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BrowseShopCard } from "@/components/dashboard/browse-shop-card";
 import { BadgeDollarSign, Plus, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui-kit";
@@ -39,8 +38,7 @@ function Dashboard() {
   const [realProducts, setRealProducts] = useState<RealProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [brandAnalytics, setBrandAnalytics] = useState<BrandAnalytics | null>(null);
-  const [influencerAnalytics, setInfluencerAnalytics] =
-    useState<InfluencerAnalytics | null>(null);
+  const [influencerAnalytics, setInfluencerAnalytics] = useState<InfluencerAnalytics | null>(null);
 
   const [redirectChecked, setRedirectChecked] = useState(false);
 
@@ -62,9 +60,7 @@ function Dashboard() {
       if (isOnlyShopper) {
         target = "/";
       } else if (
-        user.roles.some((r) =>
-          ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
-        ) &&
+        user.roles.some((r) => ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)) &&
         !user.organizationId
       ) {
         target = "/brands";
@@ -174,28 +170,29 @@ function Dashboard() {
         )}
 
         {workspace === "admin" && <AdminWorkspace />}
+        
         {workspace === "influencer" && (
-          <>
+          <div className="flex flex-col gap-6">
             <InfluencerWorkspace />
-            <BrowseShopCard />
-          </>
+          </div>
         )}
+        
         {workspace === "owner" && (
-          <>
+          <div className="flex flex-col gap-6">
             <BrandWorkspace
               products={realProducts}
               loading={productsLoading}
               analytics={brandAnalytics}
             />
-            <BrowseShopCard />
-          </>
+          </div>
         )}
+        
         {workspace === "agency" && <AgencyWorkspace />}
+        
         {workspace === "member" && (
-          <>
+          <div className="flex flex-col gap-6">
             <MemberWorkspace />
-            <BrowseShopCard />
-          </>
+          </div>
         )}
       </div>
     </ProtectedRoute>

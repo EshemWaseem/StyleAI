@@ -1,3 +1,4 @@
+// backend/src/services/admin/users.js
 const prisma = require('../../config/prisma');
 const {
   assertSuperAdmin,
@@ -7,13 +8,15 @@ const {
 } = require('./helpers');
 
 
-// LIST — all users with role filter
+// LIST — all users with role + admin approval filter
 
 async function listUsers(adminUser, filters = {}) {
   assertSuperAdmin(adminUser);
 
   const { limit, offset } = parsePagination(filters);
-  const { role, search, status } = filters;
+
+  // ✅ FIXED: destructure adminApprovalStatus (was missing → ReferenceError)
+  const { role, search, status, adminApprovalStatus } = filters;
 
   const where = {};
 
@@ -26,6 +29,10 @@ async function listUsers(adminUser, filters = {}) {
 
   if (status === 'active') where.isActive = true;
   if (status === 'inactive') where.isActive = false;
+
+  if (adminApprovalStatus) {
+    where.adminApprovalStatus = adminApprovalStatus;
+  }
 
   if (role) {
     where.userRoles = { some: { role: { name: role } } };
@@ -58,6 +65,10 @@ async function listUsers(adminUser, filters = {}) {
       organization: u.organization,
       roles: u.userRoles.map((ur) => ur.role.name),
       orderCount: u._count.orders,
+      adminApprovalStatus: u.adminApprovalStatus,
+      adminApprovalRequestedAt: u.adminApprovalRequestedAt,
+      adminApprovalReviewedAt: u.adminApprovalReviewedAt,
+      adminApprovalReason: u.adminApprovalReason,
       createdAt: u.createdAt,
     })),
   };
@@ -99,6 +110,10 @@ async function getUser(adminUser, userId) {
     })),
     hasInfluencerProfile: !!user.influencerProfile,
     orderCount: user._count.orders,
+    adminApprovalStatus: user.adminApprovalStatus,
+    adminApprovalRequestedAt: user.adminApprovalRequestedAt,
+    adminApprovalReviewedAt: user.adminApprovalReviewedAt,
+    adminApprovalReason: user.adminApprovalReason,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -136,7 +151,7 @@ async function setUserActive(adminUser, userId, isActive, req) {
 }
 
 
-// DELETE — with safeguards
+// DELETE
 
 async function deleteUser(adminUser, userId, req) {
   assertSuperAdmin(adminUser);

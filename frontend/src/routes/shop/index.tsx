@@ -12,19 +12,31 @@ import { deriveCategories } from "@/lib/categories";
 import { SEO } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
+type ShopSearch = { q?: string };
+
 export const Route = createFileRoute("/shop/")({
+  validateSearch: (search: Record<string, unknown>): ShopSearch => ({
+    q: typeof search.q === "string" && search.q.trim() ? search.q : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Shop all products — StyleAI" },
-      { name: "description", content: "Browse the full StyleAI collection — clothing, footwear, bags, accessories and more." },
+      {
+        name: "description",
+        content:
+          "Browse the full StyleAI collection — clothing, footwear, bags, accessories and more.",
+      },
       { property: "og:title", content: "Shop all products — StyleAI" },
-      { property: "og:description", content: "Browse the full StyleAI collection." },
+      {
+        property: "og:description",
+        content: "Browse the full StyleAI collection.",
+      },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: SEO.siteUrl + "/shop" },
-      { property: "og:image", content: SEO.siteUrl + "/og-default.jpg" },
+      { property: "og:url", content: `${SEO.siteUrl}/shop` },
+      { property: "og:image", content: `${SEO.siteUrl}/og-default.jpg` },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: SEO.siteUrl + "/shop" }],
+    links: [{ rel: "canonical", href: `${SEO.siteUrl}/shop` }],
     scripts: [
       {
         type: "application/ld+json",
@@ -36,13 +48,21 @@ export const Route = createFileRoute("/shop/")({
 });
 
 function ShopPage() {
+  const { q } = Route.useSearch();
+  const navigate = Route.useNavigate();
+
   const [allProducts, setAllProducts] = useState<PublicProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [genderFilter, setGenderFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(q || "");
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const cart = useCart();
+
+  // Sync URL -> local state (supports /shop?q=dress deep links)
+  useEffect(() => {
+    setQuery(q || "");
+  }, [q]);
 
   useEffect(() => {
     setLoading(true);
@@ -87,16 +107,40 @@ function ShopPage() {
       list = list.filter((p) => (p.category || "") === categoryFilter);
     }
     if (query.trim()) {
-      const q = query.trim().toLowerCase();
+      const s = query.trim().toLowerCase();
       list = list.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          (p.category || "").toLowerCase().includes(q) ||
-          p.brand.name.toLowerCase().includes(q)
+          p.name.toLowerCase().includes(s) ||
+          (p.category || "").toLowerCase().includes(s) ||
+          p.brand.name.toLowerCase().includes(s)
       );
     }
     return list;
   }, [allProducts, genderFilter, categoryFilter, query]);
+
+  // Inject ItemList JSON-LD after products load
+  useEffect(() => {
+    if (products.length === 0) return;
+    const jsonLd = SEO.itemList(products);
+    let script = document.getElementById("shop-itemlist-jsonld");
+    if (script) script.remove();
+    script = document.createElement("script");
+    script.id = "shop-itemlist-jsonld";
+    (script as HTMLScriptElement).type = "application/ld+json";
+    script.textContent = JSON.stringify(jsonLd);
+    document.head.appendChild(script);
+    return () => {
+      document.getElementById("shop-itemlist-jsonld")?.remove();
+    };
+  }, [products]);
+
+  function updateQuery(next: string) {
+    setQuery(next);
+    navigate({
+      search: { q: next.trim() || undefined },
+      replace: true,
+    });
+  }
 
   function addToCart(p: PublicProduct) {
     cart.add({
@@ -116,12 +160,20 @@ function ShopPage() {
 
       <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">Shop</p>
-          <h1 className="mt-2 font-display text-3xl font-medium tracking-tight sm:text-4xl">All products</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
+            Shop
+          </p>
+          <h1 className="mt-2 font-display text-3xl font-medium tracking-tight sm:text-4xl">
+            All products
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {loading
               ? "Loading collection…"
-              : `${products.length} piece${products.length === 1 ? "" : "s"} ${genderFilter !== "All" ? `for ${genderFilter}` : ""} ${categoryFilter !== "All" ? `in ${categoryFilter}` : ""}`.trim()}
+              : `${products.length} piece${
+                  products.length === 1 ? "" : "s"
+                } ${genderFilter !== "All" ? `for ${genderFilter}` : ""} ${
+                  categoryFilter !== "All" ? `in ${categoryFilter}` : ""
+                }`.trim()}
           </p>
         </div>
 
@@ -132,7 +184,7 @@ function ShopPage() {
               aria-label="Search products"
               placeholder="Search products…"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => updateQuery(e.target.value)}
               className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
             />
           </div>
@@ -204,14 +256,16 @@ function ShopPage() {
           ) : products.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-12 text-center">
               <p className="text-sm font-medium">No products found</p>
-              <p className="mt-1 text-xs text-muted-foreground">Try a different filter or search term.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Try a different filter or search term.
+              </p>
               <Button
                 variant="outline"
                 className="mt-4"
                 onClick={() => {
                   setGenderFilter("All");
                   setCategoryFilter("All");
-                  setQuery("");
+                  updateQuery("");
                 }}
               >
                 Clear filters
@@ -220,7 +274,12 @@ function ShopPage() {
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
               {products.map((p) => (
-                <ProductCard key={p.id} p={p} added={justAdded === p.id} onAdd={addToCart} />
+                <ProductCard
+                  key={p.id}
+                  p={p}
+                  added={justAdded === p.id}
+                  onAdd={addToCart}
+                />
               ))}
             </div>
           )}
@@ -229,11 +288,14 @@ function ShopPage() {
         <div className="mt-12 rounded-xl border border-border bg-gradient-to-r from-accent/5 to-transparent p-6 text-center sm:p-8">
           <p className="font-display text-lg font-medium">Like what you see?</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Join StyleAI to save favourites, track orders, and get AI-styled recommendations.
+            Join StyleAI to save favourites, track orders, and get AI-styled
+            recommendations.
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <Button asChild>
-              <Link to="/register">Create account <ArrowRight /></Link>
+              <Link to="/register">
+                Create account <ArrowRight />
+              </Link>
             </Button>
             <Button asChild variant="outline">
               <Link to="/login">Login</Link>

@@ -46,6 +46,10 @@ export interface AuthUser {
 
   pendingApproval: boolean;
   pendingRequest: PendingRequestInfo | null;
+  adminApprovalStatus?: "PENDING" | "APPROVED" | "REJECTED";
+  adminApprovalReason?: string | null;
+
+
 }
 
 export const roleLabels: Record<RoleName, string> = {

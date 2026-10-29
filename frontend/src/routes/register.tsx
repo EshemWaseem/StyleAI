@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useRole, getDashboardPath, type RoleName } from "@/lib/role";
 import type { ApiError } from "@/lib/api";
+import { swalInfo, swalPendingReview, swalThemed } from "@/lib/swal";
 import {
   RegisterBanners,
   type RegisterBannerState,
@@ -22,7 +23,10 @@ export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
       { title: "Create account — StyleAI" },
-      { name: "description", content: "Join StyleAI as a brand, influencer, agency, or shopper." },
+      {
+        name: "description",
+        content: "Join StyleAI as a brand, influencer, agency, or shopper.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -93,7 +97,6 @@ function RegisterPage() {
     setSuccess("");
     setPendingApprovalMessage("");
 
-    // Client-side validation
     if (!values.name.trim()) return setError("Name is required");
     if (!values.email.trim()) return setError("Email is required");
     if (!values.password || values.password.length < 8)
@@ -119,24 +122,48 @@ function RegisterPage() {
         phone: values.phone.trim() || undefined,
       });
 
-      if (createdUser.pendingApproval) {
-        setPendingApprovalMessage(
-          "Your account was created and is waiting for admin approval. You'll get an email once approved."
+      if (createdUser.adminApprovalStatus === "PENDING") {
+        await swalPendingReview(
+          "Please check your email to verify your address, then wait for admin approval before signing in."
         );
-        setLoading(false);
+        navigate({ to: "/login", replace: true });
         return;
       }
 
-      navigate({ to: getDashboardPath(createdUser.roles), replace: true });
+      if (createdUser.pendingApproval) {
+        await swalPendingReview(
+          "Please check your email to verify your address. The brand owner will be notified."
+        );
+        navigate({ to: "/login", replace: true });
+        return;
+      }
+
+      await swalThemed({
+        icon: "success",
+        title: "Account created!",
+        html: `
+          <p>Please check your email to verify your address before signing in.</p>
+          <p style="font-size:0.8125rem;">
+            Didn't get the email? You can resend it from the login page.
+          </p>
+        `,
+        confirmButtonText: "OK",
+      });
+      navigate({ to: "/login", replace: true });
     } catch (errRaw) {
       const err = errRaw as ApiError;
       const code = err?.code;
 
       if (code === "EMAIL_EXISTS" || code === "USER_EXISTS") {
         setError("An account with this email already exists.");
-      } else if (code === "PENDING_APPROVAL") {
-        setPendingApprovalMessage(
-          err.message || "Your account is waiting for admin approval."
+      } else if (
+        code === "PENDING_APPROVAL" ||
+        code === "PENDING_ADMIN_APPROVAL"
+      ) {
+        await swalInfo(
+          "Account under review",
+          err.message ||
+            "Your account is under review. Your patience is highly appreciated."
         );
       } else if (code === "EMAIL_NOT_VERIFIED") {
         setSuccess(

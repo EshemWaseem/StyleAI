@@ -1,3 +1,5 @@
+//src\controllers\joinRequestController.js
+
 const joinRequestService = require('../services/joinRequestService');
 
 async function create(req, res, next) {

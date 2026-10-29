@@ -3,6 +3,13 @@
 // USER + ROLES + PERMISSIONS
 
 
+enum AdminApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+
 model User {
   id       String  @id @default(uuid())
   name     String
@@ -27,15 +34,22 @@ model User {
   passwordResetExpires DateTime?
 
   // Email verification
-  // @default(true) → existing users migrated as verified; new registrations set false explicitly
   emailVerified      Boolean   @default(true)
   emailVerifyToken   String?
   emailVerifyExpires DateTime?
   emailVerifySentAt  DateTime?
 
-  // NEW (D3): token versioning for "logout all devices"
-  // Incremented on /auth/logout-all → all older JWTs become invalid
+  // Token versioning for "logout all devices"
   tokenVersion Int @default(0)
+
+  // ── Admin approval (business entity signups) ──
+  // SHOPPER + SUPER_ADMIN auto-APPROVED.
+  // BRAND_OWNER / BRAND_TEAM_MEMBER / INFLUENCER / AGENCY → PENDING on signup.
+  adminApprovalStatus      AdminApprovalStatus @default(APPROVED)
+  adminApprovalReason      String?
+  adminApprovalReviewedAt  DateTime?
+  adminApprovalReviewedBy  String?
+  adminApprovalRequestedAt DateTime?
 
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
@@ -68,7 +82,6 @@ model User {
 
   subscription Subscription?
 
-  // NEW (D2): login attempt history
   loginAttempts LoginAttempt[]
 
   createdAt DateTime @default(now())
@@ -78,20 +91,17 @@ model User {
   @@index([lockedUntil])
   @@index([passwordResetToken])
   @@index([emailVerifyToken])
+  @@index([adminApprovalStatus])
+  @@index([adminApprovalRequestedAt])
 }
 
-
-// NEW (D2): Login attempt audit log
-// Logs every attempt (success + fail). userId is null
-// when the email doesn't match any user (failed for
-// unknown emails is still recorded for security review).
 
 model LoginAttempt {
   id        String   @id @default(uuid())
   userId    String?
   email     String
   success   Boolean
-  reason    String? // SUCCESS | INVALID_CREDENTIALS | ACCOUNT_LOCKED | EMAIL_NOT_VERIFIED | PENDING_APPROVAL
+  reason    String?
   ip        String?
   userAgent String?
   createdAt DateTime @default(now())

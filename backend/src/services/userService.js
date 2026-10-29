@@ -3,7 +3,6 @@ const bcrypt = require('bcryptjs');
 const prisma = require('../config/prisma');
 
 
-// UPDATE OWN PROFILE
 
 async function updateOwnProfile(userId, data = {}) {
   const updateData = {};
@@ -49,7 +48,7 @@ async function updateOwnProfile(userId, data = {}) {
     updateData.country = country || null;
   }
 
-  //  — countryCode
+  //   countryCode
   if (data.countryCode !== undefined) {
     const code = data.countryCode
       ? String(data.countryCode).trim().toUpperCase()

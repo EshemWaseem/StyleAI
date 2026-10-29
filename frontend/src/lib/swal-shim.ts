@@ -1,16 +1,15 @@
 // lib/swal-shim.ts
-import Swal from "sweetalert2";
+import { swalThemed } from "@/lib/swal";
 
 let installed = false;
 
 export function installSwalShim() {
-  //  SSR safety
   if (typeof window === "undefined") return;
   if (installed) return;
   installed = true;
 
-  window.alert = (message?: any) => {
-    Swal.fire({
+  window.alert = (message?: unknown) => {
+    swalThemed({
       icon: "info",
       title: "Notice",
       text: String(message ?? ""),

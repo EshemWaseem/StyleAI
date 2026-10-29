@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const prisma = require('../config/prisma');
 const { signToken } = require('../utils/jwt');
 const { sendToUser } = require('../services/email');
+const { notifyAdmins } = require('../services/notifications/emit');
 
 const PUBLIC_SIGNUP_ROLES = [
   'BRAND_OWNER',
@@ -16,16 +17,28 @@ const PUBLIC_SIGNUP_ROLES = [
 const ROLES_REQUIRING_ORG = ['BRAND_OWNER', 'AGENCY'];
 const ROLES_PENDING_APPROVAL = ['BRAND_TEAM_MEMBER'];
 
+const ROLES_REQUIRING_ADMIN_APPROVAL = [
+  'BRAND_OWNER',
+  'BRAND_TEAM_MEMBER',
+  'INFLUENCER',
+  'AGENCY',
+];
+
+const ROLE_LABELS = {
+  BRAND_OWNER: 'Brand Owner',
+  BRAND_TEAM_MEMBER: 'Brand Team Member',
+  INFLUENCER: 'Influencer',
+  AGENCY: 'Agency',
+};
+
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_DURATION_MS = 15 * 60 * 1000;
 const CAPTCHA_AFTER_ATTEMPTS = 3;
 
-const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
-const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const RESEND_COOLDOWN_MS = 60 * 1000; // 60s between resend requests
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const RESEND_COOLDOWN_MS = 60 * 1000;
 
-
-// Helpers
 
 function hashToken(raw) {
   return crypto.createHash('sha256').update(raw).digest('hex');
@@ -55,7 +68,6 @@ async function sendVerificationEmail(userId, email, name, token) {
   }
 }
 
-// NEW (D2): log every login attempt. Never throws.
 async function logLoginAttempt({ userId, email, success, reason, req }) {
   try {
     await prisma.loginAttempt.create({
@@ -156,6 +168,8 @@ async function register(req, res, next) {
     const rawVerifyToken = crypto.randomBytes(32).toString('hex');
     const verifyTokenHash = hashToken(rawVerifyToken);
 
+    const needsAdminApproval = ROLES_REQUIRING_ADMIN_APPROVAL.includes(roleName);
+
     const result = await prisma.$transaction(async (tx) => {
       let organizationId = null;
 
@@ -189,6 +203,8 @@ async function register(req, res, next) {
           emailVerifyToken: verifyTokenHash,
           emailVerifyExpires: new Date(Date.now() + VERIFY_TOKEN_TTL_MS),
           emailVerifySentAt: new Date(),
+          adminApprovalStatus: needsAdminApproval ? 'PENDING' : 'APPROVED',
+          adminApprovalRequestedAt: needsAdminApproval ? new Date() : null,
         },
       });
 
@@ -218,6 +234,31 @@ async function register(req, res, next) {
       rawVerifyToken
     );
 
+    // NEW: Notify admins about the pending approval request
+    if (needsAdminApproval) {
+      const roleLabel = ROLE_LABELS[roleName] || roleName;
+      notifyAdmins({
+        type: 'SYSTEM',
+        title: `New ${roleLabel} signup: ${result.name}`,
+        body: `${result.email} signed up as ${roleLabel}. Admin approval required.`,
+        link: '/admin/users',
+        meta: {
+          userId: result.id,
+          email: result.email,
+          role: roleName,
+          event: 'ADMIN_APPROVAL_REQUESTED',
+        },
+        emailTemplate: 'adminApprovalRequest',
+        emailData: {
+          userName: result.name,
+          userEmail: result.email,
+          userRole: roleLabel,
+        },
+      }).catch((e) =>
+        console.error('[auth.register.notifyAdmins] failed:', e.message)
+      );
+    }
+
     if (ROLES_PENDING_APPROVAL.includes(roleName)) {
       return res.status(201).json({
         message:
@@ -234,6 +275,7 @@ async function register(req, res, next) {
           permissions: [],
           pendingApproval: true,
           emailVerified: false,
+          adminApprovalStatus: result.adminApprovalStatus,
         },
       });
     }
@@ -251,6 +293,7 @@ async function register(req, res, next) {
         roles: [roleName],
         pendingApproval: false,
         emailVerified: false,
+        adminApprovalStatus: result.adminApprovalStatus,
       },
     });
   } catch (err) {
@@ -288,7 +331,6 @@ async function login(req, res, next) {
       },
     });
 
-    //  - Unknown user / inactive  -
     if (!user || !user.isActive) {
       await logLoginAttempt({
         userId: user?.id,
@@ -303,7 +345,6 @@ async function login(req, res, next) {
       });
     }
 
-    //  - Lockout  -
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       const retryAfterSec = Math.ceil(
         (user.lockedUntil.getTime() - Date.now()) / 1000
@@ -329,7 +370,6 @@ async function login(req, res, next) {
 
     const valid = await bcrypt.compare(password, user.password);
 
-    //  - Wrong password  -
     if (!valid) {
       const attempts = (user.failedLoginAttempts || 0) + 1;
       const shouldLock = attempts >= MAX_FAILED_ATTEMPTS;
@@ -379,7 +419,6 @@ async function login(req, res, next) {
       });
     }
 
-    //  - Password OK — reset counters  -
     prisma.user
       .update({
         where: { id: user.id },
@@ -394,7 +433,40 @@ async function login(req, res, next) {
         console.error('[auth.login] metadata update error:', e.message)
       );
 
-    //  - Unverified  -
+    // ─── Admin approval gate ───
+    if (user.adminApprovalStatus === 'PENDING') {
+      await logLoginAttempt({
+        userId: user.id,
+        email: normalizedEmail,
+        success: false,
+        reason: 'PENDING_ADMIN_APPROVAL',
+        req,
+      });
+      return res.status(403).json({
+        message:
+          "Your account is under admin review. You'll be able to sign in once approved.",
+        code: 'PENDING_ADMIN_APPROVAL',
+      });
+    }
+
+    if (user.adminApprovalStatus === 'REJECTED') {
+      await logLoginAttempt({
+        userId: user.id,
+        email: normalizedEmail,
+        success: false,
+        reason: 'ADMIN_APPROVAL_REJECTED',
+        req,
+      });
+      return res.status(403).json({
+        message:
+          user.adminApprovalReason ||
+          'Your account was not approved. Please contact support.',
+        code: 'ADMIN_APPROVAL_REJECTED',
+        reason: user.adminApprovalReason || null,
+      });
+    }
+
+    // ─── Email verification gate ───
     if (user.emailVerified === false) {
       const [local, domain] = user.email.split('@');
       const masked =
@@ -418,7 +490,6 @@ async function login(req, res, next) {
       });
     }
 
-    //  - Pending team member  -
     const roles = user.userRoles.map((ur) => ur.role.name);
     const isPendingTeamMember =
       roles.includes('BRAND_TEAM_MEMBER') && !user.organizationId;
@@ -439,7 +510,6 @@ async function login(req, res, next) {
       });
     }
 
-    //  - Success  -
     const permissions = Array.from(
       new Set(
         user.userRoles.flatMap((ur) =>
@@ -448,7 +518,6 @@ async function login(req, res, next) {
       )
     );
 
-    // NEW (D3): include tokenVersion in JWT
     const token = signToken({
       userId: user.id,
       tokenVersion: user.tokenVersion,
@@ -473,6 +542,7 @@ async function login(req, res, next) {
         roles,
         permissions,
         pendingApproval: false,
+        adminApprovalStatus: user.adminApprovalStatus,
       },
     });
   } catch (err) {
@@ -838,9 +908,7 @@ async function resendVerification(req, res, next) {
 }
 
 
-// NEW (D3): POST /api/auth/logout-all
-// Increments tokenVersion → all older JWTs invalidated.
-// Current device gets a fresh token and stays signed in.
+// POST /api/auth/logout-all
 
 async function logoutAll(req, res, next) {
   try {
@@ -859,7 +927,6 @@ async function logoutAll(req, res, next) {
       select: { id: true, tokenVersion: true },
     });
 
-    // Reissue a token for THIS device so the user stays signed in here
     const newToken = signToken({
       userId: updated.id,
       tokenVersion: updated.tokenVersion,
@@ -877,8 +944,7 @@ async function logoutAll(req, res, next) {
 }
 
 
-// NEW (D2): GET /api/auth/login-history
-// Last 10 attempts for the current user.
+// GET /api/auth/login-history
 
 async function loginHistory(req, res, next) {
   try {
@@ -926,6 +992,13 @@ async function me(req, res) {
       countryCode: req.user.countryCode ?? null,
       roles: req.user.roles,
       permissions: req.user.permissions,
+      adminApprovalStatus: req.user.adminApprovalStatus ?? 'APPROVED',
+      adminApprovalReason: req.user.adminApprovalReason ?? null,
+      pendingApproval: req.user.pendingApproval ?? false,
+      pendingRequest: req.user.pendingRequest ?? null,
+      brandId: req.user.brandId ?? null,
+      brandName: req.user.brandName ?? null,
+      brandTeamRole: req.user.brandTeamRole ?? null,
     },
   });
 }
@@ -938,7 +1011,7 @@ module.exports = {
   changePassword,
   verifyEmail,
   resendVerification,
-  logoutAll, // NEW
-  loginHistory, // NEW
+  logoutAll,
+  loginHistory,
   me,
 };

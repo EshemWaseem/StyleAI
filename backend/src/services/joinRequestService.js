@@ -1,3 +1,6 @@
+// src\services\joinRequestService.js
+
+
 const prisma = require('../config/prisma');
 const { ensureDefaultRoles } = require('./brandTeamRoleService');
 

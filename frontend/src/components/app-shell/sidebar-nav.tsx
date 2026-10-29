@@ -1,11 +1,13 @@
 // components/app-shell/sidebar-nav.tsx
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router"; // 👈 useLocation add karo
 import { cn } from "@/lib/utils";
 import { useRole, type RoleName } from "@/lib/role";
 import { useChatUnread } from "@/hooks/useChatUnread";
 import { influencersApi } from "@/lib/influencers";
 import { resolveNav } from "./nav-configs";
+
+const EXACT_MATCH_PATHS = ["/", "/dashboard", "/admin", "/agency"];
 
 export function SidebarNav({
   collapsed,
@@ -18,6 +20,7 @@ export function SidebarNav({
   const userRoles = (user?.roles ?? []) as RoleName[];
   const chatUnread = useChatUnread();
   const [mySlug, setMySlug] = useState<string | undefined>(undefined);
+  const { pathname } = useLocation(); // 👈 current URL lo
 
   const isInfluencer = userRoles.includes("INFLUENCER");
 
@@ -31,9 +34,7 @@ export function SidebarNav({
         })
         .catch(() => {});
     }
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [isInfluencer]);
 
   const navToRender = resolveNav(userRoles, mySlug);
@@ -50,20 +51,24 @@ export function SidebarNav({
           <ul className="space-y-0.5">
             {group.items.map((item) => {
               const showChatBadge = item.to === "/messages" && chatUnread > 0;
+
+              // 👇 Khud decide karo active hai ya nahi — TanStack pe depend mat karo
+              const isActive = EXACT_MATCH_PATHS.includes(item.to)
+                ? pathname === item.to          // exact: sirf "/admin" pe hi highlight
+                : pathname.startsWith(item.to); // prefix: "/admin/storefront" → "Storefront" highlight
+
               return (
                 <li key={`${group.group}-${item.to}`}>
                   <Link
                     to={item.to as any}
                     onClick={onNavigate}
                     title={item.label}
+                    // ❌ activeOptions aur activeProps HATAO — hum khud handle kar rahe hain
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
-                      collapsed && "justify-center px-0"
+                      collapsed && "justify-center px-0",
+                      isActive && "bg-sidebar-accent font-medium text-foreground" // 👈 yahan apply karo
                     )}
-                    activeProps={{
-                      className:
-                        "bg-sidebar-accent font-medium text-foreground",
-                    }}
                   >
                     <item.icon className="size-4 shrink-0" aria-hidden="true" />
                     {!collapsed && <span className="truncate">{item.label}</span>}

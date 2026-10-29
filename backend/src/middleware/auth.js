@@ -3,9 +3,11 @@ const { verifyToken } = require('../utils/jwt');
 const prisma = require('../config/prisma');
 
 
-// Routes that pending users CAN still access
-
-const PENDING_SAFE_PATHS = ['/api/auth/me', '/api/auth/logout'];
+const PENDING_SAFE_PATHS = [
+  '/api/auth/me',
+  '/api/auth/logout',
+  '/api/auth/login-history',
+];
 
 function isPendingSafePath(req) {
   const url = req.originalUrl || req.url || '';
@@ -73,9 +75,7 @@ async function authenticate(req, res, next) {
       });
     }
 
-    // NEW (D3): verify token version — enables "logout all devices"
-    // DEFENSIVE: default BOTH sides to 0 so missing DB column
-    // (schema not pushed yet) never breaks login.
+    // Token version check
     const tokenVersion = decoded.tokenVersion ?? 0;
     const userTokenVersion = user.tokenVersion ?? 0;
     if (tokenVersion !== userTokenVersion) {
@@ -86,11 +86,30 @@ async function authenticate(req, res, next) {
       });
     }
 
-    // NEW: defense-in-depth — unverified accounts must not use API
+    // Email verification
     if (user.emailVerified === false) {
       return res.status(403).json({
         message: 'Please verify your email address to continue.',
         code: 'EMAIL_NOT_VERIFIED',
+      });
+    }
+
+    // ─── Admin approval gates ───
+    if (user.adminApprovalStatus === 'PENDING' && !isPendingSafePath(req)) {
+      return res.status(403).json({
+        message:
+          "Your account is under admin review. You'll be able to sign in once approved.",
+        code: 'PENDING_ADMIN_APPROVAL',
+      });
+    }
+
+    if (user.adminApprovalStatus === 'REJECTED') {
+      return res.status(403).json({
+        message:
+          user.adminApprovalReason ||
+          'Your account was not approved. Please contact support.',
+        code: 'ADMIN_APPROVAL_REJECTED',
+        reason: user.adminApprovalReason || null,
       });
     }
 
@@ -146,6 +165,10 @@ async function authenticate(req, res, next) {
       countryCode: user.countryCode ?? null,
       roles,
       permissions: resolvedPermissions,
+
+      // NEW: admin approval context
+      adminApprovalStatus: user.adminApprovalStatus ?? 'APPROVED',
+      adminApprovalReason: user.adminApprovalReason ?? null,
 
       brandTeamRole: brandTeamRole
         ? {

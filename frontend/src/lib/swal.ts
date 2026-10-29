@@ -1,12 +1,7 @@
 // src/lib/swal.ts
-
-// Themed SweetAlert2 — uses CSS vars from style.css
-// No separate CSS file needed — everything inline.
-
 import Swal from "sweetalert2";
 import type { SweetAlertOptions, SweetAlertResult } from "sweetalert2";
 
-// CSS variables pulled from your design tokens
 const CSS_VARS = {
   card: "var(--color-card)",
   cardFg: "var(--color-card-foreground)",
@@ -21,8 +16,8 @@ const CSS_VARS = {
   success: "var(--color-success)",
 };
 
-// Inject a style tag once (pure JS — no CSS file required)
 const STYLE_ID = "styleai-swal-theme";
+
 function ensureStyles() {
   if (typeof document === "undefined") return;
   if (document.getElementById(STYLE_ID)) return;
@@ -30,7 +25,6 @@ function ensureStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    /* Container overlay */
     .swal2-container.styleai-swal-container {
       backdrop-filter: blur(2px) saturate(115%);
       -webkit-backdrop-filter: blur(2px) saturate(115%);
@@ -38,7 +32,6 @@ function ensureStyles() {
       z-index: 9999;
     }
 
-    /* Popup panel */
     .styleai-swal-popup {
       border-radius: var(--radius-xl, 0.75rem) !important;
       border: 1px solid ${CSS_VARS.border} !important;
@@ -50,7 +43,6 @@ function ensureStyles() {
       font-family: var(--font-sans) !important;
     }
 
-    /* Title */
     .styleai-swal-title {
       font-family: var(--font-display) !important;
       font-weight: 500 !important;
@@ -59,20 +51,19 @@ function ensureStyles() {
       letter-spacing: -0.01em !important;
     }
 
-    /* Body text */
     .styleai-swal-html {
       color: ${CSS_VARS.mutedFg} !important;
       font-size: 0.875rem !important;
       margin-top: 0.75rem !important;
     }
+    .styleai-swal-html p { margin: 0; }
+    .styleai-swal-html p + p { margin-top: 0.5rem; }
 
-    /* Actions row */
     .styleai-swal-actions {
       gap: 0.5rem !important;
       margin-top: 1.5rem !important;
     }
 
-    /* Buttons */
     .styleai-swal-confirm,
     .styleai-swal-cancel,
     .styleai-swal-deny {
@@ -103,7 +94,6 @@ function ensureStyles() {
       background-color: color-mix(in oklch, ${CSS_VARS.accent} 8%, transparent) !important;
     }
 
-    /* Icons */
     .styleai-swal-icon.swal2-icon {
       border-width: 2px !important;
     }
@@ -112,7 +102,6 @@ function ensureStyles() {
     .styleai-swal-icon.swal2-icon.swal2-success { border-color: ${CSS_VARS.success} !important; color: ${CSS_VARS.success} !important; }
     .styleai-swal-icon.swal2-icon.swal2-info    { border-color: ${CSS_VARS.accent} !important; color: ${CSS_VARS.accent} !important; }
 
-    /* Animations */
     @keyframes styleai-swal-pop {
       from { opacity: 0; transform: translateY(8px) scale(0.98); }
       to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -123,7 +112,6 @@ function ensureStyles() {
     .swal2-show.styleai-swal-popup { animation: styleai-swal-pop 200ms cubic-bezier(0.16, 1, 0.3, 1) !important; }
     .swal2-hide.styleai-swal-popup { animation: styleai-swal-hide 150ms ease-in !important; }
 
-    /* Toast variant */
     .swal2-toast.styleai-swal-popup {
       padding: 0.75rem 1rem !important;
       border-radius: var(--radius-lg, 0.75rem) !important;
@@ -137,7 +125,6 @@ function ensureStyles() {
   document.head.appendChild(style);
 }
 
-// Apply theme classes to all Swal instances
 const base = Swal.mixin({
   buttonsStyling: false,
   customClass: {
@@ -159,7 +146,6 @@ const base = Swal.mixin({
   },
 });
 
-// Ensure styles present as soon as this module loads
 if (typeof document !== "undefined") {
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", ensureStyles, { once: true });
@@ -167,6 +153,10 @@ if (typeof document !== "undefined") {
     ensureStyles();
   }
 }
+
+export const swalThemed = (
+  options: SweetAlertOptions
+): Promise<SweetAlertResult> => base.fire(options);
 
 export const swalSuccess = (title: string, text?: string) =>
   base.fire({
@@ -216,6 +206,20 @@ export const swalToast = (
     showConfirmButton: false,
     timer: 2200,
     timerProgressBar: true,
+  });
+
+export const swalPendingReview = (details?: string) =>
+  base.fire({
+    icon: "success",
+    title: "Thanks for signing up!",
+    html: `
+      <p style="color:var(--color-foreground);">
+        Your account is <strong>under review</strong>.
+      </p>
+      <p>Your patience is highly appreciated.</p>
+      ${details ? `<p style="font-size:0.8125rem;">${details}</p>` : ""}
+    `,
+    confirmButtonText: "Got it",
   });
 
 export { Swal };

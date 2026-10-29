@@ -1,3 +1,4 @@
+// src\services\email\templates.js
 const C = {
   bg: '#0a0a0a',
   card: '#ffffff',
@@ -556,6 +557,76 @@ function accountLocked({ name, lockedUntilMinutes, lastAttemptAt, ip }) {
   };
 }
 
+function adminApprovalRequest({ userName, userEmail, userRole }) {
+  const body = `
+    ${pill('Action required', C.warning)}
+    ${h1('New account needs approval')}
+    ${p(`A new <strong>${userRole}</strong> signed up and is waiting for your review.`)}
+    ${infoBox([
+      ['Name', userName || '—'],
+      ['Email', userEmail || '—'],
+      ['Role', userRole || '—'],
+      ['Submitted', new Date().toLocaleString()],
+    ])}
+    ${p('Review the account in the admin panel. Approval is required before the user can sign in.')}
+  `;
+  return {
+    subject: `New ${userRole} signup — ${userName}`,
+    html: layout({
+      preheader: 'New account needs admin approval',
+      title: 'Approval needed',
+      bodyHtml: body,
+      ctaText: 'Review in Admin Panel',
+      ctaUrl: `${frontendBase()}/admin/users?adminApprovalStatus=PENDING`,
+    }),
+  };
+}
+
+function adminApprovalApproved({ userName }) {
+  const body = `
+    ${pill('Approved ✓', C.success)}
+    ${h1('Your StyleAI account is approved!')}
+    ${p(`Hi ${userName || 'there'}, welcome to StyleAI.`)}
+    ${p('Your account has been reviewed and approved by our team. You can now sign in and start using your workspace.')}
+    ${p('If you have any questions, reply to this email — we\'re here to help.')}
+  `;
+  return {
+    subject: '🎉 Your StyleAI account is approved',
+    html: layout({
+      preheader: 'You can now sign in',
+      title: 'Account approved',
+      bodyHtml: body,
+      ctaText: 'Sign in to StyleAI',
+      ctaUrl: `${frontendBase()}/login`,
+    }),
+  };
+}
+
+function adminApprovalRejected({ userName, reason }) {
+  const body = `
+    ${pill('Not approved', C.danger)}
+    ${h1('Account approval update')}
+    ${p(`Hi ${userName || 'there'}, we\'ve reviewed your StyleAI account application.`)}
+    ${infoBox([
+      ['Status', 'Not approved'],
+      ...(reason ? [['Reason', reason]] : []),
+    ])}
+    ${p('If you believe this decision was made in error, please reach out to our support team.')}
+    ${muted('You can reply to this email to contact support.')}
+  `;
+  return {
+    subject: 'StyleAI — Account approval update',
+    html: layout({
+      preheader: 'Application not approved',
+      title: 'Account update',
+      bodyHtml: body,
+      ctaText: 'Contact Support',
+      ctaUrl: 'mailto:support@styleai.com',
+    }),
+  };
+}
+
+
 module.exports = {
   welcome,
   trialExpiring,
@@ -575,4 +646,7 @@ module.exports = {
   passwordChanged,
   verifyEmail,
   accountLocked,
+   adminApprovalRequest,
+  adminApprovalApproved,
+  adminApprovalRejected,
 };

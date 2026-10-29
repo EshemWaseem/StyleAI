@@ -157,4 +157,31 @@ export const adminApi = {
 
   deleteAIModel: (id: string) =>
     http.delete<{ message: string }>(`/api/admin/ai/models/${id}`),
+
+  // ─── ADMIN APPROVAL ───
+  listPendingApprovals: (filters: { role?: string; search?: string } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.set(k, String(v));
+    });
+    const q = qs.toString();
+    return http.get<{ count: number; users: any[] }>(
+      `/api/admin/users/pending-approvals${q ? `?${q}` : ""}`
+    );
+  },
+
+  approveUser: (id: string) =>
+    http.patch<{ message: string; user: any }>(
+      `/api/admin/users/${id}/approve`,
+      {}
+    ),
+
+  rejectUser: (id: string, reason: string) =>
+    http.patch<{ message: string; user: any }>(
+      `/api/admin/users/${id}/reject`,
+      { reason }
+    ),
+
+
+
 };

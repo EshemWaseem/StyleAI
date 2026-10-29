@@ -9,6 +9,12 @@ router.use(authenticate, authorize('SUPER_ADMIN'));
 
 router.get('/dashboard', ctrl.dashboard);
 
+// ─── Admin approvals — MUST be before /users/:userId ───
+router.get('/users/pending-approvals', ctrl.listPendingApprovals);
+router.patch('/users/:userId/approve', ctrl.approveUser);
+router.patch('/users/:userId/reject', ctrl.rejectUser);
+
+// Users
 router.get('/users', ctrl.listUsers);
 router.get('/users/:userId', ctrl.getUser);
 router.patch('/users/:userId/activate', ctrl.activateUser);
@@ -16,39 +22,48 @@ router.patch('/users/:userId/deactivate', ctrl.deactivateUser);
 router.patch('/users/:userId/role', ctrl.changeUserRole);
 router.delete('/users/:userId', ctrl.deleteUser);
 
+// Brands
 router.get('/brands', ctrl.listBrands);
 router.delete('/brands/:brandId', ctrl.deleteBrand);
 
+// Influencers
 router.get('/influencers', ctrl.listInfluencers);
 router.patch('/influencers/:influencerId/status', ctrl.updateInfluencerStatus);
 router.delete('/influencers/:influencerId', ctrl.deleteInfluencer);
 
+// Agencies
 router.get('/agencies', ctrl.listAgencies);
 
+// Products
 router.get('/products', ctrl.listProducts);
 router.delete('/products/:productId', ctrl.deleteProduct);
 
+// Campaigns
 router.get('/campaigns', ctrl.listCampaigns);
-
 router.post('/campaign-requests', ctrl.createCampaignRequest);
 router.get('/campaign-requests', ctrl.listCampaignRequests);
 
+// Payments
 router.get('/payments', ctrl.listPayments);
 
-// ORDERS
+// Orders
 router.get('/orders', orders.listOrders);
 router.get('/orders/:orderId', orders.getOrder);
 router.post('/orders/:orderId/confirm-delivery', orders.confirmDelivery);
 router.post('/orders/:orderId/cancel', orders.cancelOrder);
 
+// Finance
 router.get('/finance', ctrl.getFinanceRules);
 router.patch('/finance', ctrl.updateFinanceRules);
 
+// Settings
 router.get('/settings', ctrl.getAllSettings);
 router.patch('/settings', ctrl.updateSettings);
 
+// Audit
 router.get('/audit', ctrl.listAuditLogs);
 
+// AI
 router.get('/ai/stats', ctrl.getAIStats);
 router.get('/ai/timeline', ctrl.getAITimeline);
 router.get('/ai/usage', ctrl.listAIUsage);
@@ -58,6 +73,7 @@ router.post('/ai/models', ctrl.createAIModel);
 router.patch('/ai/models/:id', ctrl.updateAIModel);
 router.delete('/ai/models/:id', ctrl.deleteAIModel);
 
+// Storefront
 router.get('/storefront/hero', storefront.listHero);
 router.post('/storefront/hero', storefront.createHero);
 router.patch('/storefront/hero/:id', storefront.updateHero);

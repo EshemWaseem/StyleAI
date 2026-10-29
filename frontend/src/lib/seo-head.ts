@@ -1,9 +1,8 @@
-// lib/seo-head.ts
+// frontend/src/lib/seo-head.ts
 export function noindexHead(title?: string) {
-  return {
-    meta: [
-      ...(title ? [{ title }] : []),
-      { name: "robots", content: "noindex, nofollow" },
-    ],
-  };
+  const meta: Array<Record<string, string>> = [
+    { name: "robots", content: "noindex, nofollow" },
+  ];
+  if (title) meta.unshift({ title });
+  return { meta };
 }

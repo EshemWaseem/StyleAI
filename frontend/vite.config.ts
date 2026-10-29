@@ -1,16 +1,19 @@
-
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+// frontend/vite.config.ts
+import { defineConfig } from "vite";
+import tsconfigPaths from "vite-tsconfig-paths";
+import tailwindcss from "@tailwindcss/vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  vite: {
-    server: {
-      port: 3000,
-    },
-  },
-
-  tanstackStart: {
-    // Redirect TanStack Start's bundled server entry
-    // to src/server.ts (our SSR error wrapper).
-    // entry: "server"
+  plugins: [
+    tsconfigPaths(),
+    tailwindcss(),
+    tanstackStart(),
+    react(),
+  ],
+  server: {
+    port: 3000,
+    strictPort: true,
   },
 });

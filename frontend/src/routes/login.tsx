@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useRole, getDashboardPath } from "@/lib/role";
 import { http, type ApiError } from "@/lib/api";
+import { swalThemed, swalError } from "@/lib/swal";
 import {
   LoginBanners,
   type LoginBannerState,
@@ -82,13 +83,49 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      const loggedIn = await login(email, password);
-      navigate({ to: getDashboardPath(loggedIn.roles), replace: true });
+      await login(email, password);
+      // Navigate is handled by the useEffect above to prevent UI flash
     } catch (errRaw) {
       const err = errRaw as ApiError;
       const code = err?.code;
       const status = err?.status;
 
+      // ─── Admin approval pending — Swal (primary UX) ───
+      if (code === "PENDING_ADMIN_APPROVAL") {
+        setLoading(false);
+        await swalThemed({
+          icon: "info",
+          title: "Account under review",
+          html: `
+            <p style="color:var(--color-foreground);">
+              Your account is <strong>under admin review</strong>.
+            </p>
+            <p style="font-size:0.875rem;">
+              You'll be able to sign in once approved.
+            </p>
+            <p style="font-size:0.8125rem;">
+              Your patience is highly appreciated.
+            </p>
+          `,
+          confirmButtonText: "OK",
+        });
+        return;
+      }
+
+      // ─── Admin approval rejected — Swal with reason ───
+      if (code === "ADMIN_APPROVAL_REJECTED") {
+        const reason =
+          (err as any)?.reason ||
+          (err as any)?.data?.reason ||
+          err?.message ||
+          "Please contact support@styleai.com for more information.";
+
+        setLoading(false);
+        await swalError("Account not approved", reason);
+        return;
+      }
+
+      // ─── Team member pending (brand owner approval) — keep inline banner ───
       if (code === "PENDING_APPROVAL") {
         setPendingNotice(
           err.message ||
@@ -203,6 +240,17 @@ function LoginPage() {
     attemptsRemaining,
     captchaRequired,
   };
+
+  if (authLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="inline-block size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          Redirecting to workspace…
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">

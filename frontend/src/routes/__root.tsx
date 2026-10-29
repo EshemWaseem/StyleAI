@@ -13,12 +13,11 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { installSwalShim } from "@/lib/swal-shim";
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { RoleProvider, useRole } from "../lib/role";
 import { CartProvider } from "../lib/cart";
-import { AppShell } from "../components/app-shell";
+import { AppShell } from "../components/app-shell/index";
 
-// Public paths — no auth required, no shell
+
 const PUBLIC_PATHS = [
   "/",
   "/shop",              
@@ -77,8 +76,9 @@ function ErrorComponent({
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+        // Log errors locally — swap for Sentry/Logtail later
+        console.error("[Root error boundary]", error);
+      }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -132,7 +132,7 @@ export const Route = createRootRouteWithContext<{
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@styleai" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

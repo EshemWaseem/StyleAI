@@ -1,81 +1,44 @@
-// Captures the original Error out-of-band so server.ts can recover the stack
-// when h3 has already swallowed the throw into a generic 500 Response.
+// frontend/src/lib/error-capture.ts
+// Server-side global error capture.
+// No styling — this file just catches errors so the SSR handler
+// can render them via error-page.ts.
 
-let lastCapturedError: { error: unknown; at: number } | undefined;
-const TTL_MS = 5_000;
+let lastError: Error | null = null;
+let installed = false;
 
-function record(error: unknown) {
-  lastCapturedError = { error, at: Date.now() };
+export function captureError(err: unknown): void {
+  lastError = err instanceof Error ? err : new Error(String(err));
 }
 
-// h3's HTTPError serializes to {"status":500,"unhandled":true,"message":"HTTPError"} —
-// no stack, no cause — so a plain console.error(error) reaches the log pipeline with
-// the failure detail stripped. Expand Error-like args into a string that keeps the
-// message, stack, and the full cause chain.
-const CAUSE_DEPTH_LIMIT = 5;
-const DESCRIPTION_LENGTH_LIMIT = 8_000;
-
-export function describeError(error: unknown): string {
-  const parts: string[] = [];
-  let current: unknown = error;
-  for (let depth = 0; depth < CAUSE_DEPTH_LIMIT && current != null; depth++) {
-    if (!(current instanceof Error)) {
-      parts.push(typeof current === "string" ? current : safeStringify(current));
-      break;
-    }
-    const label = depth === 0 ? "" : "caused by: ";
-    const status = describeStatus(current);
-    parts.push(`${label}${current.stack ?? `${current.name}: ${current.message}`}${status}`);
-    current = current.cause;
-  }
-  return parts.join("\n").slice(0, DESCRIPTION_LENGTH_LIMIT);
+export function consumeLastCapturedError(): Error | null {
+  const err = lastError;
+  lastError = null;
+  return err;
 }
 
-function describeStatus(error: Error): string {
-  const { status, statusCode } = error as { status?: unknown; statusCode?: unknown };
-  const value = status ?? statusCode;
-  return typeof value === "number" ? ` (status ${value})` : "";
-}
+/**
+ * Install process-level handlers (idempotent).
+ * Safe to call multiple times — handlers registered only once.
+ * Skipped automatically on the client bundle.
+ */
+export function installErrorCapture(): void {
+  if (installed) return;
+  if (typeof process === "undefined" || typeof process.on !== "function") return;
 
-function safeStringify(value: unknown): string {
-  try {
-    return JSON.stringify(value) ?? String(value);
-  } catch {
-    return String(value);
-  }
-}
+  installed = true;
 
-function isErrorLike(value: unknown): value is Error {
-  return value instanceof Error;
-}
-
-// Wrap console.error so errors logged by any layer — including h3's internal
-// unhandled-error logging, which this file cannot hook directly — are both
-// recorded for consumeLastCapturedError and expanded before serialization.
-const originalConsoleError = console.error.bind(console);
-console.error = (...args: unknown[]) => {
-  const expanded = args.map((arg) => {
-    if (!isErrorLike(arg)) return arg;
-    record(arg);
-    return describeError(arg);
+  process.on("uncaughtException", (err) => {
+    captureError(err);
+    // eslint-disable-next-line no-console
+    console.error("[uncaughtException]", err);
   });
-  originalConsoleError(...expanded);
-};
 
-if (typeof globalThis.addEventListener === "function") {
-  globalThis.addEventListener("error", (event) => record((event as ErrorEvent).error ?? event));
-  globalThis.addEventListener("unhandledrejection", (event) =>
-    record((event as PromiseRejectionEvent).reason),
-  );
+  process.on("unhandledRejection", (reason) => {
+    captureError(reason);
+    // eslint-disable-next-line no-console
+    console.error("[unhandledRejection]", reason);
+  });
 }
 
-export function consumeLastCapturedError(): unknown {
-  if (!lastCapturedError) return undefined;
-  if (Date.now() - lastCapturedError.at > TTL_MS) {
-    lastCapturedError = undefined;
-    return undefined;
-  }
-  const { error } = lastCapturedError;
-  lastCapturedError = undefined;
-  return error;
-}
+// Auto-install on import (server-side only)
+installErrorCapture();

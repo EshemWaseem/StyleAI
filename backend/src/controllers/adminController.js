@@ -1,15 +1,16 @@
 // backend/src/controllers/adminController.js
 const admin = require('../services/admin');
 const ai = require('../services/ai');
-const prisma = require('../config/prisma'); // : Needed for Campaign Requests
+const prisma = require('../config/prisma');
+const approval = require('../services/admin/approval');
 
-//  - Dashboard  -
+// ─── Dashboard ───
 async function dashboard(req, res, next) {
   try { res.json({ success: true, data: await admin.getPlatformStats(req.user) }); }
   catch (err) { next(err); }
 }
 
-//  - Users  -
+// ─── Users ───
 async function listUsers(req, res, next) {
   try { res.json(await admin.listUsers(req.user, req.query)); }
   catch (err) { next(err); }
@@ -37,7 +38,34 @@ async function changeUserRole(req, res, next) {
   } catch (err) { next(err); }
 }
 
-//  - Brands  -
+// ─── Admin approval (PENDING signups) ───
+async function listPendingApprovals(req, res, next) {
+  try {
+    const users = await approval.listPending(req.user, req.query);
+    res.json({ count: users.length, users });
+  } catch (err) { next(err); }
+}
+
+async function approveUser(req, res, next) {
+  try {
+    const user = await approval.approve(req.user, req.params.userId, req);
+    res.json({ message: 'User approved', user });
+  } catch (err) { next(err); }
+}
+
+async function rejectUser(req, res, next) {
+  try {
+    const user = await approval.reject(
+      req.user,
+      req.params.userId,
+      req.body?.reason,
+      req
+    );
+    res.json({ message: 'User rejected', user });
+  } catch (err) { next(err); }
+}
+
+// ─── Brands ───
 async function listBrands(req, res, next) {
   try { res.json(await admin.listBrands(req.user, req.query)); }
   catch (err) { next(err); }
@@ -47,7 +75,7 @@ async function deleteBrand(req, res, next) {
   catch (err) { next(err); }
 }
 
-//  - Influencers  -
+// ─── Influencers ───
 async function listInfluencers(req, res, next) {
   try { res.json(await admin.listInfluencers(req.user, req.query)); }
   catch (err) { next(err); }
@@ -63,13 +91,13 @@ async function deleteInfluencer(req, res, next) {
   catch (err) { next(err); }
 }
 
-//  - Agencies  -
+// ─── Agencies ───
 async function listAgencies(req, res, next) {
   try { res.json(await admin.listAgencies(req.user, req.query)); }
   catch (err) { next(err); }
 }
 
-//  - Products  -
+// ─── Products ───
 async function listProducts(req, res, next) {
   try { res.json(await admin.listProducts(req.user, req.query)); }
   catch (err) { next(err); }
@@ -79,23 +107,19 @@ async function deleteProduct(req, res, next) {
   catch (err) { next(err); }
 }
 
-//  - Campaigns  -
+// ─── Campaigns ───
 async function listCampaigns(req, res, next) {
   try { res.json(await admin.listCampaigns(req.user, req.query)); }
   catch (err) { next(err); }
 }
 
-
-// NEW: ADMIN CAMPAIGN REQUESTS
-
+// ─── Campaign Requests ───
 async function createCampaignRequest(req, res, next) {
   try {
     const { brandId, title, description, budget } = req.body;
-    
     if (!brandId || !title) {
       return res.status(400).json({ message: 'brandId and title are required' });
     }
-
     const request = await prisma.adminCampaignRequest.create({
       data: {
         adminId: req.user.id,
@@ -105,11 +129,8 @@ async function createCampaignRequest(req, res, next) {
         budget: budget ? parseFloat(budget) : null,
       }
     });
-    
     res.status(201).json({ message: 'Request sent successfully', request });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 }
 
 async function listCampaignRequests(req, res, next) {
@@ -119,141 +140,93 @@ async function listCampaignRequests(req, res, next) {
       orderBy: { createdAt: 'desc' }
     });
     res.json({ requests });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 }
 
-//  - Payments  -
+// ─── Payments ───
 async function listPayments(req, res, next) {
   try { res.json(await admin.listPayments(req.user, req.query)); }
   catch (err) { next(err); }
 }
 
-
-// FINANCE
-
+// ─── Finance ───
 async function getFinanceRules(req, res, next) {
-  try {
-    const rules = await admin.getFinanceRules();
-    res.json({ rules });
-  } catch (err) { next(err); }
+  try { res.json({ rules: await admin.getFinanceRules() }); }
+  catch (err) { next(err); }
 }
-
 async function updateFinanceRules(req, res, next) {
-  try {
-    const rules = await admin.updateFinanceRules(req.user.id, req.body);
-    res.json({ message: 'Finance rules updated', rules });
-  } catch (err) { next(err); }
+  try { res.json({ message: 'Finance rules updated', rules: await admin.updateFinanceRules(req.user.id, req.body) }); }
+  catch (err) { next(err); }
 }
 
-
-// SETTINGS
-
+// ─── Settings ───
 async function getAllSettings(req, res, next) {
-  try {
-    const settings = await admin.getAllSettingsGrouped();
-    res.json({ settings });
-  } catch (err) { next(err); }
+  try { res.json({ settings: await admin.getAllSettingsGrouped() }); }
+  catch (err) { next(err); }
 }
-
 async function updateSettings(req, res, next) {
-  try {
-    const updated = await admin.updateSettings(req.user.id, req.body);
-    res.json({ message: 'Settings updated', updated });
-  } catch (err) { next(err); }
+  try { res.json({ message: 'Settings updated', updated: await admin.updateSettings(req.user.id, req.body) }); }
+  catch (err) { next(err); }
 }
 
-
-// AUDIT
-
+// ─── Audit ───
 async function listAuditLogs(req, res, next) {
-  try {
-    const result = await admin.listAuditLogs(req.query);
-    res.json(result);
-  } catch (err) { next(err); }
+  try { res.json(await admin.listAuditLogs(req.query)); }
+  catch (err) { next(err); }
 }
 
-
-// AI — Model Management Dashboard (SRS §48-49)
-
+// ─── AI ───
 async function getAIStats(req, res, next) {
-  try {
-    const sinceHours = Number(req.query.sinceHours) || 24;
-    const stats = await ai.getUsageStats({ sinceHours });
-    res.json({ stats });
-  } catch (err) { next(err); }
+  try { res.json({ stats: await ai.getUsageStats({ sinceHours: Number(req.query.sinceHours) || 24 }) }); }
+  catch (err) { next(err); }
 }
-
 async function getAITimeline(req, res, next) {
-  try {
-    const days = Number(req.query.days) || 7;
-    const timeline = await ai.getUsageTimeline({ days });
-    res.json({ timeline });
-  } catch (err) { next(err); }
+  try { res.json({ timeline: await ai.getUsageTimeline({ days: Number(req.query.days) || 7 }) }); }
+  catch (err) { next(err); }
 }
-
 async function listAIUsage(req, res, next) {
   try {
-    const result = await ai.listRecentUsage({
-      limit: req.query.limit,
-      offset: req.query.offset,
-      provider: req.query.provider,
-      status: req.query.status,
-    });
-    res.json(result);
+    res.json(await ai.listRecentUsage({
+      limit: req.query.limit, offset: req.query.offset,
+      provider: req.query.provider, status: req.query.status,
+    }));
   } catch (err) { next(err); }
 }
-
 async function listAIModels(req, res, next) {
   try {
-    const models = await ai.listModels({
-      taskType: req.query.taskType,
-      provider: req.query.provider,
-      status: req.query.status,
-    });
-    res.json({ models });
+    res.json({ models: await ai.listModels({
+      taskType: req.query.taskType, provider: req.query.provider, status: req.query.status,
+    }) });
   } catch (err) { next(err); }
 }
-
 async function getAIModel(req, res, next) {
-  try {
-    const model = await ai.getModel(req.params.id);
-    res.json({ model });
-  } catch (err) { next(err); }
+  try { res.json({ model: await ai.getModel(req.params.id) }); }
+  catch (err) { next(err); }
 }
-
 async function createAIModel(req, res, next) {
-  try {
-    const model = await ai.createModel(req.user, req.body);
-    res.status(201).json({ message: 'Model created', model });
-  } catch (err) { next(err); }
+  try { res.status(201).json({ message: 'Model created', model: await ai.createModel(req.user, req.body) }); }
+  catch (err) { next(err); }
 }
-
 async function updateAIModel(req, res, next) {
-  try {
-    const model = await ai.updateModel(req.user, req.params.id, req.body);
-    res.json({ message: 'Model updated', model });
-  } catch (err) { next(err); }
+  try { res.json({ message: 'Model updated', model: await ai.updateModel(req.user, req.params.id, req.body) }); }
+  catch (err) { next(err); }
 }
-
 async function deleteAIModel(req, res, next) {
-  try {
-    const result = await ai.deleteModel(req.user, req.params.id);
-    res.json({ message: 'Model deleted', ...result });
-  } catch (err) { next(err); }
+  try { res.json({ message: 'Model deleted', ...(await ai.deleteModel(req.user, req.params.id)) }); }
+  catch (err) { next(err); }
 }
 
 module.exports = {
   dashboard,
   listUsers, getUser, activateUser, deactivateUser, deleteUser, changeUserRole,
+  listPendingApprovals, approveUser, rejectUser,
   listBrands, deleteBrand,
   listInfluencers, updateInfluencerStatus, deleteInfluencer,
   listAgencies,
   listProducts, deleteProduct,
   listCampaigns,
-  createCampaignRequest, 
-  listCampaignRequests,  
+  createCampaignRequest,
+  listCampaignRequests,
   listPayments,
   getFinanceRules,
   updateFinanceRules,
@@ -261,13 +234,8 @@ module.exports = {
   updateSettings,
   listAuditLogs,
 
-  // AI (SRS §48-49)
-  getAIStats,
-  getAITimeline,
-  listAIUsage,
-  listAIModels,
-  getAIModel,
-  createAIModel,
-  updateAIModel,
-  deleteAIModel,
+  // AI
+  getAIStats, getAITimeline, listAIUsage,
+  listAIModels, getAIModel,
+  createAIModel, updateAIModel, deleteAIModel,
 };

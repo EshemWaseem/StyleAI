@@ -12,7 +12,7 @@ function generateOrderNumber() {
   return `ORD-${y}${m}${d}-${rand}`;
 }
 
-async function createOrderFromCart(user, { cartItems, shippingAddress, currency = 'PKR' }) {
+async function createOrderFromCart(user, { cartItems, shippingAddress, currency = 'PKR', paymentProvider = null }) {
   if (!Array.isArray(cartItems) || cartItems.length === 0) {
     throw httpError('Cart is empty', 400, 'EMPTY_CART');
   }
@@ -69,6 +69,7 @@ async function createOrderFromCart(user, { cartItems, shippingAddress, currency 
       currency: orderCurrency,
       status: 'PENDING',
       shippingAddress,
+      paymentProvider: paymentProvider, // 🆕 Save Provider
       items: { create: lineItems },
     },
     include: {
@@ -77,8 +78,6 @@ async function createOrderFromCart(user, { cartItems, shippingAddress, currency 
     },
   });
 
-  // Clear shopper's cart — CartItem has no userId; go via Cart relation.
-  // Best-effort: cart may not exist in some flows (direct checkout).
   await prisma.cartItem.deleteMany({
     where: { cart: { userId: user.id } },
   }).catch(() => {});

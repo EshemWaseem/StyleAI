@@ -39,7 +39,6 @@ const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 
-
 function hashToken(raw) {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
@@ -54,12 +53,22 @@ function frontendBase() {
 
 async function sendVerificationEmail(userId, email, name, token) {
   const verifyUrl = `${frontendBase()}/verify-email?token=${token}`;
-  sendToUser(userId, 'verifyEmail', {
-    verifyUrl,
-    expiresInHours: VERIFY_TOKEN_TTL_MS / 3600000,
-  }).catch((e) =>
-    console.error('[auth.sendVerification email] failed:', e.message)
-  );
+  try {
+    const r = await sendToUser(userId, 'verifyEmail', {
+      verifyUrl,
+      expiresInHours: VERIFY_TOKEN_TTL_MS / 3600000,
+    });
+    if (!r?.ok) {
+      console.error(
+        `[auth.sendVerificationEmail] FAILED for ${email}:`,
+        r?.error || r?.reason || JSON.stringify(r)
+      );
+    } else {
+      console.log(`[auth.sendVerificationEmail] SENT → ${email}`);
+    }
+  } catch (e) {
+    console.error('[auth.sendVerificationEmail] threw:', e.message);
+  }
 
   if (process.env.NODE_ENV !== 'production') {
     console.log(
@@ -88,9 +97,9 @@ async function logLoginAttempt({ userId, email, success, reason, req }) {
   }
 }
 
-
+// ─────────────────────────────────────────────────────────────
 // POST /api/auth/register
-
+// ─────────────────────────────────────────────────────────────
 async function register(req, res, next) {
   try {
     const {
@@ -199,6 +208,7 @@ async function register(req, res, next) {
           countryCode: countryCode
             ? String(countryCode).trim().toUpperCase()
             : null,
+          // ✅ ALWAYS require email verification (no auto-verify hacks)
           emailVerified: false,
           emailVerifyToken: verifyTokenHash,
           emailVerifyExpires: new Date(Date.now() + VERIFY_TOKEN_TTL_MS),
@@ -227,6 +237,7 @@ async function register(req, res, next) {
       return user;
     });
 
+    // ✅ ALWAYS send verification email — no skip, no DEV_AUTO_VERIFY
     sendVerificationEmail(
       result.id,
       result.email,
@@ -234,7 +245,7 @@ async function register(req, res, next) {
       rawVerifyToken
     );
 
-    // NEW: Notify admins about the pending approval request
+    // Notify admins about pending approval request
     if (needsAdminApproval) {
       const roleLabel = ROLE_LABELS[roleName] || roleName;
       notifyAdmins({
@@ -301,9 +312,9 @@ async function register(req, res, next) {
   }
 }
 
-
+// ─────────────────────────────────────────────────────────────
 // POST /api/auth/login
-
+// ─────────────────────────────────────────────────────────────
 async function login(req, res, next) {
   try {
     const { email, password } = req.body;
@@ -433,7 +444,6 @@ async function login(req, res, next) {
         console.error('[auth.login] metadata update error:', e.message)
       );
 
-    // ─── Admin approval gate ───
     if (user.adminApprovalStatus === 'PENDING') {
       await logLoginAttempt({
         userId: user.id,
@@ -466,7 +476,6 @@ async function login(req, res, next) {
       });
     }
 
-    // ─── Email verification gate ───
     if (user.emailVerified === false) {
       const [local, domain] = user.email.split('@');
       const masked =
@@ -550,9 +559,9 @@ async function login(req, res, next) {
   }
 }
 
-
+// ─────────────────────────────────────────────────────────────
 // POST /api/auth/forgot-password
-
+// ─────────────────────────────────────────────────────────────
 async function forgotPassword(req, res, next) {
   try {
     const { email } = req.body;
@@ -610,9 +619,9 @@ async function forgotPassword(req, res, next) {
   }
 }
 
-
+// ─────────────────────────────────────────────────────────────
 // POST /api/auth/reset-password
-
+// ─────────────────────────────────────────────────────────────
 async function resetPassword(req, res, next) {
   try {
     const { token, password } = req.body;
@@ -681,9 +690,9 @@ async function resetPassword(req, res, next) {
   }
 }
 
-
-// POST /api/auth/change-password (authenticated)
-
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/change-password
+// ─────────────────────────────────────────────────────────────
 async function changePassword(req, res, next) {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -768,9 +777,9 @@ async function changePassword(req, res, next) {
   }
 }
 
-
+// ─────────────────────────────────────────────────────────────
 // POST /api/auth/verify-email
-
+// ─────────────────────────────────────────────────────────────
 async function verifyEmail(req, res, next) {
   try {
     const { token } = req.body;
@@ -846,9 +855,9 @@ async function verifyEmail(req, res, next) {
   }
 }
 
-
+// ─────────────────────────────────────────────────────────────
 // POST /api/auth/verify-email/resend
-
+// ─────────────────────────────────────────────────────────────
 async function resendVerification(req, res, next) {
   try {
     const { email } = req.body;
@@ -907,9 +916,9 @@ async function resendVerification(req, res, next) {
   }
 }
 
-
+// ─────────────────────────────────────────────────────────────
 // POST /api/auth/logout-all
-
+// ─────────────────────────────────────────────────────────────
 async function logoutAll(req, res, next) {
   try {
     const userId = req.user?.id;
@@ -943,9 +952,9 @@ async function logoutAll(req, res, next) {
   }
 }
 
-
+// ─────────────────────────────────────────────────────────────
 // GET /api/auth/login-history
-
+// ─────────────────────────────────────────────────────────────
 async function loginHistory(req, res, next) {
   try {
     const userId = req.user?.id;
@@ -977,9 +986,9 @@ async function loginHistory(req, res, next) {
   }
 }
 
-
+// ─────────────────────────────────────────────────────────────
 // GET /api/auth/me
-
+// ─────────────────────────────────────────────────────────────
 async function me(req, res) {
   res.json({
     user: {

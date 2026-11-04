@@ -78,21 +78,21 @@ router.get('/service-types', (req, res) => {
   });
 });
 
-router.get('/integrations', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+router.get('/integrations', authorize('AGENCY', 'SUPER_ADMIN', 'BRAND_OWNER', 'BRAND_TEAM_MEMBER'), async (req, res, next) => {
   try {
     const accounts = await agency.listAdAccounts(req.user);
     res.json({ accounts });
   } catch (err) { next(err); }
 });
 
-router.get('/integrations/:provider/connect', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+router.get('/integrations/:provider/connect', authorize('AGENCY', 'SUPER_ADMIN', 'BRAND_OWNER', 'BRAND_TEAM_MEMBER'), async (req, res, next) => {
   try {
     const url = await agency.getOAuthUrl(req.user, req.params.provider.toUpperCase());
     res.json({ url });
   } catch (err) { next(err); }
 });
 
-router.delete('/integrations/:provider', authorize('AGENCY', 'SUPER_ADMIN'), async (req, res, next) => {
+router.delete('/integrations/:provider', authorize('AGENCY', 'SUPER_ADMIN', 'BRAND_OWNER', 'BRAND_TEAM_MEMBER'), async (req, res, next) => {
   try {
     await agency.disconnectAdAccount(req.user, req.params.provider.toUpperCase());
     res.json({ message: 'Disconnected' });

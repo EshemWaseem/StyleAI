@@ -97,6 +97,7 @@ async function orderCheckout(req, res, next) {
         cartItems,
         shippingAddress,
         currency,
+        paymentProvider: provider, // 🆕 FIXED: Pass provider to save in DB
       });
       finalOrderId = order.id;
     }
@@ -152,8 +153,7 @@ async function createPortal(req, res, next) {
   } catch (e) { next(e); }
 }
 
-
-// paymentController.js — NAYA function
+// POST /api/payments/order/verify-session
 async function verifyOrderSession(req, res, next) {
   try {
     const { sessionId } = req.body || {};
@@ -193,8 +193,6 @@ async function verifyOrderSession(req, res, next) {
     next(e);
   }
 }
-
-
 
 module.exports = {
   getMethods,

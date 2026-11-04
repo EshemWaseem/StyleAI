@@ -1,8 +1,4 @@
 // services/agency/profile.js
-
-// Agency profile — service categories + rate cards
-
-
 const prisma = require('../../config/prisma');
 const { httpError } = require('../influencer/helpers');
 
@@ -50,7 +46,6 @@ async function updateProfile(user, payload = {}) {
 
   const data = {};
 
-  // String fields
   ['displayName', 'tagline', 'description', 'website', 'logoUrl'].forEach((k) => {
     if (payload[k] !== undefined) {
       data[k] = payload[k] ? String(payload[k]).trim() : null;
@@ -61,30 +56,22 @@ async function updateProfile(user, payload = {}) {
     data.currency = String(payload.currency || 'PKR').toUpperCase();
   }
 
-  // Booleans
   ['verified', 'isAcceptingNew'].forEach((k) => {
     if (payload[k] !== undefined) data[k] = Boolean(payload[k]);
   });
 
-  // Numerics
   ['monthlyRetainer', 'hourlyRate', 'photoshootRate', 'videographyRate'].forEach((k) => {
     if (payload[k] !== undefined) {
-      data[k] =
-        payload[k] === null || payload[k] === ''
-          ? null
-          : Number(payload[k]);
+      data[k] = payload[k] === null || payload[k] === '' ? null : Number(payload[k]);
     }
   });
 
-  // Arrays
   if (Array.isArray(payload.portfolioUrls)) {
     data.portfolioUrls = payload.portfolioUrls.map((s) => String(s).trim()).filter(Boolean);
   }
 
   if (Array.isArray(payload.serviceTypes)) {
-    data.serviceTypes = payload.serviceTypes.filter((s) =>
-      VALID_SERVICE_TYPES.includes(s)
-    );
+    data.serviceTypes = payload.serviceTypes.filter((s) => VALID_SERVICE_TYPES.includes(s));
   }
 
   const updated = await prisma.agencyProfile.update({
@@ -101,22 +88,37 @@ async function getProfileByOrgId(organizationId) {
   return p ? shapeProfile(p) : null;
 }
 
-/**
- * Public listing — brands/influencers browse agencies by service.
- *
- * @param {Object} opts
- * @param {string} [opts.serviceType]   Exact service type filter (e.g. "BRAND_WEBSITE")
- * @param {string} [opts.serviceGroup]  Coarse filter: "BRAND" | "INFLUENCER"
- * @param {number} [opts.limit]
- */
-/**
- * Public listing — brands/influencers browse agencies by service.
- *
- * @param {Object} opts
- * @param {string} [opts.serviceType]   Exact service type (e.g. "BRAND_WEBSITE")
- * @param {string} [opts.serviceGroup]  Coarse filter: "BRAND" | "INFLUENCER"
- * @param {number} [opts.limit]
- */
+async function listClients(user) {
+  assertAgency(user);
+  
+  const clients = await prisma.agencyClient.findMany({
+    where: { 
+      agencyOrganizationId: user.organizationId, 
+      status: 'ACTIVE' 
+    },
+    include: {
+      clientOrganization: {
+        select: {
+          id: true,
+          name: true,
+          adAccounts: {
+            select: { provider: true }
+          }
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  return clients.map((c) => ({
+    id: c.id,
+    status: c.status,
+    contractStart: c.contractStart,
+    contractEnd: c.contractEnd,
+    clientOrganization: c.clientOrganization,
+  }));
+}
+
 async function listAgenciesForService({ serviceType, serviceGroup, limit = 50 } = {}) {
   const where = { isAcceptingNew: true };
 
@@ -134,7 +136,6 @@ async function listAgenciesForService({ serviceType, serviceGroup, limit = 50 } 
     orderBy: [{ verified: 'desc' }, { updatedAt: 'desc' }],
   });
 
-  // Enrich with organization info
   const orgIds = profiles.map((p) => p.organizationId);
   const orgs = orgIds.length
     ? await prisma.organization.findMany({
@@ -181,6 +182,7 @@ module.exports = {
   updateProfile,
   getProfileByOrgId,
   getOrCreateProfile,
+  listClients,
   listAgenciesForService,
   shapeProfile,
 };

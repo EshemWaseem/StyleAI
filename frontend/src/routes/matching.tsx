@@ -194,7 +194,8 @@ function MatchingPage() {
                         )}
                       </div>
                       <p className="mt-0.5 text-[10px] text-muted-foreground truncate">
-                        {data.aiPowered ? `${data.provider} · ${data.latencyMs}ms` : "AI service offline"}
+                        {/* ✅ Defensive fallback added if provider is missing */}
+                        {data.aiPowered ? `${data.provider || "AI"} · ${data.latencyMs}ms` : "AI service offline"}
                       </p>
                     </div>
                   </section>

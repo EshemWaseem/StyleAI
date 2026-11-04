@@ -151,13 +151,32 @@ export const agencyCampaignsApi = {
     imageUrl: string;
     adText: string;
     headline?: string;
+    platforms?: {
+      facebook: boolean;
+      instagram: boolean;
+      fbFeed: boolean;
+      fbStory: boolean;
+      fbReels: boolean;
+      igFeed: boolean;
+      igStory: boolean;
+      igReels: boolean;
+      igExplore: boolean;
+    };
   }) =>
     http.post<{ message: string; adId: string }>(
       "/api/agency/meta-campaigns",
       payload
     ),
 
-  createGoogleCampaign: (payload: { name: string; budget: string }) =>
+  // 👇 UPDATED GOOGLE CAMPAIGN PAYLOAD
+  createGoogleCampaign: (payload: { 
+    name: string; 
+    budget: string;
+    finalUrl: string;
+    headlines: string[];
+    descriptions: string[];
+    keywords: string[];
+  }) =>
     http.post<{ message: string; campaignResourceName: string }>(
       "/api/agency/google-campaigns",
       payload
@@ -191,22 +210,20 @@ export const agencyCampaignsApi = {
       payload
     ),
 
-    generateStrategy: (payload: { productName: string; category?: string; price?: number }) =>
-    http.post<{ 
-      target_audience: string; 
-      suggested_budget: string; 
-      ad_headline: string; 
+  generateStrategy: (payload: { productName: string; category?: string; price?: number }) =>
+    http.post<{
+      target_audience: string;
+      suggested_budget: string;
+      ad_headline: string;
       ad_copy: string;
       ai_insight: string;
     }>('/api/agency/meta-campaigns/generate-strategy', payload
     ),
 
-    getMetaCampaignInsights: (id: string) =>
+  getMetaCampaignInsights: (id: string) =>
     http.get<{ spend: number; clicks: number; impressions: number; reach: number }>(
       `/api/agency/meta-campaigns/${id}/insights`
     ),
-
-
 };
 
 export const agencyApi = agencyProfileApi;

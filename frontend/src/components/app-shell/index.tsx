@@ -12,11 +12,9 @@ import {
   markTrialExpired,
   clearTrialExpired,
 } from "@/lib/api";
-import { Brandmark } from "./brandmark";
-import { SidebarNav } from "./sidebar-nav";
+import { Sidebar } from "./sidebar"; // 🆕 Import Sidebar
 import {
   AppHeader,
-  SidebarCollapseButton,
   StandaloneHeader,
 } from "./header";
 import { AgencyActingBanner } from "./agency-switcher";
@@ -97,10 +95,8 @@ function AppShellInner({
   }, [location.pathname, isAdmin]);
 
   function handleLogout() {
-  // logout() does hard reload — no need to clearTrialExpired or disconnectSocket
-  // (both trigger state updates that cause the flash)
-  logout();
-}
+    logout();
+  }
 
   if (standalone) {
     return (
@@ -126,28 +122,11 @@ function AppShellInner({
         data-app-shell
         className="h-[100dvh] overflow-hidden bg-background text-foreground"
       >
-        <aside
-          className={cn(
-            "fixed inset-y-0 left-0 z-30 hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 lg:flex",
-            collapsed ? "w-[68px]" : "w-[248px]"
-          )}
-        >
-          <div
-            className={cn(
-              "flex h-16 items-center border-b border-sidebar-border px-4",
-              collapsed && "justify-center px-0"
-            )}
-          >
-            <Brandmark collapsed={collapsed} />
-          </div>
-          <div className="hover-scroll flex-1 overflow-y-auto">
-            <SidebarNav collapsed={collapsed} />
-          </div>
-          <SidebarCollapseButton
-            collapsed={collapsed}
-            onToggle={() => setCollapsed((c) => !c)}
-          />
-        </aside>
+        {/* 🆕 DESKTOP SIDEBAR INTEGRATION */}
+        <Sidebar
+          collapsed={collapsed}
+          onToggleCollapse={() => setCollapsed((c) => !c)}
+        />
 
         <div
           className={cn(

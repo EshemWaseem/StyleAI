@@ -1,20 +1,10 @@
 // src/config/rateLimit.js
 
-// Centralized rate limiting
-// - Redis-backed (multi-instance safe)
-// - Each limiter gets its OWN store instance (v8 requirement)
-// - Per-user, per-email, per-IP strategies
-// - skipSuccessfulRequests for login
-// - Structured logging on block
-
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const crypto = require('crypto');
 const redis = require('./redis');
 
-//       
-// Custom Redis store (express-rate-limit v8 compatible)
-//       
 class RedisRateStore {
   constructor({ client, prefix = 'rl:' }) {
     this.client = client;
@@ -77,7 +67,6 @@ class RedisRateStore {
   }
 }
 
-//  v8 requirement — fresh store instance per limiter (unique prefix)
 function makeStore(name) {
   return new RedisRateStore({
     client: redis,
@@ -85,9 +74,6 @@ function makeStore(name) {
   });
 }
 
-//       
-// Base options factory (each limiter calls this)
-//       
 function makeBaseOpts(storeName) {
   return {
     standardHeaders: true,
@@ -104,9 +90,6 @@ function makeBaseOpts(storeName) {
   };
 }
 
-//       
-// Key helpers
-//       
 function tokenHash(authHeader) {
   return crypto
     .createHash('sha256')
@@ -128,9 +111,6 @@ function emailKey(prefix, req) {
   return `${prefix}:anon:${ipKeyGenerator(req.ip)}`;
 }
 
-//       
-// Skip paths
-//       
 function shouldSkipRateLimit(req) {
   const p = req.path || '';
   if (p.startsWith('/api/health')) return true;
@@ -142,11 +122,6 @@ function shouldSkipRateLimit(req) {
 
 const isProd = process.env.NODE_ENV === 'production';
 
-//       
-// Limiters
-//       
-
-// Global — per user (auth) / per IP (anon)
 const globalLimiter = rateLimit({
   ...makeBaseOpts('global'),
   windowMs: 15 * 60 * 1000,
@@ -159,7 +134,6 @@ const globalLimiter = rateLimit({
   },
 });
 
-// Auth umbrella — covers every /api/auth/* route (loose)
 const authUmbrellaLimiter = rateLimit({
   ...makeBaseOpts('auth'),
   windowMs: 15 * 60 * 1000,
@@ -171,7 +145,6 @@ const authUmbrellaLimiter = rateLimit({
   },
 });
 
-// Login — per IP (ignores successful logins so office WiFi works)
 const loginIpLimiter = rateLimit({
   ...makeBaseOpts('login-ip'),
   windowMs: 15 * 60 * 1000,
@@ -184,13 +157,10 @@ const loginIpLimiter = rateLimit({
   },
 });
 
-// Login — per email
-// max: 10 so DB lockout (5) triggers FIRST → user sees 423 ACCOUNT_LOCKED
-// with proper countdown. This limiter only fires for extreme abuse (bot).
 const loginEmailLimiter = rateLimit({
   ...makeBaseOpts('login-email'),
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: isProd ? 10 : 100, // 🆕 relaxed in dev
   skipSuccessfulRequests: true,
   keyGenerator: (req) => emailKey('login:email', req),
   message: {
@@ -200,7 +170,6 @@ const loginEmailLimiter = rateLimit({
   },
 });
 
-// Register — per IP (anti-spam accounts)
 const registerLimiter = rateLimit({
   ...makeBaseOpts('register'),
   windowMs: 60 * 60 * 1000,
@@ -212,11 +181,10 @@ const registerLimiter = rateLimit({
   },
 });
 
-// Password reset — per email (very strict)
 const passwordResetLimiter = rateLimit({
   ...makeBaseOpts('pwreset'),
   windowMs: 60 * 60 * 1000,
-  max: 3,
+  max: isProd ? 3 : 20, // 🆕 relaxed in dev
   keyGenerator: (req) => emailKey('pwreset', req),
   message: {
     message: 'Too many password reset requests. Try again later.',
@@ -224,11 +192,11 @@ const passwordResetLimiter = rateLimit({
   },
 });
 
-// NEW (A): Verify email resend — per email (3/hour, distinct bucket)
+// 🆕 prod: 3/hr, dev: 20/hr
 const verifyEmailLimiter = rateLimit({
   ...makeBaseOpts('verify-email'),
   windowMs: 60 * 60 * 1000,
-  max: 3,
+  max: isProd ? 3 : 20,
   keyGenerator: (req) => emailKey('verify-email', req),
   message: {
     message: 'Too many verification email requests. Try again later.',
@@ -236,7 +204,6 @@ const verifyEmailLimiter = rateLimit({
   },
 });
 
-// Heavy operations — uploads, AI, exports
 const heavyLimiter = rateLimit({
   ...makeBaseOpts('heavy'),
   windowMs: 15 * 60 * 1000,
@@ -259,6 +226,6 @@ module.exports = {
   loginEmailLimiter,
   registerLimiter,
   passwordResetLimiter,
-  verifyEmailLimiter, // NEW
+  verifyEmailLimiter,
   heavyLimiter,
 };

@@ -1,11 +1,14 @@
 // frontend/src/routes/agency.campaigns.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AlertCircle, Loader2, Megaphone, Camera, CheckCircle2, Clock } from "lucide-react";
+import { AlertCircle, Loader2, Megaphone, Camera, CheckCircle2, Clock, Plus } from "lucide-react";
 import { PageHeader, Panel } from "@/components/ui-kit";
+import { Button } from "@/components/ui/button";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { campaignsApi, type Campaign } from "@/lib/campaigns";
+import { agencyProfileApi } from "@/lib/agency/api";
 import { useAgency } from "@/lib/agency/context";
+import { CreateMetaCampaignModal } from "@/components/agency/CreateMetaCampaignModal";
 
 export const Route = createFileRoute("/agency/campaigns")({
   head: () => ({ meta: [
@@ -19,7 +22,11 @@ function AgencyCampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  // State for Clients & Modal
+  const [clients, setClients] = useState<{ id: string; name: string; hasMetaConnected: boolean }[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const loadCampaigns = () => {
     setLoading(true);
     campaignsApi.list({ limit: 200 })
       .then((r) => {
@@ -29,6 +36,23 @@ function AgencyCampaignsPage() {
       })
       .catch((e) => setError(e?.message || "Failed"))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadCampaigns();
+    
+    // Fetch clients to populate the modal dropdown
+    agencyProfileApi.listClients()
+      .then((res) => {
+        // Assuming the response has clients with organization info and integration status
+        const formatted = (res.clients || []).map((c: any) => ({
+          id: c.clientOrganization.id,
+          name: c.clientOrganization.name,
+          hasMetaConnected: c.clientOrganization.adAccounts?.some((a: any) => a.provider === 'META') || false,
+        }));
+        setClients(formatted);
+      })
+      .catch(console.error);
   }, [activeBrandId]);
 
   const needsEditing = campaigns.filter((c) =>
@@ -54,6 +78,11 @@ function AgencyCampaignsPage() {
             activeBrandId
               ? "Showing campaigns for the active client brand."
               : "All campaigns across your clients."
+          }
+          actions={
+            <Button onClick={() => setIsModalOpen(true)}>
+              <Plus className="mr-2 size-4" /> Create Campaign
+            </Button>
           }
         />
 
@@ -118,6 +147,18 @@ function AgencyCampaignsPage() {
               </tbody>
             </table>
           </Panel>
+        )}
+
+        {isModalOpen && (
+          <CreateMetaCampaignModal
+            onClose={() => setIsModalOpen(false)}
+            onSuccess={() => {
+              setIsModalOpen(false);
+              loadCampaigns();
+            }}
+            clientBrands={clients}
+            defaultBrandId={activeBrandId || ""}
+          />
         )}
       </>
     </ProtectedRoute>

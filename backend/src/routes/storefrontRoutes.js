@@ -5,6 +5,8 @@ const ctrl = require('../controllers/storefrontController');
 
 // Public — no auth required
 router.get('/', ctrl.getPublicStorefront);
+router.get('/stats', ctrl.getPublicStats);
+router.get('/settings', ctrl.getPublicSettings); // 🆕 Public Settings endpoint
 
 // Everything below this line requires authentication
 router.use(authenticate);

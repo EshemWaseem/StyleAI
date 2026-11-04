@@ -5,6 +5,7 @@ export interface CategoryStat {
   name: string;
   slug: string;
   count: number;
+  imageUrl?: string; // 👈 NAYA FIELD
 }
 
 export interface GenderStat {
@@ -42,27 +43,39 @@ export function deriveCategories(products: PublicProduct[]): {
   genders: GenderStat[];
   categories: CategoryStat[];
 } {
-  const genderMap = new Map<string, Map<string, number>>();
-  const categoryMap = new Map<string, number>();
+  const genderMap = new Map<string, Map<string, { count: number; imageUrl?: string }>>();
+  const categoryMap = new Map<string, { count: number; imageUrl?: string }>();
 
   for (const p of products) {
     const gender = normalizeGender(p.gender);
     const category = (p.category || "Other").trim();
+    const img = p.primaryImage || undefined;
 
+    // Gender Map Update
     if (!genderMap.has(gender)) genderMap.set(gender, new Map());
     const gMap = genderMap.get(gender)!;
-    gMap.set(category, (gMap.get(category) || 0) + 1);
+    const existingG = gMap.get(category) || { count: 0, imageUrl: img };
+    gMap.set(category, { 
+      count: existingG.count + 1, 
+      imageUrl: existingG.imageUrl || img 
+    });
 
-    categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
+    // Category Map Update
+    const existingC = categoryMap.get(category) || { count: 0, imageUrl: img };
+    categoryMap.set(category, { 
+      count: existingC.count + 1, 
+      imageUrl: existingC.imageUrl || img 
+    });
   }
 
   const genders: GenderStat[] = Array.from(genderMap.entries())
     .map(([name, cats]) => {
       const categories: CategoryStat[] = Array.from(cats.entries())
-        .map(([cName, count]) => ({
+        .map(([cName, data]) => ({
           name: cName,
           slug: slugifyCategoryName(cName),
-          count,
+          count: data.count,
+          imageUrl: data.imageUrl,
         }))
         .sort((a, b) => b.count - a.count);
       const count = categories.reduce((sum, c) => sum + c.count, 0);
@@ -71,10 +84,11 @@ export function deriveCategories(products: PublicProduct[]): {
     .sort((a, b) => b.count - a.count);
 
   const categories: CategoryStat[] = Array.from(categoryMap.entries())
-    .map(([name, count]) => ({
+    .map(([name, data]) => ({
       name,
       slug: slugifyCategoryName(name),
-      count,
+      count: data.count,
+      imageUrl: data.imageUrl,
     }))
     .sort((a, b) => b.count - a.count);
 

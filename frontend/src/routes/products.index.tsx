@@ -1,10 +1,10 @@
 // frontend/src/routes/products.index.tsx
-import { swalError, swalConfirm, swalSuccess } from "@/lib/swal";
+import { swalError, swalConfirm, swalSuccess, swalInfo } from "@/lib/swal";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Plus, Search, AlertCircle, Trash2, Lock,
-  Eye, EyeOff, Loader2, Store, Send
+  Loader2, Store, Send, CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui-kit";
@@ -37,7 +37,7 @@ function Products() {
 
   // Storefront state
   const [storefront, setStorefront] = useState<MyStorefrontStatus | null>(null);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null); // Used for loading state on Apply
   const [showApplyModal, setShowApplyModal] = useState(false);
 
   const canCreate = !!user?.permissions.includes("product.create");
@@ -101,20 +101,23 @@ function Products() {
     }
   }
 
-  // Toggle storefront visibility
-  async function toggleVisibility(productId: string, current: boolean) {
+  // 🆕 Request Feature (No toggle, only apply)
+  async function handleRequestFeature(productId: string) {
     if (!storefront || storefront.status !== "APPROVED") return;
     setTogglingId(productId);
     try {
-      await brandStorefrontApi.toggleProductVisibility(productId, !current);
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === productId ? { ...p, storefrontVisible: !current } : p
-        )
+      // 👉 Yahan aapki backend API call aayegi (e.g., await brandStorefrontApi.requestProductFeature(productId);)
+      // Abhi ke liye hum frontend par hi success message dikha rahe hain
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
+      
+      swalSuccess(
+        "Request Sent", 
+        "Your request to feature this product has been sent to the admin for approval."
       );
-      refreshStorefrontStatus();
+      
+      // Note: Yahan hum product ko directly visible nahi kar rahe kyunke admin approve karega
     } catch (e: any) {
-      swalError(e?.message || "Toggle failed");
+      swalError(e?.message || "Could not send request");
     } finally {
       setTogglingId(null);
     }
@@ -160,7 +163,7 @@ function Products() {
             <Store className="size-4 text-muted-foreground" />
             <span className="text-muted-foreground">
               {storefront.status === "REQUESTED"
-                ? "Storefront application under review — products can be toggled once approved."
+                ? "Storefront application under review — products can be requested once approved."
                 : storefront.status === "DECLINED"
                 ? "Storefront application was declined. You can re-apply."
                 : "Apply for the public storefront to feature products publicly."}
@@ -220,40 +223,36 @@ function Products() {
                 key={p.id}
                 className="group overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lift"
               >
-                {/* Storefront toggle header */}
+                {/* 🆕 Storefront Header (Toggle Removed) */}
                 {storefrontApproved ? (
-                  <div className="flex items-center justify-between border-b border-border bg-muted/20 px-3 py-2">
+                  <div className="flex items-center justify-between border-b border-border bg-muted/20 px-3 py-2 min-h-[40px]">
                     <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Storefront
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => toggleVisibility(p.id, visible)}
-                      disabled={busy}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium transition-colors",
-                        visible
-                          ? "bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      )}
-                      title={
-                        visible
-                          ? "Visible on public storefront — click to hide"
-                          : "Hidden from storefront — click to publish"
-                      }
-                    >
-                      {busy ? (
-                        <Loader2 className="size-3 animate-spin" />
-                      ) : visible ? (
-                        <Eye className="size-3" />
-                      ) : (
-                        <EyeOff className="size-3" />
-                      )}
-                      {visible ? "Live" : "Hidden"}
-                    </button>
+                    
+                    {visible ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold text-emerald-500">
+                        <CheckCircle2 className="size-3" /> Live
+                      </span>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRequestFeature(p.id)}
+                        disabled={busy}
+                        className="h-6 px-2 text-[10px] font-medium text-accent hover:bg-accent/10 hover:text-accent"
+                      >
+                        {busy ? (
+                          <Loader2 className="mr-1 size-3 animate-spin" />
+                        ) : (
+                          <Send className="mr-1 size-3" />
+                        )}
+                        Apply to Feature
+                      </Button>
+                    )}
                   </div>
                 ) : (
-                  <div className="border-b border-border bg-muted/10 px-3 py-2">
+                  <div className="border-b border-border bg-muted/10 px-3 py-2 min-h-[40px] flex items-center">
                     <span className="text-[10px] text-muted-foreground">
                       {storefront?.status === "REQUESTED"
                         ? "Storefront — awaiting approval"

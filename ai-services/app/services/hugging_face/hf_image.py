@@ -1,8 +1,4 @@
 # app/services/hugging_face/hf_image.py
-#      ==
-# Hugging Face Inference — text-to-image + image-to-image
-#      ==
-
 import asyncio
 import io
 import logging
@@ -34,9 +30,6 @@ class HFImageService:
         self.model = settings.HF_IMAGE_MODEL
         logger.info("HFImageService initialized. Model: %s", self.model)
 
-    #       
-    # TEXT → IMAGE (generic scene)
-    #       
     def _text_to_image_sync(self, prompt: str, width: int, height: int) -> bytes:
         try:
             image = self.client.text_to_image(
@@ -54,20 +47,13 @@ class HFImageService:
                 raise HFQuotaError(f"HF rate limit: {e}") from e
             raise
 
-    #       
-    # IMAGE + TEXT → IMAGE (preserves input image)
-    #       
     def _image_to_image_sync(
         self, image_bytes: bytes, prompt: str, strength: float = 0.65
     ) -> bytes:
         try:
-            # Load input image
             input_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-
-            # Resize to a reasonable square (SDXL/FLUX work best at multiples of 8)
             input_img.thumbnail((1024, 1024), Image.LANCZOS)
 
-            # Make square canvas if not square
             w, h = input_img.size
             if w != h:
                 side = max(w, h)
@@ -79,7 +65,7 @@ class HFImageService:
                 image=input_img,
                 prompt=prompt,
                 model=self.model,
-                strength=strength,   # 0.0 = keep original, 1.0 = ignore original
+                strength=strength,
             )
             buf = io.BytesIO()
             image.save(buf, format="PNG")
@@ -91,9 +77,6 @@ class HFImageService:
                 raise HFQuotaError(f"HF rate limit: {e}") from e
             raise
 
-    #       
-    # ASYNC WRAPPERS
-    #       
     async def generate(
         self, prompt: str, width: int = 1024, height: int = 1024
     ) -> tuple[bytes, int]:
@@ -117,7 +100,6 @@ class HFImageService:
 
 
 _service: Optional[HFImageService] = None
-
 
 def get_hf_image() -> HFImageService:
     global _service

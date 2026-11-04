@@ -30,6 +30,8 @@ from app.api.routes import platform_content as platform_content_routes
 from app.api.routes import product_photography as product_photography_routes
 from app.api.routes import embeddings as embeddings_routes
 from app.api.routes import chat as chat_routes
+from app.api.routes.tryon import router as tryon_router
+
 from app.services.ollama_service import ollama_service
 
 
@@ -199,6 +201,7 @@ app.include_router(product_angles_routes.router)
 app.include_router(platform_content_routes.router)
 app.include_router(product_photography_routes.router)
 app.include_router(embeddings_routes.router)
+app.include_router(tryon_router)
 app.include_router(chat_routes.router)
 
 

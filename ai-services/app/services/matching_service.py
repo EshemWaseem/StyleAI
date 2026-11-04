@@ -1,5 +1,15 @@
 # app/services/matching_service.py
-import re
+"""
+Influencer matching service.
+
+Routes to the unified LLM service (Groq / Gemini / Ollama) and falls
+back to a local heuristic scorer if the LLM call fails.
+
+✅ FIX: model resolution is delegated to LLMService (no more hardcoded
+        OLLAMA_TEXT_MODEL leaking into Groq, and no more hardcoded
+        "ollama" provider label in the response).
+"""
+
 import time
 import logging
 from typing import List, Dict, Any
@@ -22,6 +32,7 @@ _VALID_SCORE_KEYS = {
     "price_score",
     "verdict",
 }
+
 
 def _heuristic_score(product: dict, candidate: dict) -> dict:
     pc = (product.get("category") or "").lower()
@@ -85,6 +96,7 @@ def _heuristic_score(product: dict, candidate: dict) -> dict:
         "verdict": "Computed without AI.",
     }
 
+
 def _sanitize_key(k: str) -> str:
     k = str(k).strip()
     if k.endswith("_id_id"):
@@ -92,6 +104,7 @@ def _sanitize_key(k: str) -> str:
     if not k or len(k.strip()) == 0:
         return "__junk__"
     return k
+
 
 def _sanitize_item(raw: Any) -> dict | None:
     if not isinstance(raw, dict):
@@ -142,6 +155,7 @@ def _sanitize_item(raw: Any) -> dict | None:
         "verdict": verdict,
     }
 
+
 def _extract_results(raw: Any) -> List[dict]:
     if isinstance(raw, dict):
         arr = raw.get("results")
@@ -159,6 +173,7 @@ def _extract_results(raw: Any) -> List[dict]:
         if s:
             cleaned.append(s)
     return cleaned
+
 
 async def match_influencers(req: MatchRequest) -> Dict[str, Any]:
     start = time.time()
@@ -179,12 +194,15 @@ async def match_influencers(req: MatchRequest) -> Dict[str, Any]:
         f"{build_user_prompt(product, candidates)}"
     )
 
-    model_name = settings.OLLAMA_TEXT_MODEL
+    # ✅ Resolve actual provider + model (never hardcode "ollama").
+    provider_name = (settings.LLM_PROVIDER or "groq").lower()
+    actual_model = settings.text_model
 
     try:
         raw = await ollama_service.generate_json(
             prompt=combined_prompt,
-            model=model_name,
+            # ✅ No `model=` — LLMService routes to the correct provider
+            #    (Groq → openai/gpt-oss-120b, Gemini → gemini-flash-latest, etc.)
             temperature=0.1,
             num_predict=8192,
         )
@@ -210,12 +228,16 @@ async def match_influencers(req: MatchRequest) -> Dict[str, Any]:
 
         validated.sort(key=lambda x: x.score, reverse=True)
         latency = int((time.time() - start) * 1000)
-        logger.info("AI matched %d influencers in %dms", len(validated), latency)
+        logger.info(
+            "AI matched %d influencers in %dms (provider=%s, model=%s)",
+            len(validated), latency, provider_name, actual_model,
+        )
 
         return {
             "results": [i.model_dump() for i in validated],
-            "provider": "ollama",
-            "model": model_name,
+            # ✅ Dynamic labels — no more hardcoded "ollama"
+            "provider": provider_name,
+            "model": actual_model,
             "latency_ms": latency,
             "fallback_used": False,
         }

@@ -1,4 +1,5 @@
 // components/app-shell/header.tsx
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Command, HelpCircle, PanelLeftClose, PanelLeftOpen,
@@ -13,7 +14,7 @@ import {
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { cn } from "@/lib/utils";
 import { Brandmark } from "./brandmark";
-import { SidebarNav } from "./sidebar-nav";
+import { Sidebar } from "./sidebar"; // 🆕 Import Sidebar
 import { AgencyBrandSwitcher } from "./agency-switcher";
 import { Assistant } from "./assistant";
 import { UserMenu } from "./user-menu";
@@ -27,10 +28,15 @@ export function AppHeader({
   collapsed?: boolean;
   onLogout: () => void;
 }) {
+  // 🆕 State to control mobile menu
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <header className="z-20 shrink-0 border-b border-border bg-background/85 backdrop-blur-md">
       <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
-        <Sheet>
+        
+        {/* 🆕 MOBILE SIDEBAR INTEGRATION */}
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button
               variant="ghost"
@@ -46,12 +52,11 @@ export function AppHeader({
             className="sidebar-sheet-content w-[268px] bg-sidebar p-0"
           >
             <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <div className="flex h-16 items-center border-b border-sidebar-border px-4">
-              <Brandmark />
-            </div>
-            <div className="hover-scroll overflow-y-auto">
-              <SidebarNav />
-            </div>
+            {/* Use the Sidebar component. Pass isMobile and onNavigate to close it on click */}
+            <Sidebar
+              isMobile={true}
+              onNavigate={() => setMobileOpen(false)}
+            />
           </SheetContent>
         </Sheet>
 

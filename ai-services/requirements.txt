@@ -1,44 +1,4 @@
-# # Web framework
-# fastapi==0.141.1
-# uvicorn[standard]==0.52.4
 
-# # Validation + settings
-# pydantic==2.13.5
-# pydantic-settings==2.6.1
-
-# # HTTP client (for Ollama, HF)
-# httpx==0.28.1
-
-# # Image processing
-# Pillow==11.1.0
-
-# # Environment
-# python-dotenv==1.0.1
-
-
-
-
-
-
-
-
-
-# # # Web framework
-# # fastapi==0.141.1
-# # uvicorn[standard]==0.52.4
-
-# # # Validation
-# # pydantic==2.13.5
-# # pydantic-settings==2.6.1
-
-# # # HTTP client
-# # httpx==0.28.1
-
-# # # Image processing
-# # Pillow==11.1.0
-
-# # # Environment
-# # python-dotenv==1.0.1
 
 
 # Web framework
@@ -62,3 +22,20 @@ onnxruntime>=1.20.1
 
 # Env
 python-dotenv==1.0.1
+
+
+
+gradio_client>=0.7.0
+httpx>=0.25.0
+
+
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+httpx
+tenacity
+huggingface_hub
+Pillow
+google-genai
+python-multipart

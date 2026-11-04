@@ -19,6 +19,7 @@ import { slugifyCategory } from "@/components/shop/category-grid";
 import { useCart } from "@/lib/cart";
 import { publicProductsApi, type PublicProduct } from "@/lib/products";
 import { SEO } from "@/lib/seo";
+import { TryOnModal } from "@/components/product/TryOnModal"; // 🆕 Import TryOnModal
 
 export const Route = createFileRoute("/shop/product/$slug")({
   loader: async ({ params }) => {
@@ -148,6 +149,9 @@ function ProductPublicPage() {
 
   const [qty, setQty] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
+  
+  // 🆕 State for Virtual Try-On Modal
+  const [tryOnOpen, setTryOnOpen] = useState(false);
 
   function addToCart(goToCheckout = false) {
     for (let i = 0; i < qty; i++) {
@@ -300,6 +304,16 @@ function ProductPublicPage() {
                 </div>
               </div>
 
+              {/* 🆕 Virtual Try-On Button */}
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full gap-2 border-accent/50 text-accent hover:bg-accent/10 hover:text-accent font-medium shadow-sm"
+                onClick={() => setTryOnOpen(true)}
+              >
+                <Sparkles className="size-4" /> Try On with AI
+              </Button>
+
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
                   size="lg"
@@ -376,6 +390,15 @@ function ProductPublicPage() {
           </section>
         )}
       </main>
+
+      {/* 🆕 Try On Modal Container */}
+      <TryOnModal
+        open={tryOnOpen}
+        onClose={() => setTryOnOpen(false)}
+        productId={product.id}
+        productName={product.name}
+        productImage={product.primaryImage || product.images?.[0]?.url || ""}
+      />
     </div>
   );
 }

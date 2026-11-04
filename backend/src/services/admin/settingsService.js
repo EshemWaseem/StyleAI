@@ -2,7 +2,18 @@
 const { getAllSettings, setSetting, writeAudit } = require('./helpers');
 
 async function getAll() {
-  return getAllSettings();
+  const settings = await getAllSettings();
+  
+  // 🆕 Default fallbacks agar DB khali ho
+  return {
+    limits: {
+      minOrderAmount: 500,
+      ...(settings.limits || {}),
+    },
+    features: {
+      ...(settings.features || {}),
+    },
+  };
 }
 
 async function updateSettings(adminId, updates) {

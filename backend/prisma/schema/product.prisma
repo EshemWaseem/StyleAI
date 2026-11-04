@@ -29,6 +29,9 @@ model Product {
 
   //  — storefront section links
   storefrontSections StorefrontSectionProduct[]
+  
+  // 🆕 ADDED FOR VIRTUAL TRY-ON
+  tryOnJobs TryOnJob[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

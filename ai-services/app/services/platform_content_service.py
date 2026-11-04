@@ -1,7 +1,7 @@
 # app/services/platform_content_service.py
 #      ==
-# Per-platform content generation via Ollama text model
-# Falls back across prompt retries if JSON invalid
+# Per-platform content generation via the unified LLM service.
+# Falls back across prompt retries if JSON invalid.
 # Sprint 26: brand_context flows through build_prompt()
 #      ==
 
@@ -56,16 +56,23 @@ def _sanitize_dict(raw: Any) -> dict:
 
 async def generate_platform_content(req: PlatformContentRequest) -> Dict[str, Any]:
     start = time.time()
-    model = settings.OLLAMA_TEXT_MODEL
     retried = False
 
-    context_injected = bool(getattr(req, "brand_context", None) and str(req.brand_context).strip())
+    context_injected = bool(
+        getattr(req, "brand_context", None) and str(req.brand_context).strip()
+    )
 
     prompt = build_prompt(req)
 
+    # ❌ OLD: model = settings.OLLAMA_TEXT_MODEL
+    # ❌ OLD: ollama_service.generate_json(prompt=..., model=model, ...)
+    # ✅ NEW: Do NOT pass `model` — let the unified LLM service resolve
+    #         the correct model based on LLM_PROVIDER (groq → openai/gpt-oss-120b).
     try:
         raw = await ollama_service.generate_json(
-            prompt=prompt, model=model, temperature=0.4, num_predict=1500,
+            prompt=prompt,
+            temperature=0.4,
+            num_predict=1500,
         )
         content = _validate(req.platform, raw)
     except (ValidationError, ValueError, KeyError, json.JSONDecodeError) as e:
@@ -76,16 +83,23 @@ async def generate_platform_content(req: PlatformContentRequest) -> Dict[str, An
             + prompt
         )
         raw = await ollama_service.generate_json(
-            prompt=strict, model=model, temperature=0.0, num_predict=1500,
+            prompt=strict,
+            temperature=0.0,
+            num_predict=1500,
         )
         content = _validate(req.platform, raw)
 
     latency = int((time.time() - start) * 1000)
+
+    # Dynamically reflect the actual provider + model used
+    provider_name = (settings.LLM_PROVIDER or "groq").lower()
+    actual_model = settings.text_model
+
     return {
         "platform": req.platform,
         "content": content.model_dump(),
-        "provider": "ollama",
-        "model": model,
+        "provider": provider_name,
+        "model": actual_model,
         "latency_ms": latency,
         "retried": retried,
         "context_injected": context_injected,

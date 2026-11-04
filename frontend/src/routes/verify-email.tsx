@@ -1,12 +1,13 @@
-// routes/verify-email.tsx
+
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   CheckCircle2,
   Loader2,
   Mail,
   ShieldAlert,
   ArrowLeft,
+  LogIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,15 +44,25 @@ function VerifyEmailPage() {
   const [state, setState] = useState<State>(
     token ? { kind: "verifying" } : { kind: "resend-form" }
   );
+
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [resendError, setResendError] = useState("");
 
-  // Auto-verify on mount if token present
+  // Prevent duplicate verification requests in React StrictMode.
+  const didAttemptVerify = useRef(false);
+
+  // Auto-verify when a token is present.
   useEffect(() => {
     if (!token) return;
-    let cancelled = false;
 
+    if (didAttemptVerify.current) return;
+
+    didAttemptVerify.current = true;
+
+    // IMPORTANT:
+    // Do not cancel the response during StrictMode's simulated cleanup.
+    // Otherwise the first successful response can be ignored.
     (async () => {
       try {
         await http.post(
@@ -59,19 +70,19 @@ function VerifyEmailPage() {
           { token },
           { skipAuth: true }
         );
-        if (!cancelled) setState({ kind: "success" });
+
+        setState({ kind: "success" });
       } catch (err: any) {
-        if (cancelled) return;
         const code = err?.code;
-        if (code === "INVALID_VERIFY_TOKEN") {
-          // R2 FIX: friendlier copy — could be expired OR already used
+
+        if (code === "ALREADY_VERIFIED") {
+          setState({ kind: "success" });
+        } else if (code === "INVALID_VERIFY_TOKEN") {
           setState({
             kind: "error",
             message:
-              "This link may have already been used, or it has expired. If you've already verified, try signing in. Otherwise, request a new link below.",
+              "This link may have already been used, or it has expired. If you've already verified your email, you can sign in directly. Otherwise, request a new link below.",
           });
-        } else if (code === "ALREADY_VERIFIED") {
-          setState({ kind: "success" });
         } else {
           setState({
             kind: "error",
@@ -82,26 +93,26 @@ function VerifyEmailPage() {
         }
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
   }, [token]);
 
   async function handleResend(e: React.FormEvent) {
     e.preventDefault();
     setResendError("");
+
     if (!email.trim()) {
       setResendError("Email is required.");
       return;
     }
+
     setSending(true);
+
     try {
       await http.post(
         "/api/auth/verify-email/resend",
         { email: email.trim() },
         { skipAuth: true }
       );
+
       setState({ kind: "resend-sent" });
     } catch (err: any) {
       if (err?.status === 429) {
@@ -110,7 +121,8 @@ function VerifyEmailPage() {
         );
       } else {
         setResendError(
-          err?.message || "Could not send verification email. Please try again."
+          err?.message ||
+            "Could not send verification email. Please try again."
         );
       }
     } finally {
@@ -118,7 +130,7 @@ function VerifyEmailPage() {
     }
   }
 
-  //  Verifying 
+  // Verifying
   if (state.kind === "verifying") {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
@@ -126,9 +138,11 @@ function VerifyEmailPage() {
           <div className="mx-auto grid size-14 place-items-center rounded-full bg-accent/15 text-accent">
             <Loader2 className="size-7 animate-spin" />
           </div>
+
           <h1 className="mt-6 font-display text-2xl font-medium tracking-tight">
             Verifying your email…
           </h1>
+
           <p className="mt-3 text-sm text-muted-foreground">
             Just a moment while we confirm your account.
           </p>
@@ -137,7 +151,7 @@ function VerifyEmailPage() {
     );
   }
 
-  //  Success 
+  // Success
   if (state.kind === "success") {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
@@ -145,12 +159,15 @@ function VerifyEmailPage() {
           <div className="mx-auto grid size-14 place-items-center rounded-full bg-emerald-500/15 text-emerald-500">
             <CheckCircle2 className="size-7" />
           </div>
+
           <h1 className="mt-6 font-display text-2xl font-medium tracking-tight">
             Email verified
           </h1>
+
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             Your email has been verified. You can now sign in to your account.
           </p>
+
           <div className="mt-8 flex flex-col gap-2">
             <Button
               className="w-full"
@@ -158,6 +175,7 @@ function VerifyEmailPage() {
             >
               Sign in
             </Button>
+
             <Button asChild variant="ghost" className="w-full">
               <Link to="/">Go to storefront</Link>
             </Button>
@@ -167,7 +185,7 @@ function VerifyEmailPage() {
     );
   }
 
-  //  Resend sent 
+  // Resend sent
   if (state.kind === "resend-sent") {
     return (
       <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
@@ -175,17 +193,21 @@ function VerifyEmailPage() {
           <div className="mx-auto grid size-14 place-items-center rounded-full bg-emerald-500/15 text-emerald-500">
             <CheckCircle2 className="size-7" />
           </div>
+
           <h1 className="mt-6 font-display text-2xl font-medium tracking-tight">
             Verification email sent
           </h1>
+
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             If this email is registered and unverified, we've sent a new
             verification link. Check your inbox.
           </p>
+
           <div className="mt-8 flex flex-col gap-2">
             <Button asChild className="w-full">
               <Link to="/login">Back to sign in</Link>
             </Button>
+
             <Button asChild variant="ghost" className="w-full">
               <Link to="/">Go to storefront</Link>
             </Button>
@@ -195,7 +217,7 @@ function VerifyEmailPage() {
     );
   }
 
-  //  Error OR resend-form 
+  // Error OR resend form
   return (
     <div className="grid min-h-screen place-items-center bg-background px-4 py-16 text-foreground">
       <div className="w-full max-w-sm">
@@ -203,32 +225,56 @@ function VerifyEmailPage() {
           <span className="grid size-8 place-items-center rounded-md bg-foreground text-background font-display text-sm">
             S
           </span>
+
           <span className="font-display text-[15px]">StyleAI</span>
         </Link>
 
         <div className="mt-10 flex items-center gap-2">
           {state.kind === "error" ? (
-            <ShieldAlert className="size-5 text-destructive" aria-hidden="true" />
+            <ShieldAlert
+              className="size-5 text-destructive"
+              aria-hidden="true"
+            />
           ) : (
             <Mail className="size-5 text-accent" aria-hidden="true" />
           )}
+
           <h1 className="font-display text-3xl font-medium tracking-tight">
-            {state.kind === "error" ? "Verify your email" : "Check your email"}
+            {state.kind === "error"
+              ? "Verify your email"
+              : "Check your email"}
           </h1>
         </div>
 
         {state.kind === "error" && (
-          <div
-            role="alert"
-            className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
-          >
-            {state.message}
-          </div>
+          <>
+            <div
+              role="alert"
+              className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+            >
+              {state.message}
+            </div>
+
+            <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
+              <p className="text-xs font-medium text-foreground">
+                Already verified your email?
+              </p>
+
+              <Button
+                className="mt-2 w-full"
+                onClick={() => navigate({ to: "/login" })}
+              >
+                <LogIn className="mr-1.5 size-4" />
+                Go to sign in
+              </Button>
+            </div>
+          </>
         )}
 
         <p className="mt-3 text-sm text-muted-foreground">
-          Enter the email you signed up with, and we'll send a fresh
-          verification link.
+          {state.kind === "error"
+            ? "If your email is still unverified, request a new link below."
+            : "Enter the email you signed up with, and we'll send a fresh verification link."}
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={handleResend} noValidate>
@@ -243,6 +289,7 @@ function VerifyEmailPage() {
 
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
+
             <Input
               id="email"
               type="email"
@@ -259,7 +306,8 @@ function VerifyEmailPage() {
           <Button type="submit" className="w-full" disabled={sending}>
             {sending ? (
               <>
-                <Loader2 className="mr-1.5 size-4 animate-spin" /> Sending…
+                <Loader2 className="mr-1.5 size-4 animate-spin" />
+                Sending…
               </>
             ) : (
               "Resend verification email"

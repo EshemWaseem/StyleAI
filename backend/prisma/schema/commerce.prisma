@@ -51,6 +51,10 @@ model Order {
 
   shippingAddress Json?  
 
+  // 🆕 COURIER & TRACKING (Shipping Details)
+  courierName     String?
+  trackingNumber  String?
+
   user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   brand    Brand?      @relation(fields: [brandId], references: [id], onDelete: SetNull)
   items    OrderItem[]

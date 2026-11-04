@@ -1,4 +1,3 @@
-// components/app-shell/nav-configs/agency-nav.ts
 import {
   LayoutDashboard, MessageCircle, Bell, UsersRound, Megaphone, Camera,
   Inbox, Wallet, Settings,
@@ -35,7 +34,6 @@ export const AGENCY_NAV: NavGroup[] = [
   {
     group: "Account",
     items: [
-      { to: "/team", label: "Team", icon: UsersRound },
       { to: "/settings", label: "Settings", icon: Settings },
     ],
   },

@@ -1,4 +1,4 @@
-// settings.tsx
+// frontend/src/routes/settings.tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -18,6 +18,7 @@ import {
   LogOut,
   Monitor,
   Clock,
+  Facebook, // 👈 NEW IMPORT
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ import {
   type NotificationPreference,
   type UpdatePreferenceInput,
 } from "@/lib/notifications";
+import { agencyIntegrationsApi } from "@/lib/agency/api"; // 👈 NEW IMPORT
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -191,6 +193,10 @@ function SettingsPage() {
     text: string;
   } | null>(null);
 
+  // 👇 NEW: Meta Integration State
+  const [metaConnected, setMetaConnected] = useState(false);
+  const [metaLoading, setMetaLoading] = useState(false);
+
   //  - Auth guard  -
   useEffect(() => {
     if (authLoading || !user) return;
@@ -250,6 +256,18 @@ function SettingsPage() {
       )
       .finally(() => setHistoryLoading(false));
   }, [authLoading, user]);
+
+  // 👇 NEW: Load Meta Integration status
+  useEffect(() => {
+    if (!user || !isBrandUser(user.roles ?? [])) return;
+    setMetaLoading(true);
+    agencyIntegrationsApi.list()
+      .then((res) => {
+        setMetaConnected((res.accounts || []).some((a: any) => a.provider === "META"));
+      })
+      .catch(() => {})
+      .finally(() => setMetaLoading(false));
+  }, [user]);
 
   //  - Save account  -
   async function handleSaveAccount(e: React.FormEvent) {
@@ -438,6 +456,16 @@ function SettingsPage() {
       });
     } finally {
       setPrefsSaving(false);
+    }
+  }
+
+  // 👇 NEW: Connect Meta Handler
+  async function handleConnectMeta() {
+    try {
+      const res = await agencyIntegrationsApi.connect("META");
+      window.location.href = res.url;
+    } catch (err) {
+      alert("Failed to start Meta connection");
     }
   }
 
@@ -933,6 +961,29 @@ function SettingsPage() {
               </p>
             </div>
           )}
+        </Panel>
+      )}
+
+      {brandMode && (
+        <Panel className="mt-6">
+          <SectionTitle
+            title="Ad Account Integrations" // 👇 NEW SECTION ADDED HERE
+            description="Connect your Meta account to allow agencies to run campaigns."
+            action={<Facebook className="size-4 text-blue-500" />}
+          />
+          <div className="flex items-center justify-between rounded-lg border border-border p-4">
+            <div>
+              <p className="text-sm font-medium">Meta (Facebook & Instagram)</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {metaConnected 
+                  ? "Your Meta account is connected and ready for campaigns." 
+                  : "Connect your ad account so agencies can manage campaigns."}
+              </p>
+            </div>
+            <Button onClick={handleConnectMeta} disabled={metaLoading}>
+              {metaLoading ? "Loading..." : metaConnected ? "Reconnect Meta" : "Connect Meta"}
+            </Button>
+          </div>
         </Panel>
       )}
 

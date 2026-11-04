@@ -19,9 +19,11 @@ export function ProductCard({
 }) {
   return (
     <article className="group overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lift">
+      {/* 🆕 Added preload={false} to stop API spam on scroll */}
       <Link
         to="/shop/product/$slug"
         params={{ slug: p.id }}
+        preload={false}
         className="relative block"
         aria-label={`View ${p.name}`}
       >
@@ -41,7 +43,7 @@ export function ProductCard({
 
       <div className={cn("space-y-2.5 p-3 sm:space-y-3 sm:p-5", compact && "sm:p-3")}>
         <div>
-          <Link to="/shop/product/$slug" params={{ slug: p.id }}>
+          <Link to="/shop/product/$slug" params={{ slug: p.id }} preload={false}>
             <h3
               className={cn(
                 "font-display font-medium leading-snug hover:underline",

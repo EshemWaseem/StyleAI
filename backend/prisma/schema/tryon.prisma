@@ -1,0 +1,18 @@
+// prisma/schema/tryon.prisma
+
+model TryOnJob {
+  id             String    @id @default(cuid())
+  userId         String
+  productId      String
+  status         String    @default("PROCESSING") // PROCESSING, COMPLETED, FAILED
+  resultImageUrl String?
+  error          String?
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}

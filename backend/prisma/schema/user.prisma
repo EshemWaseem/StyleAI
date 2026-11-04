@@ -2,13 +2,11 @@
 
 // USER + ROLES + PERMISSIONS
 
-
 enum AdminApprovalStatus {
   PENDING
   APPROVED
   REJECTED
 }
-
 
 model User {
   id       String  @id @default(uuid())
@@ -83,6 +81,9 @@ model User {
   subscription Subscription?
 
   loginAttempts LoginAttempt[]
+  
+  // 🆕 ADDED FOR VIRTUAL TRY-ON
+  tryOnJobs TryOnJob[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -94,7 +95,6 @@ model User {
   @@index([adminApprovalStatus])
   @@index([adminApprovalRequestedAt])
 }
-
 
 model LoginAttempt {
   id        String   @id @default(uuid())

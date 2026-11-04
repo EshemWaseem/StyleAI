@@ -1,14 +1,14 @@
+// src/routes/admin/setting
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AlertCircle, Loader2, Save, Sliders } from "lucide-react";
+import { AlertCircle, Loader2, Save, Sliders, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { settingsApi, type PlatformSettings } from "@/lib/admin/finance";
 
 export const Route = createFileRoute("/admin/settings")({
-  head: () => ({ meta: [
-      { name: "robots", content: "noindex" },{ title: "Admin · Settings — StyleAI" }] }),
+  head: () => ({ meta: [{ name: "robots", content: "noindex" }, { title: "Admin · Settings — StyleAI" }] }),
   component: AdminSettingsPage,
 });
 
@@ -39,7 +39,7 @@ function AdminSettingsPage() {
     try {
       await settingsApi.update(edited);
       setEdited({});
-      setOk("Settings saved");
+      setOk("Settings saved successfully");
       setTimeout(() => setOk(""), 2500);
     } catch (e: any) {
       setError(e?.message || "Save failed");
@@ -47,6 +47,9 @@ function AdminSettingsPage() {
       setSaving(false);
     }
   }
+
+  // 🆕 Get values (defaults if not in DB yet)
+  const minOrder = edited["minOrderAmount"]?.value ?? settings.limits?.minOrderAmount ?? 500;
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
@@ -75,14 +78,39 @@ function AdminSettingsPage() {
           </div>
         ) : (
           <>
+            {/* 🆕 COMMERCE SETTINGS */}
             <Panel className="mt-8">
               <SectionTitle
-                title="Limits"
+                title="Commerce Settings"
+                description="Configure checkout requirements and order rules."
+                action={<ShoppingBag className="size-4 text-muted-foreground" />}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Minimum Order Amount ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={minOrder}
+                    onChange={(e) => update("limits", "minOrderAmount", Number(e.target.value))}
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm tabular-nums"
+                  />
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Customers cannot checkout if cart total is below this amount.
+                  </p>
+                </div>
+              </div>
+            </Panel>
+
+            <Panel className="mt-6">
+              <SectionTitle
+                title="System Limits"
                 description="Numeric caps enforced across the platform."
                 action={<Sliders className="size-4 text-muted-foreground" />}
               />
               <div className="grid gap-4 sm:grid-cols-2">
-                {Object.entries(settings.limits || {}).map(([key, value]) => (
+                {Object.entries(settings.limits || {}).filter(([k]) => k !== 'minOrderAmount').map(([key, value]) => (
                   <SettingField
                     key={key} category="limits" settingKey={key}
                     value={edited[key]?.value ?? value}
@@ -100,10 +128,7 @@ function AdminSettingsPage() {
               />
               <div className="space-y-3">
                 {Object.entries(settings.features || {}).map(([key, value]) => (
-                  <label
-                    key={key}
-                    className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-accent/5"
-                  >
+                  <label key={key} className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-accent/5">
                     <div>
                       <p className="text-sm font-medium">{key.replace(/([A-Z])/g, " $1").replace(/^enable /i, "")}</p>
                       <p className="text-xs text-muted-foreground">{key}</p>
@@ -121,11 +146,7 @@ function AdminSettingsPage() {
 
             <div className="mt-6 flex justify-end">
               <Button onClick={save} disabled={saving || Object.keys(edited).length === 0}>
-                {saving ? (
-                  <><Loader2 className="mr-2 size-4 animate-spin" /> Saving…</>
-                ) : (
-                  <><Save className="mr-2 size-4" /> Save changes</>
-                )}
+                {saving ? <><Loader2 className="mr-2 size-4 animate-spin" /> Saving…</> : <><Save className="mr-2 size-4" /> Save changes</>}
               </Button>
             </div>
           </>
@@ -135,15 +156,7 @@ function AdminSettingsPage() {
   );
 }
 
-function SettingField({
-  settingKey, value, onChange, type = "text",
-}: {
-  settingKey: string;
-  value: any;
-  onChange: (v: any) => void;
-  type?: string;
-  category: string;
-}) {
+function SettingField({ settingKey, value, onChange, type = "text" }: { settingKey: string; value: any; onChange: (v: any) => void; type?: string; category: string; }) {
   return (
     <div>
       <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

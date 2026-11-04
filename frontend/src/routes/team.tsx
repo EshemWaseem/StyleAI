@@ -1,5 +1,4 @@
 import { swalError, swalConfirm } from "@/lib/swal";
-// frontend/src/routes/team.tsx
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -28,18 +27,12 @@ export const Route = createFileRoute("/team")({
   component: TeamPage,
 });
 
-
-// PAGE
-
-
 function TeamPage() {
   const { user, loading: authLoading } = useRole();
   const navigate = useNavigate();
 
   const isAdmin = !!user?.roles.includes("SUPER_ADMIN");
-  const isOwner = !!user?.roles.some((r) =>
-    ["BRAND_OWNER", "AGENCY"].includes(r)
-  );
+  const isOwner = !!user?.roles.includes("BRAND_OWNER");
 
   const [roles, setRoles] = useState<BrandTeamRole[]>([]);
   const [members, setMembers] = useState<BrandTeamMember[]>([]);
@@ -63,8 +56,13 @@ function TeamPage() {
       navigate({ to: "/login" });
       return;
     }
+    
+    if (user.roles.includes("AGENCY") && !user.roles.includes("BRAND_OWNER")) {
+      navigate({ to: "/agency" });
+      return;
+    }
+
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user, navigate]);
 
   async function load() {
@@ -230,7 +228,6 @@ function TeamPage() {
         </div>
       )}
 
-      {/* MY ROLE — teammate view */}
       {!isOwner && !isAdmin && myMembership && (
         <section className="mt-8">
           <Panel>
@@ -255,7 +252,6 @@ function TeamPage() {
         </section>
       )}
 
-      {/* ROLES */}
       {(isOwner || isAdmin) && (
         <section className="mt-8">
           <SectionTitle
@@ -335,7 +331,6 @@ function TeamPage() {
         </section>
       )}
 
-      {/* PENDING JOIN REQUESTS */}
       {(isOwner || isAdmin) && pending.length > 0 && (
         <section className="mt-10">
           <div className="mb-3 flex items-center gap-2">
@@ -351,7 +346,7 @@ function TeamPage() {
               {pending.map((r) => (
                 <li
                   key={r.id}
-                  className="flex flex-wrap items-center gap-3 py-3"
+                  className="flex flex-wrap items-center gap-3 py-4 px-2"
                 >
                   <div className="grid size-9 shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-medium text-accent">
                     {r.user?.name.slice(0, 2).toUpperCase() ?? "?"}
@@ -401,7 +396,6 @@ function TeamPage() {
         </section>
       )}
 
-      {/* SENT INVITATIONS */}
       {(isOwner || isAdmin) && invites.length > 0 && (
         <section className="mt-10">
           <div className="mb-3 flex items-center gap-2">
@@ -417,7 +411,7 @@ function TeamPage() {
               {invites.map((i) => (
                 <li
                   key={i.id}
-                  className="flex flex-wrap items-center gap-3 py-3"
+                  className="flex flex-wrap items-center gap-3 py-4 px-2"
                 >
                   <div className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
                     <Mail className="size-4" />
@@ -459,8 +453,7 @@ function TeamPage() {
         </section>
       )}
 
-      {/* MEMBERS */}
-      <section className="mt-10">
+      <section className="mt-10 mb-12">
         <SectionTitle
           title="Members"
           description={
@@ -484,39 +477,44 @@ function TeamPage() {
             )}
           </div>
         ) : (
-          <Panel>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="pb-3 pr-4 font-medium">Member</th>
-                    <th className="pb-3 pr-4 font-medium">Role</th>
-                    <th className="pb-3 pr-4 font-medium">Status</th>
-                    <th className="pb-3 pr-4 font-medium">Joined</th>
+          <Panel className="overflow-hidden">
+            <div className="overflow-x-auto w-full">
+              {/* 🆕 FIXED: Increased py-6 for more space & better box height */}
+              <table className="w-full min-w-[800px] text-sm text-left">
+                <thead className="bg-muted/30 border-b border-border text-xs text-muted-foreground">
+                  <tr>
+                    <th className="px-6 py-4 font-medium w-[30%]">Member</th>
+                    <th className="px-6 py-4 font-medium w-[20%]">Role</th>
+                    <th className="px-6 py-4 font-medium w-[15%]">Status</th>
+                    <th className="px-6 py-4 font-medium w-[20%]">Joined</th>
                     {isOwner && (
-                      <th className="pb-3 text-right font-medium">Actions</th>
+                      <th className="px-6 py-4 text-right font-medium w-[15%]">Actions</th>
                     )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {members.map((m) => (
-                    <tr key={m.id} className="hover:bg-accent/5">
-                      <td className="py-3 pr-4">
+                    <tr key={m.id} className="hover:bg-muted/20 transition-colors group">
+                      
+                      {/* Member Info */}
+                      <td className="px-6 py-6 align-middle">
                         <div className="flex items-center gap-3">
-                          <div className="grid size-8 shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-medium text-accent">
-                            {m.user?.name.slice(0, 2).toUpperCase() ?? "?"}
+                          <div className="grid size-10 shrink-0 place-items-center rounded-full bg-accent/15 text-sm font-semibold text-accent uppercase">
+                            {m.user?.name?.slice(0, 2) ?? "?"}
                           </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">
-                              {m.user?.name}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {m.user?.email}
-                            </p>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-medium text-foreground truncate">
+                              {m.user?.name || "Unknown"}
+                            </span>
+                            <span className="text-xs text-muted-foreground truncate mt-0.5">
+                              {m.user?.email || "No email"}
+                            </span>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 pr-4">
+
+                      {/* Role Dropdown */}
+                      <td className="px-6 py-6 align-middle">
                         {isOwner && m.role ? (
                           <RoleDropdown
                             member={m}
@@ -527,10 +525,12 @@ function TeamPage() {
                           <RoleBadge role={m.role} />
                         )}
                       </td>
-                      <td className="py-3 pr-4">
+
+                      {/* Status */}
+                      <td className="px-6 py-6 align-middle">
                         <span
                           className={cn(
-                            "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                            "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide",
                             m.status === "ACTIVE"
                               ? "bg-emerald-500/15 text-emerald-500"
                               : "bg-muted text-muted-foreground"
@@ -539,15 +539,19 @@ function TeamPage() {
                           {m.status}
                         </span>
                       </td>
-                      <td className="py-3 pr-4 text-xs text-muted-foreground">
-                        {new Date(m.joinedAt).toLocaleDateString()}
+
+                      {/* Joined Date */}
+                      <td className="px-6 py-6 align-middle text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(m.joinedAt).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
+
+                      {/* Actions */}
                       {isOwner && (
-                        <td className="py-3 text-right">
+                        <td className="px-6 py-6 align-middle text-right">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="text-destructive hover:text-destructive"
+                            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
                             onClick={() => handleRemoveMember(m)}
                             aria-label="Remove member"
                           >
@@ -564,7 +568,6 @@ function TeamPage() {
         )}
       </section>
 
-      {/* MODALS */}
       {showRoleEditor && (
         <RoleEditorModal
           mode={editingRole ? "edit" : "create"}
@@ -613,10 +616,6 @@ function TeamPage() {
   );
 }
 
-
-// SMALL COMPONENTS
-
-
 function RoleBadge({
   role,
 }: {
@@ -627,7 +626,7 @@ function RoleBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap",
         classes.bg,
         classes.text,
         classes.border
@@ -638,6 +637,7 @@ function RoleBadge({
   );
 }
 
+// 🆕 ROLE DROPDOWN FIX
 function RoleDropdown({
   member,
   roles,
@@ -651,54 +651,54 @@ function RoleDropdown({
   const current = member.role;
 
   return (
-    <div className="relative">
+    <div className="relative inline-block w-full max-w-[220px]">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-transparent px-1.5 py-1 hover:border-border"
+        className={cn(
+          "flex w-full items-center justify-between gap-2 rounded-md border border-border/60 bg-background px-3 py-2 text-sm transition-colors hover:bg-accent/10",
+          open && "ring-2 ring-accent/20 border-accent/50"
+        )}
       >
         <RoleBadge role={current} />
-        <ChevronDown className="size-3 text-muted-foreground" />
+        <ChevronDown className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (
         <>
           <div
-            className="fixed inset-0 z-30"
+            className="fixed inset-0 z-40"
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute left-0 top-full z-40 mt-1 w-56 rounded-lg border border-border bg-popover p-1 shadow-lift">
-            {roles.map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => {
-                  if (r.id !== current?.id) onChange(r.id);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10",
-                  r.id === current?.id && "bg-accent/10"
-                )}
-              >
-                <RoleBadge role={r} />
-                {r.id === current?.id && (
-                  <Check className="size-3.5 text-accent" />
-                )}
-              </button>
-            ))}
+          <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-border bg-popover p-1.5 shadow-lift">
+            <div className="max-h-[250px] overflow-y-auto hover-scroll flex flex-col gap-0.5">
+              {roles.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => {
+                    if (r.id !== current?.id) onChange(r.id);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-accent/10",
+                    r.id === current?.id && "bg-accent/5"
+                  )}
+                >
+                  <RoleBadge role={r} />
+                  {r.id === current?.id && (
+                    <Check className="size-4 text-accent" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </>
       )}
     </div>
   );
 }
-
-
-// ADD MEMBER MODAL — smart (direct add OR invite)
-// Uses .ui-overlay / .ui-panel system
-
 
 function AddMemberModal({
   roles,
@@ -768,36 +768,22 @@ function AddMemberModal({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  
-  // RESULT: ADDED
-  
   if (result?.type === "ADDED") {
     return (
-      <div
-        className="ui-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-member-added-title"
-      >
+      <div className="ui-overlay" role="dialog" aria-modal="true" aria-labelledby="add-member-added-title">
         <div className="ui-panel ui-panel-sm">
           <div className="ui-panel-body text-center">
             <div className="mx-auto grid size-14 place-items-center rounded-full bg-emerald-500/15 text-emerald-500">
               <Check className="size-7" />
             </div>
-            <h2
-              id="add-member-added-title"
-              className="mt-4 font-display text-xl font-medium"
-            >
+            <h2 id="add-member-added-title" className="mt-4 font-display text-xl font-medium">
               Member added
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              <strong className="text-foreground">{result.email}</strong> has
-              been added as{" "}
-              <strong className="text-foreground">{result.roleName}</strong>.
+              <strong className="text-foreground">{result.email}</strong> has been added as <strong className="text-foreground">{result.roleName}</strong>.
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
-              They can now log in and access the workspace with their assigned
-              permissions.
+              They can now log in and access the workspace with their assigned permissions.
             </p>
           </div>
           <div className="ui-panel-footer justify-center">
@@ -808,52 +794,31 @@ function AddMemberModal({
     );
   }
 
-  
-  // RESULT: INVITED
-  
   if (result?.type === "INVITED") {
     return (
-      <div
-        className="ui-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-member-invited-title"
-      >
+      <div className="ui-overlay" role="dialog" aria-modal="true" aria-labelledby="add-member-invited-title">
         <div className="ui-panel ui-panel-md">
           <div className="ui-panel-body">
             <div className="mx-auto grid size-14 place-items-center rounded-full bg-amber-500/15 text-amber-500">
               <Mail className="size-7" />
             </div>
-            <h2
-              id="add-member-invited-title"
-              className="mt-4 text-center font-display text-xl font-medium"
-            >
+            <h2 id="add-member-invited-title" className="mt-4 text-center font-display text-xl font-medium">
               Invitation created
             </h2>
             <p className="mt-2 text-center text-sm text-muted-foreground">
-              No account found for{" "}
-              <strong className="text-foreground">{result.email}</strong>.
-              Share this link with them:
+              No account found for <strong className="text-foreground">{result.email}</strong>. Share this link with them:
             </p>
-
             <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
               <div className="flex items-center gap-2">
                 <Link2 className="size-3.5 shrink-0 text-muted-foreground" />
-                <input
-                  readOnly
-                  value={result.link}
-                  className="flex-1 truncate bg-transparent text-xs outline-none"
-                />
+                <input readOnly value={result.link} className="flex-1 truncate bg-transparent text-xs outline-none" />
                 <Button size="sm" onClick={copyLink}>
                   {copied ? <Check className="size-3.5" /> : "Copy"}
                 </Button>
               </div>
             </div>
-
             <p className="mt-3 text-xs text-muted-foreground">
-              They must log in with <strong>{result.email}</strong> to accept.
-              Link expires in 7 days. Role:{" "}
-              <strong>{result.roleName}</strong>.
+              They must log in with <strong>{result.email}</strong> to accept. Link expires in 7 days. Role: <strong>{result.roleName}</strong>.
             </p>
           </div>
           <div className="ui-panel-footer">
@@ -864,28 +829,16 @@ function AddMemberModal({
     );
   }
 
-  
-  // FORM
-  
   return (
-    <div
-      className="ui-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="add-member-title"
-    >
+    <div className="ui-overlay" role="dialog" aria-modal="true" aria-labelledby="add-member-title">
       <div className="ui-panel ui-panel-md">
         <div className="ui-panel-header">
           <div className="min-w-0">
-            <h2
-              id="add-member-title"
-              className="font-display text-xl font-medium"
-            >
+            <h2 id="add-member-title" className="font-display text-xl font-medium">
               Add member
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              If they already have an account, they'll be added instantly.
-              Otherwise we'll generate an invite link.
+              If they already have an account, they'll be added instantly. Otherwise we'll generate an invite link.
             </p>
           </div>
         </div>
@@ -937,9 +890,7 @@ function AddMemberModal({
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span
-                            className={cn("text-sm font-medium", classes.text)}
-                          >
+                          <span className={cn("text-sm font-medium", classes.text)}>
                             {r.name}
                           </span>
                           {r.isOwnerRole && (
@@ -977,12 +928,7 @@ function AddMemberModal({
           </div>
 
           <div className="ui-panel-footer">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={saving}
-            >
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
               Cancel
             </Button>
             <Button type="submit" disabled={saving}>
@@ -994,11 +940,6 @@ function AddMemberModal({
     </div>
   );
 }
-
-
-// APPROVE REQUEST MODAL
-// Uses .ui-overlay / .ui-panel system
-
 
 function ApproveRequestModal({
   request,
@@ -1035,19 +976,11 @@ function ApproveRequestModal({
   }
 
   return (
-    <div
-      className="ui-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="approve-request-title"
-    >
+    <div className="ui-overlay" role="dialog" aria-modal="true" aria-labelledby="approve-request-title">
       <div className="ui-panel ui-panel-md">
         <div className="ui-panel-header">
           <div className="min-w-0">
-            <h2
-              id="approve-request-title"
-              className="font-display text-xl font-medium"
-            >
+            <h2 id="approve-request-title" className="font-display text-xl font-medium">
               Approve request
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -1057,7 +990,6 @@ function ApproveRequestModal({
         </div>
 
         <div className="ui-panel-body space-y-5">
-          {/* Applicant card */}
           <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
             <div className="grid size-10 shrink-0 place-items-center rounded-full bg-accent/15 text-sm font-medium text-accent">
               {request.user?.name.slice(0, 2).toUpperCase() ?? "?"}
@@ -1072,7 +1004,6 @@ function ApproveRequestModal({
             </div>
           </div>
 
-          {/* Role picker */}
           <div className="space-y-2">
             <Label>Assign role *</Label>
             <div className="grid gap-2">
@@ -1098,9 +1029,7 @@ function ApproveRequestModal({
                       className="mt-1"
                     />
                     <div className="min-w-0 flex-1">
-                      <span
-                        className={cn("text-sm font-medium", classes.text)}
-                      >
+                      <span className={cn("text-sm font-medium", classes.text)}>
                         {r.name}
                       </span>
                       {r.description && (
@@ -1123,12 +1052,7 @@ function ApproveRequestModal({
         </div>
 
         <div className="ui-panel-footer">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={saving}
-          >
+          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
           <Button onClick={handleApprove} disabled={saving || !roleId}>

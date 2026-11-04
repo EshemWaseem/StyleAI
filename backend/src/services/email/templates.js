@@ -1,15 +1,15 @@
-// src\services\email\templates.js
+// src/services/email/templates.js
 const C = {
-  bg: '#0a0a0a',
-  card: '#ffffff',
-  text: '#1a1a1a',
-  muted: '#6b7280',
-  accent: '#c9a86a',
-  border: '#e5e7eb',
-  success: '#059669',
-  danger: '#dc2626',
-  warning: '#d97706',
-  info: '#2563eb',
+  bg: '#0a110d',         // Very dark greenish-black background
+  card: '#121a16',       // Dark greenish card
+  text: '#f0fdf4',       // Off-white with green tint
+  muted: '#94a3b8',      // Slate grey for secondary text
+  accent: '#22c55e',     // Bright emerald green (StyleAI accent)
+  border: '#1e293b',     // Dark border
+  success: '#22c55e',
+  danger: '#ef4444',
+  warning: '#f59e0b',
+  info: '#3b82f6',
 };
 
 function layout({ preheader, title, bodyHtml, ctaText, ctaUrl }) {
@@ -19,7 +19,7 @@ function layout({ preheader, title, bodyHtml, ctaText, ctaUrl }) {
       <tr>
         <td style="padding: 8px 32px 32px;">
           <a href="${ctaUrl}"
-             style="display:inline-block;background:${C.accent};color:#fff;
+             style="display:inline-block;background:${C.accent};color:#ffffff;
                     text-decoration:none;padding:12px 24px;border-radius:8px;
                     font-weight:600;font-size:14px;">
             ${ctaText}
@@ -44,10 +44,10 @@ function layout({ preheader, title, bodyHtml, ctaText, ctaUrl }) {
       <td align="center">
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
                style="max-width:600px;background:${C.card};border-radius:12px;overflow:hidden;
-                      box-shadow:0 4px 24px rgba(0,0,0,0.15);">
+                      box-shadow:0 4px 24px rgba(0,0,0,0.4);border:1px solid ${C.border};">
           <tr>
             <td style="padding:24px 32px;border-bottom:1px solid ${C.border};">
-              <span style="font-size:20px;font-weight:700;letter-spacing:-0.5px;">
+              <span style="font-size:20px;font-weight:700;letter-spacing:-0.5px;color:${C.text};">
                 Style<span style="color:${C.accent};">AI</span>
               </span>
             </td>
@@ -78,7 +78,7 @@ function layout({ preheader, title, bodyHtml, ctaText, ctaUrl }) {
 }
 
 function h1(text) {
-  return `<h1 style="margin:0 0 16px;font-size:22px;font-weight:700;line-height:1.3;">${text}</h1>`;
+  return `<h1 style="margin:0 0 16px;font-size:22px;font-weight:700;line-height:1.3;color:${C.text};">${text}</h1>`;
 }
 function p(text) {
   return `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:${C.text};">${text}</p>`;
@@ -88,7 +88,7 @@ function muted(text) {
 }
 function pill(text, color) {
   return `<span style="display:inline-block;background:${color}1a;color:${color};
-                       padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;">
+                       padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;margin-bottom:16px;">
     ${text}
   </span>`;
 }
@@ -97,20 +97,25 @@ function infoBox(rows) {
     .map(
       ([k, v]) => `
     <tr>
-      <td style="padding:6px 0;font-size:13px;color:${C.muted};">${k}</td>
-      <td style="padding:6px 0;font-size:13px;text-align:right;font-weight:600;color:${C.text};">${v}</td>
+      <td style="padding:8px 0;font-size:13px;color:${C.muted};">${k}</td>
+      <td style="padding:8px 0;font-size:13px;text-align:right;font-weight:600;color:${C.text};">${v}</td>
     </tr>`
     )
     .join('');
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-           style="background:#f9fafb;border:1px solid ${C.border};border-radius:8px;
+           style="background:${C.bg};border:1px solid ${C.border};border-radius:8px;
                   padding:16px;margin:16px 0;">
       ${inner}
     </table>`;
 }
 
+// 👇 SMART FIX: Localhost vs Ngrok issue solved
 function frontendBase() {
+  // Development mein hamesha localhost use karein, production mein env variable
+  if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+    return 'http://localhost:3000';
+  }
   return (
     (process.env.FRONTEND_URL || 'http://localhost:3000')
       .split(',')[0]
@@ -118,16 +123,41 @@ function frontendBase() {
   );
 }
 
+//  NEW TEMPLATE FOR ORDER CONFIRMATION
+function orderConfirmed({ name, orderId, total, currency }) {
+  const body = `
+    ${pill('Order Confirmed', C.success)}
+    ${h1('Thank you for your order!')}
+    ${p(`Hi ${name || 'there'}, your order <strong>#${orderId}</strong> has been successfully confirmed.`)}
+    ${infoBox([
+      ['Order ID', orderId],
+      ['Total Amount', `${currency} ${Number(total || 0).toFixed(2)}`],
+      ['Status', 'Confirmed'],
+    ])}
+    ${p('We will notify you once your order is shipped.')}
+  `;
+  return {
+    subject: `Order Confirmed — #${orderId}`,
+    html: layout({
+      preheader: 'Your order is confirmed',
+      title: 'Order Confirmed',
+      bodyHtml: body,
+      ctaText: 'View Order',
+      ctaUrl: `${frontendBase()}/orders`,
+    }),
+  };
+}
+
 function welcome({ name, role }) {
   const roleLabel =
-    { BRAND: 'Brand', AGENCY: 'Agency', INFLUENCER: 'Creator', SHOPPER: 'Shopper' }[
+    { BRAND: 'Brand', AGENCY: 'Agency', INFLUENCOR: 'Creator', SHOPPER: 'Shopper' }[
       role
     ] || 'User';
 
   const body = `
     ${h1(`Welcome to StyleAI, ${name || 'there'}!`)}
     ${p(`Your <strong>${roleLabel}</strong> account is ready. Here's what you can do right now:`)}
-    <ul style="margin:0 0 16px;padding-left:20px;font-size:15px;line-height:1.8;">
+    <ul style="margin:0 0 16px;padding-left:20px;font-size:15px;line-height:1.8;color:${C.text};">
       <li>Upload products and let AI write descriptions</li>
       <li>Match with influencers using 6-dimension scoring</li>
       <li>Run campaigns and track performance</li>
@@ -505,9 +535,6 @@ function passwordChanged({ name }) {
   };
 }
 
-
-// NEW — Email verification
-
 function verifyEmail({ name, verifyUrl, expiresInHours }) {
   const hrs = Number(expiresInHours) || 24;
   const body = `
@@ -527,9 +554,6 @@ function verifyEmail({ name, verifyUrl, expiresInHours }) {
     }),
   };
 }
-
-
-// NEW — Account lockout notification
 
 function accountLocked({ name, lockedUntilMinutes, lastAttemptAt, ip }) {
   const mins = Number(lockedUntilMinutes) || 15;
@@ -626,7 +650,6 @@ function adminApprovalRejected({ userName, reason }) {
   };
 }
 
-
 module.exports = {
   welcome,
   trialExpiring,
@@ -646,7 +669,8 @@ module.exports = {
   passwordChanged,
   verifyEmail,
   accountLocked,
-   adminApprovalRequest,
+  adminApprovalRequest,
   adminApprovalApproved,
   adminApprovalRejected,
+  orderConfirmed, //  Exported
 };

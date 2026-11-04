@@ -6,6 +6,9 @@ Drop-in replacement for the old OllamaService.
 Routing:
 - Images present → VISION_PROVIDER   (default: gemini)
 - Text only      → LLM_PROVIDER      (default: groq)
+
+✅ Defensive guard added: catches Ollama-style model names
+   (e.g. "qwen2.5:7b") that leak into cloud providers.
 """
 
 import asyncio
@@ -21,6 +24,45 @@ logger = logging.getLogger(__name__)
 
 GROQ_BASE = "https://api.groq.com/openai/v1"
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
+
+
+#      ==
+# MODEL GUARD — prevents Ollama-style models leaking into cloud providers
+#      ==
+def _validate_model_for_provider(provider: str, model: str) -> str:
+    """
+    Sanity-check the model name against the provider.
+    Rejects obviously wrong combos (e.g. "qwen2.5:7b" passed to Groq).
+    Returns a safe fallback model if a mismatch is detected.
+    """
+    if not model:
+        return model
+
+    provider = (provider or "").lower()
+
+    # Ollama-style model names usually contain ':' (tag) or start with known
+    # local families that aren't on cloud APIs.
+    ollama_style = (":" in model) or model.startswith(
+        ("qwen2.5", "qwen2:", "llama3.2:", "llava", "mistral:")
+    )
+
+    if provider == "groq" and ollama_style:
+        safe = settings.GROQ_TEXT_MODEL or "openai/gpt-oss-120b"
+        logger.warning(
+            "[GUARD] Ollama-style model %r passed to Groq → falling back to %r",
+            model, safe,
+        )
+        return safe
+
+    if provider == "gemini" and ollama_style:
+        safe = settings.GEMINI_TEXT_MODEL or "gemini-flash-latest"
+        logger.warning(
+            "[GUARD] Ollama-style model %r passed to Gemini → falling back to %r",
+            model, safe,
+        )
+        return safe
+
+    return model
 
 
 class LLMService:
@@ -84,40 +126,40 @@ class LLMService:
     #    ==========
     async def _text_json(self, prompt, model, temperature, num_predict):
         provider = (settings.LLM_PROVIDER or "groq").lower()
-        model = model or settings.text_model
-        logger.debug("text_json via %s (model=%s)", provider, model)
+        resolved = _validate_model_for_provider(provider, model or settings.text_model)
+        logger.debug("text_json via %s (model=%s)", provider, resolved)
 
         if provider == "groq":
-            return await self._groq_json(prompt, model, temperature, num_predict)
+            return await self._groq_json(prompt, resolved, temperature, num_predict)
         if provider == "gemini":
-            return await self._gemini_json(prompt, model, temperature, num_predict)
+            return await self._gemini_json(prompt, resolved, temperature, num_predict)
         if provider == "ollama":
-            return await self._ollama_json(prompt, model, temperature, num_predict)
+            return await self._ollama_json(prompt, resolved, temperature, num_predict)
         raise ValueError(f"Unknown LLM_PROVIDER: {provider}")
 
     async def _text_text(self, prompt, model, temperature, num_predict):
         provider = (settings.LLM_PROVIDER or "groq").lower()
-        model = model or settings.text_model
+        resolved = _validate_model_for_provider(provider, model or settings.text_model)
 
         if provider == "groq":
-            return await self._groq_text(prompt, model, temperature, num_predict)
+            return await self._groq_text(prompt, resolved, temperature, num_predict)
         if provider == "gemini":
-            return await self._gemini_text(prompt, model, temperature, num_predict)
+            return await self._gemini_text(prompt, resolved, temperature, num_predict)
         if provider == "ollama":
-            return await self._ollama_text(prompt, model, temperature, num_predict)
+            return await self._ollama_text(prompt, resolved, temperature, num_predict)
         raise ValueError(f"Unknown LLM_PROVIDER: {provider}")
 
     async def _vision_json(self, prompt, images, model, temperature, num_predict):
         provider = (settings.VISION_PROVIDER or "gemini").lower()
-        model = model or settings.vision_model
-        logger.debug("vision_json via %s (model=%s)", provider, model)
+        resolved = _validate_model_for_provider(provider, model or settings.vision_model)
+        logger.debug("vision_json via %s (model=%s)", provider, resolved)
 
         if provider == "gemini":
-            return await self._gemini_vision_json(prompt, images, model, temperature, num_predict)
+            return await self._gemini_vision_json(prompt, images, resolved, temperature, num_predict)
         if provider == "groq":
-            return await self._groq_vision_json(prompt, images, model, temperature, num_predict)
+            return await self._groq_vision_json(prompt, images, resolved, temperature, num_predict)
         if provider == "ollama":
-            return await self._ollama_json(prompt, model, temperature, num_predict, images=images)
+            return await self._ollama_json(prompt, resolved, temperature, num_predict, images=images)
         raise ValueError(f"Unknown VISION_PROVIDER: {provider}")
 
     #    ==========

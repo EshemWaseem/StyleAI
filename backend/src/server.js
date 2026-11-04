@@ -8,7 +8,10 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 
+const tryonRoutes = require('./routes/tryonRoutes');
 
+const courierRoutes = require('./routes/courierRoutes');
+const privacyRoutes = require('./routes/privacyRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const roleRoutes = require('./routes/roleRoutes');
@@ -44,8 +47,6 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
 
 const storefrontRoutes = require('./routes/storefrontRoutes');
-
-// const checkoutRoutes = require('./routes/checkoutRoutes');
 
 // MIDDLEWARE
 
@@ -84,18 +85,25 @@ app.use(
 );
 
 
-// CORS
+// CORS (FIXED)
 
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
 
+// Development mode mein localhost ko hamesha allow karein
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push('http://localhost:3000', 'http://127.0.0.1:3000');
+}
+
 app.use(
   cors({
     origin(origin, callback) {
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
+      
+      console.error(`[CORS Blocked] Request from ${origin} is not allowed.`);
       return callback(new Error(`CORS blocked: ${origin}`));
     },
     credentials: true,
@@ -116,7 +124,7 @@ app.use(requestId);
 // WEBHOOKS — before express.json()
 
 app.use('/api/webhooks', webhookRoutes);
-
+app.use('/api/tryon', tryonRoutes);
 
 // BODY PARSERS
 
@@ -184,7 +192,9 @@ app.use('/api/recommendations', recommendationsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/assistant', assistantRoutes);
-// app.use('/api/checkout', checkoutRoutes);
+app.use('/privacy', privacyRoutes);
+
+app.use('/api/courier', courierRoutes); 
 app.use(notFound);
 app.use(errorHandler);
 
@@ -200,9 +210,7 @@ const DB_RETRY_INTERVAL_MS = 30_000;
   let workersStarted = false;
   let retryTimer = null;
 
-  //       
   // 1. Prisma warmup
-  //       
   try {
     await prisma.$connect();
     await prisma.$queryRaw`SELECT 1`;
@@ -218,10 +226,7 @@ const DB_RETRY_INTERVAL_MS = 30_000;
     );
   }
 
-  //       
-  // 2. Init queues (Redis-backed — no DB needed)
-  //    Routes can enqueue; only workers need DB.
-  //       
+  // 2. Init queues
   try {
     const { initQueues, QUEUE_ENABLED } = require('./services/queue');
     if (QUEUE_ENABLED) {
@@ -235,10 +240,7 @@ const DB_RETRY_INTERVAL_MS = 30_000;
     console.warn('[server] queue init failed (non-fatal):', err.message);
   }
 
-  //       
-  // 3. Start workers — GATED on DB health
-  //    Prevents infinite worker-error loop when DB is down.
-  //       
+  // 3. Start workers
   async function tryStartWorkers() {
     if (workersStarted || !queuesInitialized) return;
     try {
@@ -281,9 +283,7 @@ const DB_RETRY_INTERVAL_MS = 30_000;
     retryTimer.unref();
   }
 
-  //       
   // 4. HTTP server
-  //       
   const server = app.listen(PORT, () => {
     console.log(`🚀 Backend running on http://localhost:${PORT}`);
     console.log(`🌍 Env: ${process.env.NODE_ENV || 'development'}`);
@@ -294,9 +294,7 @@ const DB_RETRY_INTERVAL_MS = 30_000;
     }
   });
 
-  //       
   // 5. WebSocket
-  //       
   try {
     const { initWebSocket } = require('./services/websocket');
     initWebSocket(server, allowedOrigins);
@@ -305,9 +303,7 @@ const DB_RETRY_INTERVAL_MS = 30_000;
     console.error('⚠️  WebSocket init failed:', err.message);
   }
 
-  //       
   // 6. Cron
-  //       
   let stopCronFn = null;
   try {
     const { startCron, stopCron } = require('./services/billing/cron');
@@ -317,9 +313,7 @@ const DB_RETRY_INTERVAL_MS = 30_000;
     console.warn('[server] cron init failed:', err.message);
   }
 
-  //       
   // 7. Graceful shutdown
-  //       
   let shuttingDown = false;
 
   async function shutdown(signal) {

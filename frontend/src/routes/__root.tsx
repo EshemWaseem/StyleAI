@@ -17,7 +17,6 @@ import { RoleProvider, useRole } from "../lib/role";
 import { CartProvider } from "../lib/cart";
 import { AppShell } from "../components/app-shell/index";
 
-
 const PUBLIC_PATHS = [
   "/",
   "/shop",              
@@ -32,12 +31,26 @@ const PUBLIC_PATHS = [
   "/trial-expired",
   "/invite",
   "/payments/result",
-  "/privacy", // ✅ NEW: Privacy Policy added here
+  "/privacy",
+];
+
+// 🆕 YEH NAYE PATHS HAIN JAHAN SIDEBAR NAHI DIKHNI CHAHIYE
+const SHOPPER_PATHS = [
+  "/orders",
+  "/account",
+  "/checkout"
 ];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => {
     if (p === "/") return pathname === "/";
+    return pathname === p || pathname.startsWith(`${p}/`);
+  });
+}
+
+// 🆕 Shopper paths check karne ke liye function
+function isShopperPath(pathname: string): boolean {
+  return SHOPPER_PATHS.some((p) => {
     return pathname === p || pathname.startsWith(`${p}/`);
   });
 }
@@ -204,7 +217,11 @@ function AppShellGate() {
   const navigate = useNavigate();
 
   const isPublic = isPublicPath(pathname);
+  const isShopperRoute = isShopperPath(pathname); // 🆕 Shopper route check
   const isDashboard = pathname === "/dashboard";
+
+  // 🆕 Check karein ke user sirf SHOPPER hai ya nahi
+  const isOnlyShopper = !!user && user.roles.includes("SHOPPER") && user.roles.every((r) => r === "SHOPPER");
 
   const redirectTarget: string | null = (() => {
     if (isPublic) return null;
@@ -215,9 +232,6 @@ function AppShellGate() {
     if (isDashboard) {
       if (user.roles.includes("SUPER_ADMIN")) return "/admin";
       if (user.roles.includes("AGENCY")) return "/agency";
-      const isOnlyShopper =
-        user.roles.includes("SHOPPER") &&
-        user.roles.every((r) => r === "SHOPPER");
       if (isOnlyShopper) return "/";
       const isBrandUser = user.roles.some((r) =>
         ["BRAND_OWNER", "BRAND_TEAM_MEMBER"].includes(r)
@@ -243,8 +257,10 @@ function AppShellGate() {
     return null;
   }
 
-  // ─── PUBLIC SHELL
-  if (isPublic) {
+  // ─── 👇 MAIN LOGIC CHANGE YAHAN HAI ───
+  // Agar Public page hai, YA Shopper page hai (/orders, /account), 
+  // YA user sirf Shopper hai (taake usay kabhi sidebar na dikhe) -> Bina Sidebar ke render karo
+  if (isPublic || isShopperRoute || isOnlyShopper) {
     return (
       <div data-public-shell className="min-h-dvh">
         <Outlet />
@@ -252,7 +268,7 @@ function AppShellGate() {
     );
   }
 
-  // ─── APP SHELL
+  // ─── APP SHELL (Sirf Brands, Influencers, Admins ke liye)
   return (
     <AppShell>
       <Outlet />

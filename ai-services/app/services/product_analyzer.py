@@ -1,20 +1,17 @@
-
-
-
-
-
-
-
+# app/services/product_analyzer.py
 """
 Product analyzer — shared validation/normalization + local (Ollama) vision path.
 
 Used by:
   * gemini_vision.py    -> ProductAnalyzer()._validate(raw)
   * product_analyze.py  -> ProductAnalyzer().analyze(bytes)
-                           (only when VISION_PROVIDER != "gemini")
+                           (only when VISION_PROVIDER == "ollama")
 
 NOTE: no self-import in this file. The `product_analyzer` instance is
 created at the bottom.
+
+✅ FIX: no longer passes `model=` to the unified LLM service —
+   previously leaked `OLLAMA_VISION_MODEL` (qwen2.5:7b) into Groq → 404.
 """
 
 import base64
@@ -114,26 +111,30 @@ class ProductAnalyzer:
             raise ValueError(f"Analysis failed schema validation: {e}") from e
 
     #        
-    # Local vision path (Ollama). Only used if VISION_PROVIDER != "gemini".
+    # Local vision path (Ollama). Only used if VISION_PROVIDER == "ollama".
     #        
     async def analyze(self, image_bytes: bytes) -> Tuple[ProductAnalysis, dict]:
         start = time.time()
-        model = settings.OLLAMA_VISION_MODEL
         image_b64 = base64.b64encode(image_bytes).decode("ascii")
+
+        # Resolve model per current provider (never hardcode Ollama here).
+        provider = (settings.VISION_PROVIDER or "gemini").lower()
+        model = settings.vision_model
 
         last_err: Optional[Exception] = None
         for prompt in (PRODUCT_ANALYSIS_PROMPT, PRODUCT_ANALYSIS_RETRY_PROMPT):
             try:
                 raw = await ollama_service.generate_json(
                     prompt=prompt,
-                    model=model,
+                    # ✅ No explicit `model=` — LLMService routes it correctly.
+                    #    Prevents Ollama model names leaking into cloud providers.
                     images=[image_b64],
                     temperature=0.1,
                     num_predict=800,
                 )
                 analysis = self._validate(raw)
                 meta = {
-                    "provider": f"ollama:{model}",
+                    "provider": f"{provider}:{model}",
                     "duration_ms": int((time.time() - start) * 1000),
                 }
                 return analysis, meta

@@ -4,12 +4,22 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import {
   ArrowRight, Check, ChevronLeft, ChevronRight, Menu, Minus, Plus,
   Search, ShoppingBag, Sparkles, Trash2, Package, Palette, Store, UsersRound,
+  LogOut, User, PackageCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCart } from "@/lib/cart";
+import { useRole, getDashboardPath } from "@/lib/role";
 import { cn } from "@/lib/utils";
 import {
   publicProductsApi, publicStorefrontApi,
@@ -50,6 +60,19 @@ export const Route = createFileRoute("/")({
   component: Storefront,
 });
 
+// ✅ HELPER: Resolves relative image paths to absolute backend URLs
+const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:4000").replace(/\/$/, "");
+
+function resolveImageUrl(url?: string | null) {
+  if (!url) return "";
+  // Agar already http, https ya data URI hai toh waisa hi return karo
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+    return url;
+  }
+  // Agar relative path hai (jaise /uploads/xyz.jpg) toh backend URL prepend karo
+  return `${API_BASE}/${url.replace(/^\//, "")}`;
+}
+
 const DEFAULT_EDITORIAL: StorefrontEditorial = {
   id: "default-editorial",
   title: "Behind every piece: the StyleAI loop.",
@@ -63,7 +86,9 @@ const SECTIONS = [
   { id: "creators", label: "Creators" },
 ] as const;
 
+const SECTION_IDS = SECTIONS.map((s) => s.id);
 const NAV_OFFSET = 80;
+const CONTAINER = "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8";
 
 function useSmoothScrollTo(offset = NAV_OFFSET) {
   return useCallback((id: string | null, onDone?: () => void) => {
@@ -120,6 +145,7 @@ function useScrollSpy(ids: readonly string[], offset = NAV_OFFSET) {
 }
 
 function Storefront() {
+  const { user, loading: authLoading, logout } = useRole();
   const [brands, setBrands] = useState<PublicBrand[]>([]);
   const [products, setProducts] = useState<PublicProduct[]>([]);
   const [activeBrand, setActiveBrand] = useState<string>("");
@@ -133,6 +159,8 @@ function Storefront() {
   const [sections, setSections] = useState<StorefrontSectionPublic[]>([]);
   const [editorial, setEditorial] = useState<StorefrontEditorial | null>(null);
   const [creators, setCreators] = useState<StorefrontCreator[]>([]);
+  
+  const [storefrontLoading, setStorefrontLoading] = useState(true);
 
   const [genders, setGenders] = useState<GenderStat[]>([]);
   const [categoriesStat, setCategoriesStat] = useState<CategoryStat[]>([]);
@@ -140,7 +168,7 @@ function Storefront() {
 
   const cart = useCart();
   const scrollTo = useSmoothScrollTo(NAV_OFFSET);
-  const activeSection = useScrollSpy(SECTIONS.map((s) => s.id), NAV_OFFSET);
+  const activeSection = useScrollSpy(SECTION_IDS, NAV_OFFSET);
 
   useEffect(() => {
     publicProductsApi.brands().then((res) => setBrands(res.brands)).catch(() => {});
@@ -174,6 +202,7 @@ function Storefront() {
   }, []);
 
   useEffect(() => {
+    setStorefrontLoading(true);
     publicStorefrontApi.get().then((r) => {
       setHeroSlides(r.hero || []);
       setSections(r.sections || []);
@@ -184,10 +213,12 @@ function Storefront() {
       setSections([]);
       setEditorial(null);
       setCreators([]);
+    }).finally(() => {
+      setStorefrontLoading(false);
     });
   }, []);
 
-  function addToCart(p: PublicProduct) {
+  const addToCart = useCallback((p: PublicProduct) => {
     cart.add({
       slug: p.id,
       name: p.name,
@@ -197,16 +228,14 @@ function Storefront() {
     });
     setJustAdded(p.id);
     window.setTimeout(() => setJustAdded((s) => (s === p.id ? null : s)), 1400);
-  }
+  }, [cart]);
 
   function handleMobileNavClick(id: string) {
     scrollTo(id, () => setMobileNavOpen(false));
   }
 
   const editorialToShow: StorefrontEditorial =
-    editorial && editorial.steps && editorial.steps.length > 0
-      ? editorial
-      : DEFAULT_EDITORIAL;
+    editorial && editorial.steps && editorial.steps.length > 0 ? editorial : DEFAULT_EDITORIAL;
 
   const validHeroSlides = useMemo(
     () => heroSlides.filter((s) => s && s.imageUrl),
@@ -222,7 +251,7 @@ function Storefront() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
+        <div className={cn(CONTAINER, "flex h-16 items-center gap-3")}>
           <button
             type="button"
             onClick={() => scrollTo(null)}
@@ -270,15 +299,72 @@ function Storefront() {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex">
-              <Link to="/login">Login</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex">
-              <Link to="/register" search={{ role: "SHOPPER" } as any}>Just shopping?</Link>
-            </Button>
-            <Button asChild className="hidden sm:inline-flex">
-              <Link to="/register">Register</Link>
-            </Button>
+            
+            {authLoading ? (
+              <div className="hidden sm:block h-9 w-24 animate-pulse rounded-md bg-muted" />
+            ) : user ? (
+              <>
+                <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex">
+                  <Link to="/orders">
+                    <PackageCheck className="mr-1.5 size-4" /> My Orders
+                  </Link>
+                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="hidden sm:inline-flex gap-2">
+                      <User className="size-4" />
+                      <span className="max-w-[100px] truncate">
+                        {user.name ? user.name.split(" ")[0] : "Account"}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/orders" className="cursor-pointer">
+                        <PackageCheck className="mr-2 size-4" />
+                        My Orders
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/account" className="cursor-pointer">
+                        <User className="mr-2 size-4" />
+                        Account Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+                      onClick={logout}
+                    >
+                      <LogOut className="mr-2 size-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex">
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex">
+                  <Link to="/register" search={{ role: "SHOPPER" } as any}>Just shopping?</Link>
+                </Button>
+                <Button asChild className="hidden sm:inline-flex">
+                  <Link to="/register">Register</Link>
+                </Button>
+              </>
+            )}
 
             <Sheet>
               <SheetTrigger asChild>
@@ -339,18 +425,44 @@ function Storefront() {
                         Why StyleAI?
                       </Link>
                       </nav>
+                
                 <div className="mt-auto space-y-2 border-t border-border pt-4">
-                  <Button asChild variant="outline" className="w-full">
-                    <Link to="/login" onClick={() => setMobileNavOpen(false)}>Login</Link>
-                  </Button>
-                  <Button asChild variant="ghost" className="w-full">
-                    <Link to="/register" search={{ role: "SHOPPER" } as any} onClick={() => setMobileNavOpen(false)}>
-                      Just shopping?
-                    </Link>
-                  </Button>
-                  <Button asChild className="w-full">
-                    <Link to="/register" onClick={() => setMobileNavOpen(false)}>Register</Link>
-                  </Button>
+                  {authLoading ? (
+                    <div className="h-20 w-full animate-pulse rounded-md bg-muted" />
+                  ) : user ? (
+                    <>
+                      <div className="px-3 pb-2 text-sm text-muted-foreground">
+                        Signed in as <strong className="text-foreground">{user.name}</strong>
+                      </div>
+                      <Button asChild variant="outline" className="w-full justify-start" onClick={() => setMobileNavOpen(false)}>
+                        <Link to="/orders">
+                          <PackageCheck className="mr-2 size-4" /> My Orders
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline" className="w-full justify-start" onClick={() => setMobileNavOpen(false)}>
+                        <Link to="/account">
+                          <User className="mr-2 size-4" /> Account Settings
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { logout(); setMobileNavOpen(false); }}>
+                        <LogOut className="mr-2 size-4" /> Logout
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button asChild variant="outline" className="w-full">
+                        <Link to="/login" onClick={() => setMobileNavOpen(false)}>Login</Link>
+                      </Button>
+                      <Button asChild variant="ghost" className="w-full">
+                        <Link to="/register" search={{ role: "SHOPPER" } as any} onClick={() => setMobileNavOpen(false)}>
+                          Just shopping?
+                        </Link>
+                      </Button>
+                      <Button asChild className="w-full">
+                        <Link to="/register" onClick={() => setMobileNavOpen(false)}>Register</Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
@@ -359,7 +471,9 @@ function Storefront() {
       </header>
 
       <main>
-        {hasHeroSlides ? (
+        {storefrontLoading ? (
+          <HeroSkeleton />
+        ) : hasHeroSlides ? (
           <HeroCarousel slides={validHeroSlides} onScrollToShop={() => scrollTo("shop")} />
         ) : (
           <BrandingHero onScrollToShop={() => scrollTo("shop")} />
@@ -367,7 +481,7 @@ function Storefront() {
 
         {categoriesLoading ? (
           <section className="border-t border-border">
-            <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className={cn(CONTAINER, "py-12 sm:py-16")}>
               <div className="mb-6 space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
                   Browse
@@ -384,7 +498,7 @@ function Storefront() {
         )}
 
         <section id="shop" className="scroll-mt-20 border-t border-border">
-          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+          <div className={cn(CONTAINER, "py-12 sm:py-16")}>
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
               <div>
                 <h2 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">
@@ -470,7 +584,7 @@ function Storefront() {
 
         {sections.map((sec) => (
           <section key={sec.id} className="scroll-mt-20 border-t border-border bg-card/30">
-            <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className={cn(CONTAINER, "py-12 sm:py-16")}>
               <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">
@@ -505,27 +619,29 @@ function Storefront() {
           </section>
         ))}
 
-        <section id="edit" className="scroll-mt-20 border-t border-border bg-card/50">
-          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-            <h2 className="max-w-lg font-display text-2xl font-medium tracking-tight sm:text-3xl">
-              {editorialToShow.title}
-            </h2>
-            <ol className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-3 sm:mt-8 sm:gap-y-4">
-              {editorialToShow.steps.map((step, i) => (
-                <li key={`${step}-${i}`} className="flex items-center gap-3">
-                  <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">
-                    {step}
-                  </span>
-                  {i < editorialToShow.steps.length - 1 && (
-                    <ArrowRight className="size-3.5 text-muted-foreground sm:size-4" aria-hidden="true" />
-                  )}
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
+        {!storefrontLoading && (
+          <section id="edit" className="scroll-mt-20 border-t border-border bg-card/50">
+            <div className={cn(CONTAINER, "py-12 sm:py-16")}>
+              <h2 className="max-w-lg font-display text-2xl font-medium tracking-tight sm:text-3xl">
+                {editorialToShow.title}
+              </h2>
+              <ol className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-3 sm:mt-8 sm:gap-y-4">
+                {editorialToShow.steps.map((step, i) => (
+                  <li key={`${step}-${i}`} className="flex items-center gap-3">
+                    <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">
+                      {step}
+                    </span>
+                    {i < editorialToShow.steps.length - 1 && (
+                      <ArrowRight className="size-3.5 text-muted-foreground sm:size-4" aria-hidden="true" />
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+        )}
 
-        <section id="creators" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-12 sm:px-6 sm:py-16">
+        <section id="creators" className={cn(CONTAINER, "scroll-mt-20 py-12 sm:py-16")}>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">
               Styled by our creators
@@ -550,7 +666,7 @@ function Storefront() {
                 >
                   {c.avatarUrl ? (
                     <img
-                      src={c.avatarUrl}
+                      src={resolveImageUrl(c.avatarUrl)}
                       alt={c.displayName}
                       loading="lazy"
                       className="size-12 rounded-full object-cover sm:size-14"
@@ -576,27 +692,27 @@ function Storefront() {
               ))}
             </div>
           ) : (
-            <div className="mt-6 rounded-xl border border-border bg-gradient-to-r from-accent/5 via-transparent to-transparent p-6 sm:mt-8 sm:p-8">
-              <div className="flex flex-wrap items-center gap-5">
+            <div className="mt-6 flex flex-col gap-6 rounded-xl border border-border bg-gradient-to-r from-accent/5 via-transparent to-transparent p-6 sm:mt-8 sm:p-8 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start md:items-center">
                 <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-accent/15 text-accent">
-                  <UsersRound className="size-5" />
+                  <UsersRound className="size-6" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-display text-lg font-medium">Be among the first creators.</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
                     StyleAI features real creators styling real products. Apply to join our creator program — brands will discover you.
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    <Button asChild>
-                      <Link to="/register" search={{ role: "INFLUENCER" } as any}>
-                        Join as creator <ArrowRight className="ml-1 size-4" />
-                      </Link>
-                    </Button>
-                    <Button variant="outline" asChild>
-                      <Link to="/why-styleai">Learn more</Link>
-                    </Button>
-                  </div>
+              </div>
+              <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
+                <Button asChild className="w-full sm:w-auto">
+                  <Link to="/register" search={{ role: "INFLUENCER" } as any}>
+                    Join as creator <ArrowRight className="ml-1 size-4" />
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="w-full sm:w-auto">
+                  <Link to="/why-styleai">Learn more</Link>
+                </Button>
               </div>
             </div>
           )}
@@ -606,7 +722,7 @@ function Storefront() {
       </main>
 
       <footer className="border-t border-border py-8 sm:py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 text-center text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:justify-between sm:gap-4 sm:px-6 sm:text-left">
+        <div className={cn(CONTAINER, "flex flex-col items-center gap-3 text-center text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:justify-between sm:gap-4 sm:text-left")}>
           <span>© 2026 StyleAI</span>
           <div className="flex items-center gap-4">
             <Link to="/privacy" className="hover:text-foreground transition-colors">
@@ -617,6 +733,23 @@ function Storefront() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function HeroSkeleton() {
+  return (
+    <section className="relative overflow-hidden border-b border-border">
+      <div className="relative h-[60vh] min-h-[420px] w-full sm:h-[68vh] sm:min-h-[520px] animate-pulse bg-muted/20">
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        <div className="absolute inset-0 flex items-end">
+          <div className={cn(CONTAINER, "pb-10 sm:pb-16 space-y-4")}>
+            <div className="h-12 w-2/3 max-w-lg rounded-md bg-muted/50"></div>
+            <div className="h-4 w-1/2 max-w-md rounded-md bg-muted/50"></div>
+            <div className="h-10 w-32 rounded-md bg-muted/50 mt-6"></div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -636,7 +769,7 @@ function CartSheet({ cart }: { cart: ReturnType<typeof useCart> }) {
             <li key={item.slug} className="flex gap-3 border-b border-border pb-4">
               {item.image ? (
                 <img
-                  src={item.image}
+                  src={resolveImageUrl(item.image)}
                   alt={item.name}
                   loading="lazy"
                   className="size-20 rounded-md object-cover"
@@ -688,7 +821,7 @@ function CartSheet({ cart }: { cart: ReturnType<typeof useCart> }) {
         </div>
         <Button asChild className="w-full" disabled={cart.items.length === 0}>
           <Link to="/checkout">
-            Checkout <ArrowRight />
+            Proceed to Checkout <ArrowRight />
           </Link>
         </Button>
         <p className="text-center text-[11px] text-muted-foreground">
@@ -710,7 +843,7 @@ function BrandingHero({ onScrollToShop }: { onScrollToShop: () => void }) {
         aria-hidden="true"
         className="pointer-events-none absolute -right-40 -top-40 size-[500px] rounded-full bg-accent/10 blur-3xl"
       />
-      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:py-32">
+      <div className={cn(CONTAINER, "relative py-20 sm:py-28 lg:py-32")}>
         <div className="max-w-3xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
             AI-styled fashion atelier
@@ -755,7 +888,7 @@ function AboutSection() {
   ];
   return (
     <section className="border-t border-border bg-card/40">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <div className={cn(CONTAINER, "py-16 sm:py-20")}>
         <div className="max-w-2xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">Why StyleAI</p>
           <h2 className="mt-4 font-display text-2xl font-medium tracking-tight sm:text-3xl">
@@ -831,84 +964,100 @@ function HeroCarousel({
   if (!s) return null;
 
   return (
-    <section className="relative overflow-hidden border-b border-border">
+    <section className="relative w-full overflow-hidden border-b border-border">
       <div className="relative h-[60vh] min-h-[420px] w-full sm:h-[68vh] sm:min-h-[520px]">
+        
+        {/* Images */}
         {slides.map((slide, i) => (
           <img
             key={slide.id}
-            src={slide.imageUrl}
+            // ✅ YAHAN FIX HAI: resolveImageUrl use kiya hai
+            src={resolveImageUrl(slide.imageUrl)}
             alt={slide.headline ?? ""}
             loading={i === 0 ? "eager" : "lazy"}
             className={cn(
-              "absolute inset-0 size-full object-cover transition-opacity duration-700",
+              "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700",
               i === active ? "opacity-100" : "opacity-0"
             )}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        
+        {/* Dark Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        
+        {/* Content Container */}
         <div className="absolute inset-0 flex items-end">
-          <div className="mx-auto w-full max-w-6xl px-4 pb-10 sm:px-6 sm:pb-16">
-            {s.headline && (
-              <h1 className="max-w-2xl font-display text-4xl font-medium leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-                {s.headline}
-              </h1>
-            )}
-            {s.subheading && (
-              <p className="mt-4 max-w-lg text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-                {s.subheading}
-              </p>
-            )}
-            <div className="mt-6 flex flex-wrap gap-3 sm:mt-8">
-              {s.ctaText &&
-                (s.ctaLink?.startsWith("/") ? (
-                  <Button asChild size="lg">
-                    <Link to={s.ctaLink as any}>
-                      {s.ctaText} <ArrowRight />
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button size="lg" onClick={onScrollToShop}>
-                    {s.ctaText} <ArrowRight />
-                  </Button>
-                ))}
-            </div>
-
-            {slides.length > 1 && (
-              <div className="mt-8 flex items-center gap-3">
-                <button
-                  onClick={() => go((active - 1 + slides.length) % slides.length)}
-                  className="grid size-9 place-items-center rounded-full border border-border bg-background/85 backdrop-blur-sm transition-colors hover:bg-background"
-                  aria-label="Previous slide"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
-                <div className="flex items-center gap-1.5">
-                  {slides.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => go(i)}
-                      aria-label={`Slide ${i + 1}`}
-                      className={cn(
-                        "h-1.5 rounded-full transition-all",
-                        i === active ? "w-6 bg-foreground" : "w-1.5 bg-foreground/40 hover:bg-foreground/70"
-                      )}
-                    />
+          <div className={cn(CONTAINER, "pb-24 sm:pb-28")}>
+            <div className="max-w-2xl">
+              {s.headline && (
+                <h1 className="font-display text-4xl font-medium leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                  {s.headline}
+                </h1>
+              )}
+              {s.subheading && (
+                <p className="mt-4 text-sm leading-6 text-white/80 sm:text-base sm:leading-7">
+                  {s.subheading}
+                </p>
+              )}
+              <div className="mt-6 flex flex-wrap gap-3 sm:mt-8">
+                {s.ctaText &&
+                  (s.ctaLink?.startsWith("/") ? (
+                    <Button asChild size="lg" className="bg-white text-black hover:bg-white/90">
+                      <Link to={s.ctaLink as any}>
+                        {s.ctaText} <ArrowRight className="ml-2 size-4" />
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button size="lg" onClick={onScrollToShop} className="bg-white text-black hover:bg-white/90">
+                      {s.ctaText} <ArrowRight className="ml-2 size-4" />
+                    </Button>
                   ))}
-                </div>
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {active + 1} / {slides.length}
-                </span>
-                <button
-                  onClick={() => go((active + 1) % slides.length)}
-                  className="grid size-9 place-items-center rounded-full border border-border bg-background/85 backdrop-blur-sm transition-colors hover:bg-background"
-                  aria-label="Next slide"
-                >
-                  <ChevronRight className="size-4" />
-                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
+
+        {/* LEFT ARROW (Far Left, Vertically Centered) */}
+        {slides.length > 1 && (
+          <button
+            onClick={() => go((active - 1 + slides.length) % slides.length)}
+            className="absolute left-4 top-1/2 z-20 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-black/60 hover:border-white/40 sm:left-8 sm:size-12"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft className="size-5 sm:size-6" />
+          </button>
+        )}
+
+        {/* RIGHT ARROW (Far Right, Vertically Centered) */}
+        {slides.length > 1 && (
+          <button
+            onClick={() => go((active + 1) % slides.length)}
+            className="absolute right-4 top-1/2 z-20 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-black/60 hover:border-white/40 sm:right-8 sm:size-12"
+            aria-label="Next slide"
+          >
+            <ChevronRight className="size-5 sm:size-6" />
+          </button>
+        )}
+
+        
+        {slides.length > 1 && (
+          <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center justify-center gap-2 sm:bottom-8">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => go(i)}
+                aria-label={`Go to slide ${i + 1}`}
+                className={cn(
+                  "h-1.5 rounded-full transition-all duration-300",
+                  i === active 
+                    ? "w-8 bg-white" 
+                    : "w-2 bg-white/40 hover:bg-white/70"
+                )}
+              />
+            ))}
+          </div>
+        )}
+
       </div>
     </section>
   );

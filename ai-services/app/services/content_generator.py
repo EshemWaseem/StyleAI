@@ -1,7 +1,9 @@
 # app/services/content_generator.py
 """
 Content generation:
-   attributes (+ optional brand_context) → prompt → Ollama → JSON → sanitize → Pydantic
+   attributes (+ optional brand_context) → prompt → LLM (Groq/Gemini/Ollama) → JSON → sanitize → Pydantic
+
+✅ FIX: meta.provider now reflects the ACTUAL provider, not hardcoded "ollama".
 """
 
 import logging
@@ -107,8 +109,12 @@ class ContentGenerator:
             )
             content = self._validate(raw, attrs_clean)
 
+        # ✅ FIX: dynamic provider + model — NOT hardcoded "ollama"
+        provider_name = (settings.LLM_PROVIDER or "groq").lower()
+        actual_model = settings.text_model
+
         meta = {
-            "provider": f"ollama:{settings.OLLAMA_TEXT_MODEL}",
+            "provider": f"{provider_name}:{actual_model}",
             "duration_ms": int((time.time() - start) * 1000),
             "retried": retried,
             "context_injected": context_injected,

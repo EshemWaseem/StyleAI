@@ -180,24 +180,35 @@ async function recommendForProduct(user, productId, options) {
   let aiResult = matchingCache.get(productId, candidateIds);
   let aiPowered = false;
 
+  // ✅ Helper: check if a result is a valid, non-fallback AI response
+  const isValidAiResult = (res) =>
+    !!res &&
+    !res.fallback_used &&
+    Array.isArray(res.results) &&
+    res.results.length > 0 &&
+    // ✅ Accept ANY real provider (groq / gemini / ollama), reject only heuristic labels
+    typeof res.provider === 'string' &&
+    res.provider !== 'heuristic' &&
+    res.provider !== 'heuristic-local' &&
+    res.provider !== 'none';
+
   if (aiResult) {
-    aiPowered =
-      aiResult.provider === 'ollama' &&
-      !aiResult.fallback_used &&
-      Array.isArray(aiResult.results) &&
-      aiResult.results.length > 0;
-  } else {
+    // ✅ FIXED: dynamic provider check instead of hardcoded 'ollama'
+    aiPowered = isValidAiResult(aiResult);
+    if (!aiPowered) {
+      // Cache contains a stale/fallback entry — ignore it
+      aiResult = null;
+    }
+  }
+
+  if (!aiResult) {
     try {
       const brief = {
         product: productToBrief(product),
         candidates: preRanked.map((r) => influencerToBrief(r.inf)),
       };
       aiResult = await callMatchApi(brief);
-      aiPowered =
-        !aiResult.fallback_used &&
-        aiResult.provider === 'ollama' &&
-        Array.isArray(aiResult.results) &&
-        aiResult.results.length > 0;
+      aiPowered = isValidAiResult(aiResult);
 
       if (aiPowered) {
         matchingCache.set(productId, candidateIds, aiResult);
@@ -205,6 +216,7 @@ async function recommendForProduct(user, productId, options) {
     } catch (err) {
       console.error('[matching] AI call failed:', err.message);
       aiResult = null;
+      aiPowered = false;
     }
   }
 

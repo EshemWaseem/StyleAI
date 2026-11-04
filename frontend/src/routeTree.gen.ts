@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as CartRouteImport } from './routes/cart'
@@ -23,6 +24,7 @@ import { Route as MatchedProductsRouteImport } from './routes/matched-products'
 import { Route as MatchingRouteImport } from './routes/matching'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as PendingRouteImport } from './routes/pending'
 import { Route as PlansRouteImport } from './routes/plans'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -90,6 +92,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnalyticsRoute = AnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -153,6 +160,11 @@ const MessagesRoute = MessagesRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PendingRoute = PendingRouteImport.update({
@@ -401,14 +413,14 @@ const OffersNewRoute = OffersNewRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersIndexRoute = OrdersIndexRouteImport.update({
-  id: '/orders/',
-  path: '/orders/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrdersRoute,
 } as any)
 const OrdersIdRoute = OrdersIdRouteImport.update({
-  id: '/orders/$id',
-  path: '/orders/$id',
-  getParentRoute: () => rootRouteImport,
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => OrdersRoute,
 } as any)
 const PaymentsResultRoute = PaymentsResultRouteImport.update({
   id: '/payments/result',
@@ -463,6 +475,7 @@ const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
   '/cart': typeof CartRoute
@@ -476,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/matching': typeof MatchingRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/pending': typeof PendingRoute
   '/plans': typeof PlansRoute
   '/privacy': typeof PrivacyRoute
@@ -540,6 +554,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
   '/cart': typeof CartRoute
@@ -618,6 +633,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/analytics': typeof AnalyticsRoute
   '/billing': typeof BillingRoute
   '/cart': typeof CartRoute
@@ -631,6 +647,7 @@ export interface FileRoutesById {
   '/matching': typeof MatchingRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/pending': typeof PendingRoute
   '/plans': typeof PlansRoute
   '/privacy': typeof PrivacyRoute
@@ -697,6 +714,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/analytics'
     | '/billing'
     | '/cart'
@@ -710,6 +728,7 @@ export interface FileRouteTypes {
     | '/matching'
     | '/messages'
     | '/notifications'
+    | '/orders'
     | '/pending'
     | '/plans'
     | '/privacy'
@@ -774,6 +793,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/analytics'
     | '/billing'
     | '/cart'
@@ -851,6 +871,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/analytics'
     | '/billing'
     | '/cart'
@@ -864,6 +885,7 @@ export interface FileRouteTypes {
     | '/matching'
     | '/messages'
     | '/notifications'
+    | '/orders'
     | '/pending'
     | '/plans'
     | '/privacy'
@@ -929,6 +951,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AnalyticsRoute: typeof AnalyticsRoute
   BillingRoute: typeof BillingRoute
   CartRoute: typeof CartRoute
@@ -942,6 +965,7 @@ export interface RootRouteChildren {
   MatchingRoute: typeof MatchingRoute
   MessagesRoute: typeof MessagesRoute
   NotificationsRoute: typeof NotificationsRoute
+  OrdersRoute: typeof OrdersRouteWithChildren
   PendingRoute: typeof PendingRoute
   PlansRoute: typeof PlansRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -985,7 +1009,6 @@ export interface RootRouteChildren {
   OffersIdRoute: typeof OffersIdRoute
   OffersBrowseRoute: typeof OffersBrowseRoute
   OffersNewRoute: typeof OffersNewRoute
-  OrdersIdRoute: typeof OrdersIdRoute
   PaymentsResultRoute: typeof PaymentsResultRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   StudioContentRoute: typeof StudioContentRoute
@@ -997,7 +1020,6 @@ export interface RootRouteChildren {
   CampaignsIndexRoute: typeof CampaignsIndexRoute
   InfluencersIndexRoute: typeof InfluencersIndexRoute
   OffersIndexRoute: typeof OffersIndexRoute
-  OrdersIndexRoute: typeof OrdersIndexRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ShopCategorySlugRoute: typeof ShopCategorySlugRoute
@@ -1012,6 +1034,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analytics': {
@@ -1103,6 +1132,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pending': {
@@ -1450,17 +1486,17 @@ declare module '@tanstack/react-router' {
     }
     '/orders/': {
       id: '/orders/'
-      path: '/orders'
+      path: '/'
       fullPath: '/orders/'
       preLoaderRoute: typeof OrdersIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OrdersRoute
     }
     '/orders/$id': {
       id: '/orders/$id'
-      path: '/orders/$id'
+      path: '/$id'
       fullPath: '/orders/$id'
       preLoaderRoute: typeof OrdersIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OrdersRoute
     }
     '/payments/result': {
       id: '/payments/result'
@@ -1535,8 +1571,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface OrdersRouteChildren {
+  OrdersIdRoute: typeof OrdersIdRoute
+  OrdersIndexRoute: typeof OrdersIndexRoute
+}
+
+const OrdersRouteChildren: OrdersRouteChildren = {
+  OrdersIdRoute: OrdersIdRoute,
+  OrdersIndexRoute: OrdersIndexRoute,
+}
+
+const OrdersRouteWithChildren =
+  OrdersRoute._addFileChildren(OrdersRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AnalyticsRoute: AnalyticsRoute,
   BillingRoute: BillingRoute,
   CartRoute: CartRoute,
@@ -1550,6 +1600,7 @@ const rootRouteChildren: RootRouteChildren = {
   MatchingRoute: MatchingRoute,
   MessagesRoute: MessagesRoute,
   NotificationsRoute: NotificationsRoute,
+  OrdersRoute: OrdersRouteWithChildren,
   PendingRoute: PendingRoute,
   PlansRoute: PlansRoute,
   PrivacyRoute: PrivacyRoute,
@@ -1593,7 +1644,6 @@ const rootRouteChildren: RootRouteChildren = {
   OffersIdRoute: OffersIdRoute,
   OffersBrowseRoute: OffersBrowseRoute,
   OffersNewRoute: OffersNewRoute,
-  OrdersIdRoute: OrdersIdRoute,
   PaymentsResultRoute: PaymentsResultRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   StudioContentRoute: StudioContentRoute,
@@ -1605,7 +1655,6 @@ const rootRouteChildren: RootRouteChildren = {
   CampaignsIndexRoute: CampaignsIndexRoute,
   InfluencersIndexRoute: InfluencersIndexRoute,
   OffersIndexRoute: OffersIndexRoute,
-  OrdersIndexRoute: OrdersIndexRoute,
   ProductsIndexRoute: ProductsIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
   ShopCategorySlugRoute: ShopCategorySlugRoute,

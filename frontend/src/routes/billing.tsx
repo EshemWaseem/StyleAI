@@ -76,21 +76,13 @@ function BillingPage() {
     }
   }
 
-  //       
-  // Initial load — handles Stripe return + trial flag cleanup
-  // NEW: On success, auto-redirects to role-appropriate dashboard
-  //       
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
     const status = params.get("status");
 
     (async () => {
-      
-      // PAYMENT SUCCESS → verify → brief toast → redirect
-      
       if (status === "success") {
-        // Verify the session directly with Stripe (fallback if webhook failed)
         if (sessionId) {
           try {
             await paymentsApi.verifySession(sessionId);
@@ -99,45 +91,26 @@ function BillingPage() {
           }
         }
 
-        // Clear trial flag so app exits standalone mode
         clearTrialExpired();
-
-        // Refresh billing state so if user navigates back it's up-to-date
         await load();
-
-        // Show brief success message, then auto-redirect
         setOk("Payment successful — redirecting to your dashboard…");
 
-        // Role-appropriate destination
-        //   SUPER_ADMIN  → /admin
-        //   AGENCY       → /agency
-        //   BRAND_OWNER  → /dashboard
-        //   INFLUENCER   → /dashboard
-        //   SHOPPER      → /
         const targetPath = user?.roles?.length
           ? getDashboardPath(user.roles)
           : "/dashboard";
 
-        // Small delay so user sees the success state briefly (~0.8s)
         setTimeout(() => {
           navigate({ to: targetPath, replace: true });
         }, 800);
         return;
       }
 
-      
-      // PAYMENT CANCELLED
-      
       if (status === "cancel") {
         setError("Payment was cancelled.");
       }
 
-      
-      // NORMAL LOAD (no status params)
-      
       await load();
 
-      // Clean URL so refreshing doesn't re-trigger
       if (status || sessionId) {
         window.history.replaceState({}, "", window.location.pathname);
       }
@@ -557,65 +530,125 @@ function BillingPage() {
                     <p className="text-xs text-muted-foreground">No invoices yet.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[560px] text-sm">
-                      <thead>
-                        <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                          <th className="pb-3 font-medium">Invoice</th>
-                          <th className="pb-3 font-medium">Date</th>
-                          <th className="pb-3 font-medium text-right">Amount</th>
-                          <th className="pb-3 font-medium">Status</th>
-                          <th className="pb-3 font-medium text-right w-12"> </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {data.invoices.map((inv) => (
-                          <tr key={inv.id}>
-                            <td className="py-3 font-mono text-xs">
-                              {inv.invoiceNumber.length > 40
-                                ? `${inv.invoiceNumber.slice(0, 40)}…`
-                                : inv.invoiceNumber}
-                            </td>
-                            <td className="py-3 text-xs text-muted-foreground">
-                              {new Date(inv.createdAt).toLocaleDateString()}
-                            </td>
-                            <td className="py-3 text-right tabular-nums font-medium">
-                              {inv.currency} {inv.amount.toFixed(2)}
-                            </td>
-                            <td className="py-3">
-                              <span className={cn(
-                                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase",
-                                inv.status === "SUCCEEDED" ? "bg-emerald-500/15 text-emerald-500"
-                                : inv.status === "PENDING" ? "bg-amber-500/15 text-amber-500"
-                                : "bg-destructive/15 text-destructive"
-                              )}>
-                                {inv.status === "SUCCEEDED" ? <CheckCircle2 className="size-3" /> : inv.status === "FAILED" ? <XCircle className="size-3" /> : null}
-                                {inv.status}
-                              </span>
-                            </td>
-                            <td className="py-3 text-right">
-                              {inv.status === "FAILED" && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="size-7 text-muted-foreground hover:text-destructive"
-                                  onClick={() => handleDeleteInvoice(inv.id)}
-                                  disabled={deletingId === inv.id}
-                                  title="Delete this failed invoice"
-                                >
-                                  {deletingId === inv.id ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="size-3.5" />
-                                  )}
-                                </Button>
-                              )}
-                            </td>
+                  <>
+                    {/* 🆕 DESKTOP TABLE VIEW */}
+                    <div className="hidden md:block overflow-x-auto w-full hover-scroll pb-2">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border text-left text-xs text-muted-foreground bg-muted/20">
+                            <th className="py-3 px-4 font-medium w-[35%]">Invoice</th>
+                            <th className="py-3 px-4 font-medium w-[20%]">Date</th>
+                            <th className="py-3 px-4 font-medium text-right w-[20%]">Amount</th>
+                            <th className="py-3 px-4 font-medium text-center w-[15%]">Status</th>
+                            <th className="py-3 px-4 font-medium text-right w-[10%]"></th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {data.invoices.map((inv) => (
+                            <tr key={inv.id} className="hover:bg-muted/30 transition-colors">
+                              <td className="py-3 px-4 font-mono text-xs">
+                                <div 
+                                  className="max-w-[200px] truncate cursor-help" 
+                                  title={inv.invoiceNumber}
+                                >
+                                  {inv.invoiceNumber}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-xs text-muted-foreground whitespace-nowrap">
+                                {new Date(inv.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="py-3 px-4 text-right tabular-nums font-medium whitespace-nowrap">
+                                {inv.currency} {inv.amount.toFixed(2)}
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                <span className={cn(
+                                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide",
+                                  inv.status === "SUCCEEDED" ? "bg-emerald-500/15 text-emerald-500"
+                                  : inv.status === "PENDING" ? "bg-amber-500/15 text-amber-500"
+                                  : "bg-destructive/15 text-destructive"
+                                )}>
+                                  {inv.status === "SUCCEEDED" ? <CheckCircle2 className="size-3" /> : inv.status === "FAILED" ? <XCircle className="size-3" /> : null}
+                                  {inv.status}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-right">
+                                {inv.status === "FAILED" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-7 text-muted-foreground hover:text-destructive"
+                                    onClick={() => handleDeleteInvoice(inv.id)}
+                                    disabled={deletingId === inv.id}
+                                    title="Delete this failed invoice"
+                                  >
+                                    {deletingId === inv.id ? (
+                                      <Loader2 className="size-3.5 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="size-3.5" />
+                                    )}
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* 🆕 MOBILE CARD VIEW - 100% Scroll Free */}
+                    <div className="md:hidden flex flex-col divide-y divide-border overflow-hidden">
+                      {data.invoices.map((inv) => (
+                        <div key={inv.id} className="p-4 space-y-3 overflow-hidden">
+                          <div className="flex justify-between items-start gap-4">
+                            
+                            {/* Ye block text ko screen ke andar rakhega */}
+                            <div className="flex-1 min-w-0">
+                              <p 
+                                className="font-mono text-[11px] font-medium break-all text-foreground leading-tight" 
+                                title={inv.invoiceNumber}
+                              >
+                                {inv.invoiceNumber}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground mt-1">
+                                {new Date(inv.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+
+                            <span className={cn(
+                              "shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider",
+                              inv.status === "SUCCEEDED" ? "bg-emerald-500/15 text-emerald-500"
+                              : inv.status === "PENDING" ? "bg-amber-500/15 text-amber-500"
+                              : "bg-destructive/15 text-destructive"
+                            )}>
+                              {inv.status}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-1">
+                            <p className="font-medium tabular-nums text-sm text-foreground">
+                              {inv.currency} {inv.amount.toFixed(2)}
+                            </p>
+                            
+                            {inv.status === "FAILED" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteInvoice(inv.id)}
+                                disabled={deletingId === inv.id}
+                              >
+                                {deletingId === inv.id ? (
+                                  <Loader2 className="size-3.5 animate-spin" />
+                                ) : (
+                                  <><Trash2 className="mr-1 size-3.5" /> Delete</>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </Panel>
             </div>

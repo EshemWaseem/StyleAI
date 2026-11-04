@@ -1,273 +1,287 @@
-// frontend/src/routes/admin/orders.tsx
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Loader2,
-  Package,
-  ShoppingBag,
-  Truck,
-  XCircle,
+// routes/orders.tsx
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState, useCallback } from "react";
+import { 
+  Package, Truck, CheckCircle2, ChevronRight, ArrowLeft, 
+  Loader2, ShoppingBag, RefreshCw, Clock, MapPin, Receipt, Trash2, Check, User, LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageHeader, Panel, SectionTitle } from "@/components/ui-kit";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { adminOrdersApi, type AdminOrder, type OrderStatus } from "@/lib/admin/orders";
-import { swalConfirm, swalError, swalSuccess } from "@/lib/swal";
+import { useRole } from "@/lib/role";
+import { useCart } from "@/lib/cart";
+import { http } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { PublicHeader } from "@/components/shop/public-header";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { swalConfirm, swalSuccess, swalError } from "@/lib/swal";
 
 export const Route = createFileRoute("/admin/orders")({
-  head: () => ({ meta: [
-      { name: "robots", content: "noindex" },{ title: "Orders — Admin" }] }),
-  component: AdminOrdersPage,
+  head: () => ({ meta: [{ title: "My Orders — StyleAI" }, { name: "robots", content: "noindex" }] }),
+  component: OrdersPage,
 });
 
-const STATUS_META: Record<OrderStatus, { label: string; icon: any; tone: string }> = {
-  PENDING: { label: "Pending", icon: Clock, tone: "bg-amber-500/15 text-amber-500" },
-  CONFIRMED: { label: "Confirmed", icon: CheckCircle2, tone: "bg-blue-500/15 text-blue-500" },
-  SHIPPED: { label: "Shipped", icon: Truck, tone: "bg-blue-500/15 text-blue-500" },
-  DELIVERED: { label: "Delivered", icon: CheckCircle2, tone: "bg-emerald-500/15 text-emerald-500" },
-  COMPLETED: { label: "Completed", icon: CheckCircle2, tone: "bg-emerald-500/15 text-emerald-500" },
-  CANCELLED: { label: "Cancelled", icon: XCircle, tone: "bg-destructive/15 text-destructive" },
-  REFUNDED: { label: "Refunded", icon: XCircle, tone: "bg-muted text-muted-foreground" },
-};
+const TRACKING_STEPS = [
+  { id: "PENDING", label: "Placed", icon: Clock },
+  { id: "PROCESSING", label: "Processing", icon: Package },
+  { id: "SHIPPED", label: "Shipped", icon: Truck },
+  { id: "DELIVERED", label: "Delivered", icon: CheckCircle2 },
+];
 
-function AdminOrdersPage() {
-  const [orders, setOrders] = useState<AdminOrder[]>([]);
+function getStepIndex(status: string) {
+  const s = status?.toUpperCase();
+  if (s === "PENDING") return 0;
+  if (s === "PROCESSING" || s === "CONFIRMED") return 1;
+  if (s === "SHIPPED") return 2;
+  if (s === "DELIVERED" || s === "COMPLETED") return 3;
+  return 0;
+}
+
+function ProductImage({ src, alt }: { src?: string | null; alt: string }) {
+  if (!src) return <div className="size-full grid place-items-center bg-muted text-muted-foreground"><Package className="size-5 opacity-50" /></div>;
+  return <img src={src} alt={alt} loading="lazy" className="size-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+}
+
+function OrdersPage() {
+  const { user, logout } = useRole();
+  const cart = useCart();
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [processing, setProcessing] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
-  async function load() {
-    setLoading(true);
+  const fetchOrders = useCallback(async (isRefresh = false) => {
+    if (!user) return;
+    if (isRefresh) setRefreshing(true); else setLoading(true);
     setError("");
     try {
-      const res = await adminOrdersApi.list({
-        status: statusFilter || undefined,
-        provider: "COD",
-      });
-      setOrders(res.orders);
-    } catch (e: any) {
-      setError(e?.message || "Failed to load orders");
+      const res = await http.get<{ orders: any[] }>("/api/orders");
+      const sorted = (res.orders || []).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setOrders(sorted);
+    } catch (err: any) {
+      setError(err?.message || "Could not load your orders.");
     } finally {
-      setLoading(false);
+      setLoading(false); setRefreshing(false);
     }
-  }
+  }, [user]);
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line
-  }, [statusFilter]);
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  async function confirmDelivery(order: AdminOrder) {
-    const ok = await swalConfirm(
-      "Mark as delivered?",
-      `Order #${order.id.slice(0, 8).toUpperCase()} — ${order.currency} ${order.totalAmount.toFixed(2)}\n\nThis will confirm the COD payment and notify the customer.`
-    );
+  // 🆕 Handle Confirm
+  const handleConfirm = async (orderId: string) => {
+    const ok = await swalConfirm("Confirm this order?", "Once confirmed, an email will be sent and it cannot be deleted.");
     if (!ok) return;
-
-    setProcessing(order.id);
     try {
-      await adminOrdersApi.confirmDelivery(order.id);
-      swalSuccess("Order delivered", "Payment confirmed. Customer has been notified.");
-      await load();
+      await http.post(`/api/orders/${orderId}/confirm`);
+      swalSuccess("Order Confirmed", "Email sent successfully.");
+      fetchOrders();
     } catch (e: any) {
-      swalError("Failed", e?.message || "Could not confirm delivery");
-    } finally {
-      setProcessing(null);
+      swalError("Failed", e?.message || "Could not confirm order.");
     }
-  }
+  };
 
-  async function cancelOrder(order: AdminOrder) {
-    const reason = window.prompt("Reason for cancellation? (optional)");
-    if (reason === null) return;
-
-    setProcessing(order.id);
+  // 🆕 Handle Delete
+  const handleDelete = async (orderId: string) => {
+    const ok = await swalConfirm("Delete this order?", "This action cannot be undone.");
+    if (!ok) return;
     try {
-      await adminOrdersApi.cancel(order.id, reason || undefined);
-      swalSuccess("Order cancelled");
-      await load();
+      await http.delete(`/api/orders/${orderId}`);
+      swalSuccess("Deleted", "Order removed.");
+      fetchOrders();
     } catch (e: any) {
-      swalError("Failed", e?.message || "Could not cancel");
-    } finally {
-      setProcessing(null);
+      swalError("Failed", e?.message || "Could not delete order.");
     }
-  }
+  };
 
-  const pendingCount = orders.filter((o) => o.status === "PENDING").length;
+  if (!user) return <div className="flex min-h-screen items-center justify-center bg-background"><Link to="/login" className="text-accent underline">Please sign in to view your orders.</Link></div>;
 
   return (
-    <ProtectedRoute roles={["SUPER_ADMIN"]}>
-      <div className="ui-page-content">
-        <PageHeader
-          eyebrow="Commerce"
-          title="Customer orders"
-          description="Confirm COD deliveries, track order status, and manage cancellations."
-          actions={
-            pendingCount > 0 ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-500">
-                <Clock className="size-3" />
-                {pendingCount} pending delivery
-              </span>
-            ) : null
-          }
-        />
+    <div className="min-h-screen bg-background text-foreground">
+      {/* 🆕 Exact Same Header for Perfect Alignment */}
+      <PublicHeader cartCount={cart.count} />
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="">All statuses</option>
-            <option value="PENDING">Pending</option>
-            <option value="CONFIRMED">Confirmed</option>
-            <option value="SHIPPED">Shipped</option>
-            <option value="DELIVERED">Delivered</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
-          <Button size="sm" variant="outline" onClick={load}>
-            Refresh
+      {/* 🆕 max-w-7xl set kiya hai taake favicon aur cart icon k sath align ho */}
+      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="size-5" />
+            </Link>
+            <div>
+              <h1 className="font-display text-3xl font-medium tracking-tight">My Orders</h1>
+              <p className="mt-1 text-sm text-muted-foreground">Track your recent purchases.</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => fetchOrders(true)} disabled={refreshing || loading} className="gap-2 self-start sm:self-auto">
+            <RefreshCw className={cn("size-4", refreshing && "animate-spin")} /> {refreshing ? "Checking..." : "Track Updates"}
           </Button>
         </div>
 
-        {error && (
-          <div className="mt-6 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            <AlertCircle className="mt-0.5 size-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
         {loading ? (
-          <div className="mt-12 flex items-center justify-center">
-            <Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Loading orders…</span>
-          </div>
+          <div className="flex items-center justify-center py-20 text-muted-foreground"><Loader2 className="mr-2 size-5 animate-spin" /> Loading orders...</div>
+        ) : error ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-center text-destructive">{error}</div>
         ) : orders.length === 0 ? (
-          <Panel className="mt-8">
-            <div className="flex flex-col items-center py-12 text-center">
-              <ShoppingBag className="mx-auto size-8 text-muted-foreground" />
-              <p className="mt-3 text-sm font-medium">No COD orders</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                COD orders will appear here once customers place them.
-              </p>
-            </div>
-          </Panel>
+          <div className="rounded-xl border border-dashed border-border py-20 text-center">
+            <ShoppingBag className="mx-auto size-10 text-muted-foreground mb-4 opacity-50" />
+            <h2 className="text-lg font-medium">No orders yet</h2>
+            <p className="mt-1 text-sm text-muted-foreground">When you place an order, it will appear here.</p>
+            <Button asChild className="mt-6"><Link to="/shop">Start Shopping</Link></Button>
+          </div>
         ) : (
-          <div className="mt-6 space-y-3">
-            <SectionTitle title={`${orders.length} order${orders.length === 1 ? "" : "s"}`} />
-            {orders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                processing={processing === order.id}
-                onConfirm={() => confirmDelivery(order)}
-                onCancel={() => cancelOrder(order)}
-              />
-            ))}
+          <div className="space-y-8">
+            {orders.map((order: any) => {
+              const currentStep = getStepIndex(order.status);
+              const orderTotal = Number(order.totalAmount || 0);
+              const orderDate = order.createdAt ? new Date(order.createdAt) : new Date();
+
+              return (
+                <div key={order.id} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-muted/20 p-4 sm:px-6">
+                    <div className="grid grid-cols-2 gap-4 sm:flex sm:gap-12">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Order Placed</p>
+                        <p className="text-sm font-medium">{orderDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Total</p>
+                        <p className="text-sm font-medium">${orderTotal.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Order ID</p>
+                        <p className="text-sm font-medium">#{order.id.slice(0, 8).toUpperCase()}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-b border-border p-6 bg-accent/5">
+                    <div className="relative flex justify-between">
+                      <div className="absolute top-1/2 left-0 right-0 h-1 -translate-y-1/2 bg-border rounded-full" />
+                      <div className="absolute top-1/2 left-0 h-1 -translate-y-1/2 bg-accent rounded-full transition-all duration-500" style={{ width: `${(currentStep / (TRACKING_STEPS.length - 1)) * 100}%` }} />
+                      {TRACKING_STEPS.map((step, idx) => {
+                        const isCompleted = idx <= currentStep;
+                        const isActive = idx === currentStep;
+                        const Icon = step.icon;
+                        return (
+                          <div key={step.id} className="relative z-10 flex flex-col items-center gap-2">
+                            <div className={cn("grid size-8 place-items-center rounded-full border-2 transition-colors", isCompleted ? "bg-accent border-accent text-background" : "bg-card border-border text-muted-foreground")}>
+                              <Icon className="size-4" />
+                            </div>
+                            <span className={cn("text-[10px] sm:text-xs font-medium", isActive ? "text-accent" : isCompleted ? "text-foreground" : "text-muted-foreground")}>{step.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-border">
+                    {order.items?.slice(0, 2).map((item: any) => (
+                      <div key={item.id} className="flex items-center gap-4 p-4 sm:px-6">
+                        <div className="size-16 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                          <ProductImage src={item.product?.primaryImage} alt={item.name || item.product?.name || "Product"} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-sm font-medium">{item.name || item.product?.name || "Product"}</p>
+                          <p className="text-xs text-muted-foreground">Qty: {item.quantity || 1}</p>
+                        </div>
+                        <p className="text-sm font-medium tabular-nums">${Number(item.priceAtTime || item.price || 0).toFixed(2)}</p>
+                      </div>
+                    ))}
+                    {order.items?.length > 2 && (
+                      <div className="p-3 text-center text-xs text-muted-foreground bg-muted/10">+ {order.items.length - 2} more item(s)</div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-border p-4 bg-muted/10 gap-4">
+                    <p className="text-xs text-muted-foreground">
+                      Status: <strong className="text-foreground">{order.status}</strong>
+                      {order.paymentProvider && <span className="ml-2 px-2 py-0.5 rounded bg-accent/10 text-accent">{order.paymentProvider}</span>}
+                    </p>
+                    
+                    <div className="flex items-center gap-2">
+                      {/* 🆕 DELETE BUTTON (Only if PENDING) */}
+                      {order.status === "PENDING" && (
+                        <Button variant="outline" size="sm" className="gap-1 text-destructive hover:bg-destructive/10 border-destructive/20" onClick={() => handleDelete(order.id)}>
+                          <Trash2 className="size-4" /> Delete
+                        </Button>
+                      )}
+
+                      {/* 🆕 CONFIRM BUTTON (Only if PENDING) */}
+                      {order.status === "PENDING" && (
+                        <Button variant="default" size="sm" className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleConfirm(order.id)}>
+                          <Check className="size-4" /> Confirm Order
+                        </Button>
+                      )}
+
+                      <Button variant="outline" size="sm" className="gap-1" onClick={() => setSelectedOrder(order)}>
+                        View Details <ChevronRight className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-      </div>
-    </ProtectedRoute>
-  );
-}
+      </main>
 
-function OrderCard({
-  order,
-  processing,
-  onConfirm,
-  onCancel,
-}: {
-  order: AdminOrder;
-  processing: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  const meta = STATUS_META[order.status];
-  const Icon = meta.icon;
-  const codPayment = order.payments.find((p) => p.provider === "COD" && p.context === "ORDER");
-  const canConfirm = ["PENDING", "CONFIRMED", "SHIPPED"].includes(order.status) && codPayment?.status === "PENDING";
-  const canCancel = !["DELIVERED", "COMPLETED", "CANCELLED", "REFUNDED"].includes(order.status);
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {selectedOrder && (() => {
+            const modalTotal = Number(selectedOrder.totalAmount) > 0 ? Number(selectedOrder.totalAmount) : (selectedOrder.items ?? []).reduce((sum: number, i: any) => sum + Number(i.priceAtTime || i.price || 0) * (i.quantity || 1), 0);
 
-  return (
-    <Panel className="overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
-        <div className="flex items-center gap-3">
-          <div className={cn("grid size-10 place-items-center rounded-lg", meta.tone)}>
-            <Icon className="size-5" />
-          </div>
-          <div>
-            <p className="font-display text-base font-medium">
-              #{order.id.slice(0, 8).toUpperCase()}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {order.user?.name || "Unknown"} · {order.user?.email || "—"} ·{" "}
-              {new Date(order.createdAt).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className={cn("rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase", meta.tone)}>
-            {meta.label}
-          </span>
-          <span className="text-sm font-medium tabular-nums">
-            {order.currency} {order.totalAmount.toLocaleString()}
-          </span>
-        </div>
-      </div>
-
-      <div className="grid gap-4 p-4 sm:grid-cols-[1fr_auto]">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Items ({order.items.length})
-          </p>
-          <ul className="mt-2 space-y-1 text-sm">
-            {order.items.map((item) => (
-              <li key={item.id} className="flex justify-between">
-                <span>
-                  {item.name} <span className="text-muted-foreground">× {item.quantity}</span>
-                </span>
-                <span className="tabular-nums text-muted-foreground">
-                  {order.currency} {(item.priceAtTime * item.quantity).toLocaleString()}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {codPayment && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              COD · {codPayment.invoiceNumber} · Payment{" "}
-              <span className={codPayment.status === "SUCCEEDED" ? "text-emerald-500" : "text-amber-500"}>
-                {codPayment.status}
-              </span>
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-start gap-2 sm:flex-col sm:items-end">
-          {canConfirm && (
-            <Button size="sm" onClick={onConfirm} disabled={processing}>
-              {processing ? (
-                <>
-                  <Loader2 className="mr-1.5 size-3.5 animate-spin" /> Confirming…
-                </>
-              ) : (
-                <>
-                  <Package className="mr-1.5 size-3.5" /> Confirm delivered
-                </>
-              )}
-            </Button>
-          )}
-          {canCancel && (
-            <Button size="sm" variant="outline" onClick={onCancel} disabled={processing}>
-              Cancel order
-            </Button>
-          )}
-        </div>
-      </div>
-    </Panel>
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-display text-2xl">Order #{selectedOrder.id.slice(0, 8).toUpperCase()}</DialogTitle>
+                  <DialogDescription>Placed on {new Date(selectedOrder.createdAt).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-6 md:grid-cols-3 mt-4">
+                  <div className="md:col-span-2 space-y-4">
+                    <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Items</h3>
+                    <div className="divide-y divide-border rounded-lg border border-border">
+                      {selectedOrder.items?.map((item: any) => (
+                        <div key={item.id} className="flex items-center gap-4 p-4">
+                          <div className="size-16 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                            <ProductImage src={item.product?.primaryImage} alt={item.name || item.product?.name || "Product"} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">{item.name || item.product?.name}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Qty: {item.quantity}</p>
+                          </div>
+                          <p className="font-medium tabular-nums text-sm">${Number(item.priceAtTime || item.price || 0).toFixed(2)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-6">
+                    <div className="rounded-lg border border-border p-4">
+                      <h3 className="font-medium text-sm flex items-center gap-2 mb-3"><MapPin className="size-4" /> Shipping</h3>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p className="font-medium text-foreground">{selectedOrder.shippingAddress?.fullName || user.name}</p>
+                        {selectedOrder.shippingAddress?.phone && <p>{selectedOrder.shippingAddress.phone}</p>}
+                        <p>{selectedOrder.shippingAddress?.street || "Address provided at checkout"}</p>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-border p-4 bg-muted/10">
+                      <h3 className="font-medium text-sm flex items-center gap-2 mb-3"><Receipt className="size-4" /> Summary</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between text-muted-foreground"><span>Total Amount</span><span className="font-medium text-foreground">${modalTotal.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-muted-foreground"><span>Status</span><span className="font-medium text-foreground">{selectedOrder.status}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

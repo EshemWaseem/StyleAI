@@ -2,168 +2,132 @@
 
 <br/>
 
-# StyleAI
+<h1>StyleAI</h1>
 
-### AI-Powered Fashion Commerce & Influencer Marketing Platform
+<p><strong>AI-Powered Fashion Commerce & Influencer Marketing Platform</strong></p>
 
-*An end-to-end multi-tenant SaaS + B2C e-commerce ecosystem — brands upload products, AI understands them, matches creators, generates ads, and manages campaigns. Fully automated, end to end.*
+<p>An end-to-end multi-tenant SaaS and B2C e-commerce ecosystem. Brands upload products, AI understands them, matches creators, generates content, and manages campaigns at scale — fully automated, end to end.</p>
 
 <br/>
 
-![Status](https://img.shields.io/badge/MVP-~88%25%20Complete-22c55e?style=flat-square)
-![Tests](https://img.shields.io/badge/Backend%20Tests-86%20Passed%20%2F%200%20Failed-22c55e?style=flat-square)
-![AI Tests](https://img.shields.io/badge/AI%20Service%20Tests-10%20Passed%20%2F%200%20Failed-22c55e?style=flat-square)
-![Node](https://img.shields.io/badge/Node.js-20%20LTS-339933?style=flat-square&logo=node.js&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%20+%20pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.13-009688?style=flat-square&logo=fastapi&logoColor=white)
+[![MVP Status](https://img.shields.io/badge/MVP-~95%25%20Complete-22c55e?style=flat-square)](https://github.com)
+[![Backend Tests](https://img.shields.io/badge/Backend%20Tests-86%20Passed-22c55e?style=flat-square)](https://github.com)
+[![AI Tests](https://img.shields.io/badge/AI%20Service%20Tests-10%20Passed-22c55e?style=flat-square)](https://github.com)
+[![Node.js](https://img.shields.io/badge/Node.js-20%20LTS-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%20+%20pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.13-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+
+<br/>
 
 </div>
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 
-- [Overview & Vision](#-overview--vision)
-- [Business Model](#-business-model)
-- [System Architecture](#️-system-architecture)
-- [Technology Stack](#-technology-stack)
-- [User Roles & Permissions](#-user-roles--permissions)
-- [Key Features](#-key-features)
-- [AI Pipeline](#-ai-pipeline)
-- [Repository Structure](#-repository-structure)
-- [Environment Configuration](#️-environment-configuration)
-- [Getting Started](#-getting-started)
-- [API Reference](#-api-reference)
-- [Security](#-security)
-- [Test Suite](#-test-suite)
-- [Current Status & Roadmap](#-current-status--roadmap)
-- [Key Design Decisions](#-key-design-decisions)
-- [License](#-license)
-
----
-
-## 📌 Overview & Vision
-
-StyleAI automates the complete journey from product upload to influencer campaign performance — powered by a dedicated Python AI microservice.
-
-```
-Brand uploads product
-        │
-        ▼
-  AI Vision Analysis         ← Gemini Vision / Groq Vision
-        │
-        ├──► AI Description Generator   (title, SEO, FAQs, keywords)
-        ├──► AI Photography Angles       (lifestyle shot recommendations)
-        ├──► Vector Embeddings           (pgvector → RAG + matching)
-        │
-        ▼
-  AI Influencer Matching     ← 6-dimension scoring model
-        │
-        ▼
-  Offer → Escrow → Campaign  ← Wallet-escrow with ACID transactions
-        │
-        ▼
-  Content Pipeline           ← raw → review → approve → publish
-        │
-        ▼
-  Analytics + AI Learning    ← campaign signals feed recommendations
-```
-
-**Platform Status:** MVP ~88% complete — production-ready for controlled/beta launch.
-**Test Results:** Backend 86/0 · AI Service 10/10 · Frontend build ✅ clean.
+- [Overview](#overview)
+- [How It Works](#how-it-works)
+- [Business Model](#business-model)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [User Roles](#user-roles)
+- [Features](#features)
+- [AI Pipeline](#ai-pipeline)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [API Reference](#api-reference)
+- [Security](#security)
+- [Testing](#testing)
+- [Roadmap](#roadmap)
+- [Design Decisions](#design-decisions)
+- [License](#license)
 
 ---
 
-## 💼 Business Model
+## Overview
 
-| Stream | Who Pays | What For |
+StyleAI is a production-grade platform that automates the entire influencer marketing lifecycle — from the moment a brand uploads a product image to the final campaign performance report. A dedicated Python AI microservice handles all intelligence: vision analysis, content generation, semantic search, influencer matching, and RAG-powered brand assistance.
+
+The platform serves four distinct user types through a single codebase: brands running influencer campaigns, influencers managing their portfolio and earnings, agencies operating across multiple client brands, and shoppers purchasing through the public B2C storefront.
+
+---
+
+## How It Works
+
+A brand uploads a product image. The AI vision model identifies category, colors, material, style, occasion, formality, and aesthetic — producing a validated structured output. From that single upload, the platform generates product descriptions, SEO content, photography shot lists, and vector embeddings for semantic search.
+
+Those embeddings power the influencer matching engine, which scores candidates across six dimensions and returns a ranked list with numeric scores and natural-language explanations. The brand sends an offer, funds are held in escrow, and the campaign enters a structured content pipeline — raw submission, brand review, approval, and publish. Analytics and performance signals continuously improve future recommendations.
+
+---
+
+## Business Model
+
+| Revenue Stream | Payer | Description |
 |---|---|---|
-| **B2B SaaS** | Brands, Agencies, Influencers | Monthly subscriptions (Stripe) — tiered plans |
-| **B2C E-commerce** | Shoppers | Product purchases via Stripe card or Cash on Delivery |
-| **Ad Platform** | Agencies | Running Meta (FB/IG) + Google Ads for client brands |
+| B2B SaaS | Brands, Agencies, Influencers | Tiered monthly subscriptions via Stripe |
+| B2C E-commerce | Shoppers | Product purchases via card or Cash on Delivery |
+| Ad Platform | Agencies | Managed Meta (Facebook/Instagram) and Google Ads for client brands |
 
 ---
 
-## 🏗️ System Architecture
+## Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│   Frontend  ·  React 19 + TanStack Router 1.168.32 + Vite 8.1.6 │
-│   Port: 3000                                                     │
-│   ─ Public storefront + SSR product pages (no auth required)     │
-│   ─ Authenticated brand/influencer/agency dashboard (SPA)        │
-│   ─ Admin panel (/admin/*)                                       │
-└──────────────────────────┬───────────────────────────────────────┘
-                           │  HTTPS + JWT + SSE + WebSocket
-                           ▼
-┌──────────────────────────────────────────────────────────────────┐
-│   Backend  ·  Node.js + Express 4 + Prisma 5                     │
-│   Port: 4000                                                     │
-│   ─ Auth, RBAC (6 roles, 37 permissions), multi-tenancy          │
-│   ─ Products, Orders, Campaigns, Offers, Wallet                  │
-│   ─ Payment gateways (Stripe, COD, JazzCash, Easypaisa)          │
-│   ─ Queue (BullMQ) · WebSocket chat · SSE notifications          │
-│   ─ Admin approval workflow (PENDING → APPROVED / REJECTED)      │
-└───────┬──────────────────────────────────┬───────────────────────┘
-        │  REST (X-Internal-Key auth)       │
-        ▼                                  ▼
-┌───────────────────────┐        ┌───────────────────────────────┐
-│  AI Service           │        │  PostgreSQL 16 + pgvector     │
-│  Python FastAPI       │        │  25+ tables · Prisma ORM      │
-│  Port: 8000           │        └───────────────────────────────┘
-│  ─ Ollama / Groq LLM  │
-│  ─ Gemini Vision      │        ┌───────────────────────────────┐
-│  ─ HuggingFace FLUX   │        │  Redis 6379                   │
-│  ─ Embeddings / RAG   │        │  Cache + BullMQ job queue     │
-└───────────────────────┘        └───────────────────────────────┘
-```
+StyleAI is composed of three independently deployable services that communicate over HTTP.
 
-### Architectural Rules (Never Violate)
+**Frontend** is a React 19 application with server-side rendering via TanStack Start. It serves a public storefront for shoppers, an authenticated SPA dashboard for brands, influencers, and agencies, and a full admin panel.
 
-| Rule | Reason |
+**Backend** is a Node.js and Express API that owns all business logic, database writes, authentication, payments, and real-time communication. It is the only service that writes to the database. All AI requests from the frontend pass through the backend before reaching the AI service — the frontend never calls the AI service directly.
+
+**AI Service** is a stateless Python FastAPI microservice. It handles LLM calls, vision analysis, embeddings, influencer matching, and content generation. It performs no database writes and holds no application state.
+
+**Infrastructure** consists of PostgreSQL 16 with the pgvector extension for relational data and vector storage, and Redis for caching and the BullMQ job queue.
+
+### Core Rules
+
+| Rule | Rationale |
 |---|---|
-| React never calls FastAPI directly | All AI calls go through Node backend |
-| FastAPI never touches the database | Stateless compute only — Node is the only DB writer |
-| AI never saves to DB directly | Human-in-the-loop validation via Node |
-| Every query scoped by `organizationId` or `userId` | Hard multi-tenancy at ORM level |
-| Agency context via `X-Acting-Brand` header | Clean brand-switching without re-auth |
-| LLM output always schema-validated | Never execute raw AI output |
+| Frontend never calls the AI service directly | All AI traffic routes through the backend for auth, quota, and audit |
+| AI service has no database access | Stateless compute only — the backend is the sole DB writer |
+| AI output is always schema-validated | Raw LLM output is never executed or persisted |
+| Every query is scoped by tenant | Multi-tenancy enforced at the ORM layer, not the application layer |
+| Wallet ledger is the source of truth | The balance cache is always derived, never authoritative |
+| Ads are created paused by default | Prevents accidental live spend — activation is always a deliberate action |
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend
 
-| Category | Technology | Version |
-|---|---|---|
-| Framework | React | 19 |
-| Router / SSR | TanStack Router + TanStack Start | **1.168.32** (pinned — see Known Issues) |
-| Build | Vite + Rolldown | 8.1.6 |
-| Styling | Tailwind CSS (single source: `styles.css`) | v4 |
-| UI Primitives | shadcn/ui + Radix UI | — |
-| Charts | Recharts | — |
-| Data Fetching | TanStack Query | — |
-| Forms | React Hook Form + Zod | — |
-| Notifications | SweetAlert2 (themed via `lib/swal.ts`) | — |
-| Real-time | Socket.IO client (WebSocket + SSE) | — |
-| Language | TypeScript | — |
+| Category | Technology |
+|---|---|
+| Framework | React 19 |
+| Router and SSR | TanStack Router + TanStack Start |
+| Build Tool | Vite + Rolldown |
+| Styling | Tailwind CSS v4 — single source: `styles.css` |
+| UI Components | shadcn/ui + Radix UI |
+| Charts | Recharts |
+| Data Fetching | TanStack Query |
+| Forms | React Hook Form + Zod |
+| Real-time | Socket.IO (WebSocket + SSE) |
+| Language | TypeScript |
 
 ### Backend
 
-| Category | Technology | Version |
-|---|---|---|
-| Runtime | Node.js | 20 LTS (24 works but not recommended) |
-| Framework | Express | 4 |
-| ORM | Prisma | 5 |
-| Database | PostgreSQL + pgvector | 16 |
-| Cache / Queue | Redis + BullMQ | 7 |
-| Auth | JWT (HS256) + bcrypt + token versioning | — |
-| File Storage | Cloudinary + Multer | — |
-| Email | Gmail SMTP (dev) · SendGrid/Resend (prod) | — |
-| Payments | Stripe · COD · JazzCash · Easypaisa | — |
+| Category | Technology |
+|---|---|
+| Runtime | Node.js 20 LTS |
+| Framework | Express 4 |
+| ORM | Prisma 5 |
+| Database | PostgreSQL 16 + pgvector |
+| Cache and Queue | Redis + BullMQ |
+| Auth | JWT HS256 + bcrypt + token versioning |
+| File Storage | Cloudinary |
+| Email | SMTP in development, SendGrid or Resend in production |
+| Payments | Stripe, Cash on Delivery, JazzCash, Easypaisa |
 
 ### AI Service
 
@@ -171,418 +135,225 @@ Brand uploads product
 |---|---|
 | Runtime | Python 3.13 |
 | Framework | FastAPI + Uvicorn |
-| LLM | Ollama `qwen2.5:7b` (local) · Groq `llama-3.3-70b-versatile` (cloud) |
-| Vision | Gemini Vision `gemini-2.0-flash` |
-| Image Generation | HuggingFace FLUX · Gemini Image (fallback) |
-| Embeddings | Gemini · HuggingFace |
-| Matching | Custom ML scoring engine |
+| Text LLM — Cloud | Groq (`openai/gpt-oss-120b`, `openai/gpt-oss-20b` fallback) |
+| Text LLM — Local | Ollama `qwen2.5:7b` — only active when `LLM_PROVIDER=ollama` |
+| Vision | Gemini Vision `gemini-flash-latest` · Groq Vision `llama-4-scout-17b-16e-instruct` |
+| Image Generation | HuggingFace FLUX `FLUX.1-Kontext-dev` · Pollinations AI (free fallback) |
+| Embeddings | Gemini `gemini-embedding-001` |
+| Matching Engine | Custom 6-dimension ML scoring with dynamic provider routing |
 
 ### External Integrations
 
 | Service | Purpose |
 |---|---|
-| Meta Graph API v20 | Facebook + Instagram Ads |
-| Google Ads API v17 | Google Ads campaign management |
-| Stripe | Subscriptions + card payments + webhooks |
-| Cloudinary | Image storage + transformation |
-| Ngrok | Local OAuth callback tunneling (dev) |
+| Meta Graph API | Facebook and Instagram Ads management |
+| Google Ads API | Google Ads campaign creation |
+| Stripe | Subscriptions, card payments, and webhooks |
+| Cloudinary | Image storage and transformation |
 
 ---
 
-## 👥 User Roles & Permissions
+## User Roles
+
+The platform enforces six roles and 37 granular permissions.
 
 | Role | Description |
 |---|---|
-| `SUPER_ADMIN` | Full platform control — user approvals, finance, AI ops, audit |
+| `SUPER_ADMIN` | Full platform control — user approvals, finance, AI ops, audit logs |
 | `BRAND_OWNER` | Main paying customer — products, campaigns, influencers, analytics |
-| `BRAND_TEAM_MEMBER` | Scoped permissions under a brand (Marketing, Content, Analyst, etc.) |
-| `INFLUENCER` | Content creator — receives offers, delivers campaigns, manages earnings |
-| `AGENCY` | Manages multiple client brands, runs ad campaigns |
-| `SHOPPER` | End consumer — browses, carts, checks out (bypasses approval gate) |
-
-The platform has **37 granular permissions** enforced via `authorize()` and `requirePermission()` middleware. Every admin action additionally requires `assertSuperAdmin()`.
+| `BRAND_TEAM_MEMBER` | Scoped access under a brand — Marketing, Content, Analyst, and similar |
+| `INFLUENCER` | Content creator — receives offers, delivers content, manages earnings |
+| `AGENCY` | Manages multiple client brands and runs ad campaigns |
+| `SHOPPER` | End consumer — browses, adds to cart, and checks out |
 
 ### Admin Approval Workflow
 
-All business role signups pass through a 2-stage approval gate:
+All business-role signups (`BRAND_OWNER`, `INFLUENCER`, `AGENCY`) enter a pending state and require admin review before the account is active. The admin is notified via SSE, email, and dashboard badge. On approval or rejection, the user is notified immediately.
 
-```
-Register (BRAND_OWNER / INFLUENCER / AGENCY / BRAND_TEAM_MEMBER)
-        │
-        ▼
-  status = PENDING
-        │
-        ▼
-  Admin notified (SSE + email + dashboard badge)
-        │
-        ├── Approve → User notified → Login enabled
-        └── Reject  → User notified with mandatory reason → Login blocked
-```
-
-> **SHOPPER bypasses the gate** — gating B2C converts kills conversion.
-> **Existing users auto-APPROVED** via `@default(APPROVED)` — zero migration disruption.
+`SHOPPER` accounts bypass this gate entirely. Gating B2C purchases with an approval queue kills conversion.
 
 ---
 
-## ✨ Key Features
+## Features
 
-### 🏢 For Brands
+### For Brands
 
-- **AI Product Upload** — Upload an image; vision model auto-detects category, subcategory, colors, material, style, occasion, formality, and visual aesthetic.
-- **AI Description Generator** — Generates short/long descriptions, SEO title, meta description, keywords, and FAQs — in the brand's defined voice.
-- **AI Photography Studio** — Photography angle recommendations + lifestyle image generation per product type.
-- **Influencer Discovery** — Search and filter by niche, platform, follower count, engagement rate, geography, and audience demographics.
-- **AI Matching Engine** — 6-dimension ML scoring ranks influencers by compatibility with a specific product and brand profile.
-- **Campaign Management** — Send offers, escrow wallet funds, track deliverables through a full pipeline (raw → edit → approve → publish), monitor metrics.
-- **Platform Content Studio** — AI generates platform-specific ad copy for Instagram, TikTok, YouTube, Facebook, and blogs.
-- **Brand AI Assistant (RAG)** — Upload brand guidelines or lookbooks; the AI assistant uses them as grounded context for all generation tasks.
-- **Recommendations Engine** — Signal-based recommendations from campaign, offer, product, and performance history.
-- **Team & Role Management** — Invite team members with per-permission access control.
+**AI Product Upload.** Upload a product image and the vision model automatically identifies category, subcategory, colors, material, style, occasion, formality, and aesthetic — returning a validated structured output with no manual tagging required.
 
-### 🎨 For Influencers
+**AI Description Generator.** From the vision output, the platform generates a short description, long description, SEO title, meta description, keyword set, and FAQ block — all written in the brand's configured voice.
 
-- **Profile & Portfolio** — Connect Instagram, TikTok, YouTube, and 7 other platforms with verified audience data.
-- **Per-Platform Pricing Grid** — Set custom rates per content type and per platform.
-- **Offer Deal Flow** — Receive, review, accept, negotiate, and decline brand offers.
-- **Campaign Deliverables** — Submit raw content, receive brand feedback, track approval stages.
-- **Earnings Wallet** — Automatic campaign payouts via escrow release, withdrawal requests with admin approval.
+**AI Photography Studio.** Per product type, the system generates a shot-angle list covering recommended lighting, backgrounds, and lifestyle compositions. Image-to-image generation is available via HuggingFace FLUX with Pollinations AI as a free fallback.
 
-### 🏢 For Agencies
+**Influencer Discovery.** Search and filter the influencer database by niche, platform, follower count, engagement rate, geography, and audience demographics.
 
-- **Multi-Brand Workspace** — Manage multiple client brands from a single agency account using `X-Acting-Brand` header-based context switching.
-- **Meta Ads Integration** — Create and manage Facebook/Instagram campaigns (created PAUSED by default — no accidental spend).
-- **Google Ads Shell** — Basic campaign creation (AdGroup + Keywords in progress).
-- **Engagement Tracking** — Content performance monitoring across all managed clients.
+**AI Matching Engine.** The 6-dimension scoring model ranks influencers by compatibility with a specific product and brand profile. Each result includes a numeric score and a natural-language explanation.
 
-### 🛍️ For Shoppers (B2C)
+**Campaign Management.** Full offer-to-completion lifecycle — send offers, hold escrow, track deliverables through a structured pipeline (raw upload, brand review, approval, publish), and monitor performance metrics.
 
-- **Public Storefront** — SSR-rendered product pages with JSON-LD structured data, sitemap, and full SEO.
-- **AI-Curated Collections** — Editorial sections and influencer-styled product feeds, admin-controlled.
-- **Cart & Checkout** — Guest-friendly cart (localStorage), full checkout flow with address management.
-- **Payment Methods** — Stripe (international), JazzCash, Easypaisa, Cash on Delivery.
-- **Order Tracking** — Real-time status: placed → confirmed → shipped → delivered.
+**Platform Content Studio.** AI-generated ad copy optimized per platform — Instagram, TikTok, YouTube, Facebook, and blog.
 
-### 🛡️ For Super Admins
+**Brand AI Assistant.** Upload brand guidelines, lookbooks, or product catalogs. The RAG-powered assistant uses these documents as grounded context for every generation task, ensuring output stays on-brand.
 
-- **User Approval Queue** — Review, approve, or reject PENDING business signups with mandatory rejection reasons.
-- **Platform Finance** — Commission rates, wallet oversight, withdrawal approvals, transaction ledger.
-- **AI Ops Dashboard** — API requests, token usage, cost per model, latency, and error rate monitoring.
-- **Model Management** — Track versions, accuracy scores, evaluation results, deploy/rollback production models.
-- **Storefront Control** — Hero sections, editorial collections, brand feature approvals, homepage curation.
-- **Order Management** — Confirm COD delivery, cancel orders, trigger wallet credits.
-- **Audit Logs** — Immutable event trail via `writeAudit()` on all sensitive operations.
+**Recommendations Engine.** Signal-based suggestions derived from campaign history, offer outcomes, and performance data — improving over time as the brand runs more campaigns.
 
-### 🌐 SEO & Public Pages
+**Team and Role Management.** Invite team members with granular per-permission access control. Each member sees only the parts of the platform their role allows.
 
-- `robots.txt` — Public shop allowed, `/dashboard`/`/admin` blocked
-- `sitemap.xml` — Categories + gender pages dynamically generated
-- JSON-LD structured data — Organization, WebSite, Product, Breadcrumb, ItemList, CollectionPage, FAQPage
-- OG tags + Twitter cards on all public pages
-- `noindex` meta tag on 16 protected/auth-only pages
-- Canonical URLs with trailing-slash normalization
-- `/why-styleai` — Premium marketing landing page (4 persona sections: brand, creator, agency, shopper)
+### For Influencers
+
+**Profile and Portfolio.** Connect Instagram, TikTok, YouTube, and seven additional platforms with verified audience data including follower count, engagement rate, and demographics.
+
+**Per-Platform Pricing.** Set custom rates for each content type on each connected platform.
+
+**Offer Deal Flow.** Receive, review, accept, negotiate, or decline brand offers through a structured interface.
+
+**Campaign Deliverables.** Submit raw content, receive brand feedback with revision rounds, and track approval stages in real time.
+
+**Earnings Wallet.** Campaign payments are released from escrow automatically on content approval. Withdrawal requests are submitted and processed with admin confirmation.
+
+### For Agencies
+
+**Multi-Brand Workspace.** Manage multiple client brands from a single agency account. Context switches cleanly between brands without re-authentication.
+
+**Meta Ads Integration.** Create and manage Facebook and Instagram ad campaigns directly from the platform. Campaigns are created in a paused state by default to prevent accidental spend.
+
+**Google Ads.** Basic campaign creation is available. AdGroup and keyword management are in progress.
+
+**Engagement Tracking.** Monitor content performance across all managed client brands from a single view.
+
+### For Shoppers
+
+**Public Storefront.** Server-side rendered product pages with full SEO — JSON-LD structured data, Open Graph tags, Twitter cards, and canonical URLs.
+
+**AI-Curated Collections.** Editorial sections and influencer-styled product feeds, managed and published by the admin team.
+
+**Cart and Checkout.** Guest-friendly cart that persists across sessions, with a full checkout flow including address management and order confirmation.
+
+**Payment Methods.** Stripe for international card payments, JazzCash and Easypaisa for Pakistan, and Cash on Delivery.
+
+**Order Tracking.** Real-time status from placement through confirmation, shipping, and delivery.
+
+### For Admins
+
+**User Approval Queue.** A dedicated dashboard for reviewing, approving, or rejecting pending business signups. Rejections require a reason which is communicated to the user.
+
+**Platform Finance.** Commission rate management, full wallet oversight, withdrawal approvals, and a complete transaction ledger.
+
+**AI Ops Dashboard.** Live view of API requests, token consumption, cost per model, latency, and error rates across all AI providers.
+
+**Model Management.** Track model versions, accuracy scores, and evaluation results. Supports deploy and rollback workflows.
+
+**Storefront Control.** Manage hero sections, editorial collections, featured brand slots, and homepage curation without a code deployment.
+
+**Audit Logs.** An immutable event trail on all sensitive operations across the platform.
+
+### SEO
+
+The public storefront is fully optimized for search engines. `robots.txt` allows the public shop and blocks all dashboard and admin routes. `sitemap.xml` is dynamically generated for category and gender pages. JSON-LD structured data covers Organization, WebSite, Product, Breadcrumb, CollectionPage, and FAQPage schemas. All auth-only pages carry a `noindex` directive.
 
 ---
 
-## 🤖 AI Pipeline
+## AI Pipeline
 
-### Product Understanding
+### Product Intelligence
 
-```
-Image uploaded by brand
-        │
-        ▼
-  Gemini Vision (gemini-2.0-flash)
-        │
-        ▼
-  Structured JSON (Pydantic validated):
-  { category, subcategory, colors, material,
-    style, occasion, formality, aesthetic,
-    gender, estimatedAgeGroup }
-        │
-        ├──► Content Generator (Groq llama-3.3-70b)
-        │    └── title · short desc · long desc · SEO · FAQs
-        │
-        ├──► Embedding Service → pgvector
-        │    └── stored for RAG search + matching
-        │
-        └──► Photography Angle Generator (Gemini)
-             └── shot list per product type + occasion
-```
+When a brand uploads a product image, the AI service runs vision analysis through Gemini Vision or Groq Vision, returning a Pydantic-validated structured object covering category, subcategory, colors, material, style, occasion, formality, aesthetic, gender, and estimated age group.
 
-### Influencer Matching (6-Dimension Scoring)
+That output is passed to three parallel processes. The content generator uses a Groq LLM to produce title, descriptions, SEO content, and FAQs. The embedding service generates a vector representation stored in pgvector for semantic search and matching. The photography angle generator produces a shot list tailored to the product type and occasion.
 
-```
-Brand selects product
-        │
-        ▼
-  Product vector fetched from pgvector
-        │
-        ▼
-  Matching Service applies 6-dimension model:
-    1. Style compatibility (vector cosine similarity)
-    2. Audience demographics alignment
-    3. Engagement rate quality score
-    4. Historical campaign performance
-    5. Niche / category match
-    6. Price segment fit
-        │
-        ▼
-  Ranked list with numeric score + natural-language explanation
-```
+### Influencer Matching
+
+When a brand initiates matching for a product, the platform fetches the product's stored embedding from pgvector and runs it through the 6-dimension scoring engine:
+
+1. Style compatibility — vector cosine similarity between product and influencer profile
+2. Audience demographics alignment — overlap between product target and influencer audience
+3. Engagement rate quality — adjusted for platform and follower tier
+4. Historical campaign performance — weighted by recency
+5. Niche and category match — semantic and categorical overlap
+6. Price segment fit — alignment between product price point and influencer positioning
+
+Each result returns a numeric score and a natural-language explanation.
 
 ### RAG Brand Knowledge Base
 
-```
-Brand uploads doc (PDF, DOCX, brand guidelines)
-        │
-        ▼
-  Chunker (overlapping segments)
-        │
-        ▼
-  Embedder → vectors stored in pgvector
-        │
-        ▼
-  User sends query to Brand AI Assistant
-        │
-        ▼
-  Query Expander (semantic variants)
-        │
-        ▼
-  pgvector top-k similarity search
-        │
-        ▼
-  Reranker (relevance filter)
-        │
-        ▼
-  LLM generates response grounded in brand context
-```
+Brands upload documents — PDFs, DOCX files, brand guidelines, lookbooks. The chunker splits documents into overlapping segments. The embedder generates vectors stored in pgvector. When a user queries the Brand AI Assistant, the query is semantically expanded, run against pgvector for top-k retrieval, filtered through a reranker, and passed to the LLM as grounded context. The model responds only with information found in the brand's documents.
 
-### AI Safety Pipeline
+### Dynamic Provider Routing
 
-```
-LLM generates output
-        │
-        ▼
-  Pydantic / Zod schema validation
-        │
-        ▼
-  Permission check
-        │
-        ▼
-  Application logic (safe, scoped execution)
+The AI service includes a provider routing guard that prevents local model names from being sent to cloud APIs and cloud model names from being sent to Ollama. This eliminates a class of 404 errors that occur when provider configuration changes without updating model names.
 
-  ← LLM output is NEVER blindly executed →
-```
+### AI Safety
+
+All LLM output is validated against a Pydantic or Zod schema before it enters any application logic. Raw model output is never executed, stored, or forwarded. If validation fails, the request fails cleanly with an error — no partial or malformed data reaches the database.
 
 ---
 
-## 📂 Repository Structure
+## Project Structure
 
 ```
-StyleAI/
+styleai/
 ├── backend/
 │   ├── prisma/
-│   │   ├── schema/                    # Multi-file Prisma schema
-│   │   │   ├── user.prisma            # User + RBAC + AdminApprovalStatus
-│   │   │   ├── commerce.prisma        # Order + OrderItem + Cart
-│   │   │   └── ...                    # 25+ tables total
-│   │   ├── seed.js                    # Roles + permissions seed
-│   │   ├── create-admin.js            # Env-based admin bootstrap
-│   │   └── seed-ai-models.js          # AI model registry
+│   │   ├── schema/                    # Multi-file Prisma schema — 25+ tables
+│   │   └── seed.js                    # Roles, permissions, and admin bootstrap
 │   └── src/
-│       ├── server.js                  # Express bootstrap + middleware mount
-│       ├── config/
-│       │   ├── prisma.js · redis.js · cloudinary.js
-│       │   └── payment_service/       # Gateway context per provider
-│       ├── controllers/               # 31 thin HTTP handlers
-│       ├── middleware/
-│       │   ├── auth.js                # JWT + RBAC + approval gate
-│       │   ├── actingBrand.js         # X-Acting-Brand for agencies
-│       │   ├── trialCheck.js          # Trial enforcement
-│       │   ├── quotaCheck.js          # Plan quota enforcement
-│       │   └── upload.js              # Multer + Cloudinary
-│       ├── routes/                    # 35+ Express route files
+│       ├── server.js                  # Express entry point and middleware mount
+│       ├── config/                    # Database, cache, storage, payment gateway config
+│       ├── controllers/               # Thin HTTP request handlers — 31 files
+│       ├── middleware/                # Auth, RBAC, quota enforcement, file upload
+│       ├── routes/                    # Express route definitions — 35+ files
 │       ├── services/
-│       │   ├── admin/
-│       │   │   ├── approval.js        # listPending · approve · reject
-│       │   │   ├── users.js · storefront.js · finance.js
-│       │   ├── payments/
-│       │   │   ├── core/gateway.js    # Abstract PaymentGateway base class
-│       │   │   ├── cod/ · stripe/ · jazzcash/ · easypaisa/
-│       │   ├── wallet/
-│       │   │   ├── helpers.js         # Ledger-based truth pattern
-│       │   │   ├── offerFlow.js · orderFlow.js · platform.js
-│       │   ├── notifications/
-│       │   │   └── emit.js            # notifyUser · notifyAdmins (SSE)
-│       │   ├── email/
-│       │   │   └── templates.js       # 21 email templates
-│       │   ├── knowledge/             # RAG: chunker · embedder · reranker
-│       │   ├── matching/              # ML scoring engine + cache
-│       │   ├── assistant/             # Brand AI chat + RAG search
-│       │   └── recommendations/       # Signal-based recommendation engine
-│       └── scripts/
-│           └── test-everything.js     # Master test suite (86 checks)
+│       │   ├── payments/              # Gateway abstraction — Stripe, COD, JazzCash, Easypaisa
+│       │   ├── wallet/                # Ledger-based wallet engine and escrow
+│       │   ├── knowledge/             # RAG pipeline — chunker, embedder, reranker
+│       │   ├── matching/              # ML scoring engine with result caching
+│       │   ├── assistant/             # Brand AI chat with RAG context
+│       │   ├── notifications/         # SSE-based real-time notification system
+│       │   ├── email/                 # 21 transactional email templates
+│       │   ├── campaigns/             # Full campaign lifecycle — create through complete
+│       │   ├── recommendations/       # Signal-based recommendation engine
+│       │   └── ...                    # Additional domain services
+│       └── utils/                     # JWT helpers, SKU generation
 │
 ├── frontend/
 │   └── src/
 │       ├── routes/
-│       │   ├── __root.tsx             # App shell auth gate
-│       │   ├── index.tsx              # Public storefront homepage (SSR)
-│       │   ├── why-styleai.tsx        # Premium marketing landing page
-│       │   ├── pending.tsx            # Admin-pending UX with Swal
-│       │   ├── login.tsx              # Swal popup for PENDING/REJECTED
-│       │   ├── register.tsx           # Swal popup on PENDING signup
-│       │   ├── dashboard.tsx          # Role-adaptive workspace
-│       │   ├── admin/                 # Admin panel pages (users, finance, AI ops)
-│       │   ├── campaigns.*.tsx        # Campaign management
-│       │   ├── influencers.*.tsx      # Discovery + profiles
-│       │   ├── studio.*.tsx           # Content + photography studio
-│       │   └── ...
+│       │   ├── index.tsx              # Public storefront — SSR
+│       │   ├── dashboard.tsx          # Role-adaptive authenticated workspace
+│       │   ├── admin/                 # Full admin panel — users, finance, AI ops, audit
+│       │   ├── campaigns.*.tsx        # Campaign management pages
+│       │   ├── studio.*.tsx           # Content and photography studio
+│       │   └── ...                    # All other route pages
 │       ├── components/
-│       │   ├── app-shell/             # Sidebar + nav (split into 13 files)
-│       │   ├── ui/                    # shadcn/ui primitives + skeletons
-│       │   └── ...
-│       ├── lib/
-│       │   ├── api.ts                 # Fetch wrapper (JWT · 401 · 402 · 429)
-│       │   ├── role.tsx               # AuthContext + AuthUser interface
-│       │   ├── swal.ts                # Themed SweetAlert2 wrapper
-│       │   └── admin/api.ts           # Admin API client
-│       └── styles.css                 # ⚠️ SINGLE source of truth — all design tokens
+│       │   ├── ui/                    # shadcn/ui primitives
+│       │   └── ...                    # Feature-level components
+│       ├── lib/                       # API clients, auth context, type definitions
+│       └── styles.css                 # Single source of truth for all design tokens
 │
 ├── ai-services/
 │   └── app/
-│       ├── main.py                    # FastAPI bootstrap
-│       ├── api/routes/                # health · matching · content · vision
-│       ├── services/
-│       │   ├── llm_service.py         # Multi-provider LLM abstraction
-│       │   ├── gemini_vision.py       # Product image analysis
-│       │   ├── matching_service.py    # ML scoring engine
-│       │   ├── embedding_service.py   # Vector pipeline
-│       │   └── content_generator.py   # Multi-format content generation
-│       ├── prompts/                   # Modular prompt templates per domain
-│       └── schemas/                   # Pydantic request/response schemas
+│       ├── main.py                    # FastAPI application entry point
+│       ├── api/routes/                # Endpoints — health, matching, content, vision
+│       ├── services/                  # LLM routing, vision, embedding, matching, content
+│       ├── prompts/                   # Domain-organized prompt templates
+│       └── schemas/                   # Pydantic request and response schemas
 │
-├── docker-compose.yml                 # Local dev (PostgreSQL + Redis)
-├── docker-compose.prod.yml            # Production deployment
+├── docker-compose.yml                 # Local development — PostgreSQL and Redis
+├── docker-compose.prod.yml            # Production deployment configuration
 └── README.md
 ```
 
 ---
 
-## ⚙️ Environment Configuration
-
-> **Never commit `.env` files.** Commit `.env.example` only.
-
-### `backend/.env`
-
-```env
-# ─── Database & Cache ───────────────────────────────────────
-DATABASE_URL=postgresql://postgres:password@localhost:5433/styleai?schema=public
-REDIS_URL=redis://localhost:6379
-
-# ─── Server ─────────────────────────────────────────────────
-PORT=4000
-NODE_ENV=development
-FRONTEND_URL="https://app.yourdomain.com"
-API_URL="https://api.yourdomain.com"
-
-# ─── Auth ───────────────────────────────────────────────────
-# Generate: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-JWT_SECRET="<64-char-hex>"
-OAUTH_STATE_SECRET="<32-char-hex>"
-
-# ─── AI Service ─────────────────────────────────────────────
-AI_SERVICE_URL="http://localhost:8000"
-AI_INTERNAL_KEY="<shared-secret>"
-INTERNAL_KEY="<same-as-above>"
-
-# ─── OAuth ──────────────────────────────────────────────────
-META_APP_ID="..."
-META_APP_SECRET="..."
-META_REDIRECT_URI="https://api.yourdomain.com/api/agency/integrations/META/callback"
-GOOGLE_CLIENT_ID="..."
-GOOGLE_CLIENT_SECRET="..."
-GOOGLE_REDIRECT_URI="https://api.yourdomain.com/api/agency/integrations/GOOGLE/callback"
-
-# ─── Payments (Global) ──────────────────────────────────────
-STRIPE_SECRET_KEY="sk_live_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-
-# ─── Payments (Pakistan) ────────────────────────────────────
-JAZZCASH_MERCHANT_ID="..."
-JAZZCASH_PASSWORD="..."
-JAZZCASH_INTEGRITY_SALT="..."
-EASYPAISA_STORE_ID="..."
-EASYPAISA_HASH_KEY="..."
-COD_ENABLED=true
-COD_MIN_AMOUNT=500
-COD_MAX_AMOUNT=200000
-
-# ─── Cloudinary ─────────────────────────────────────────────
-CLOUDINARY_CLOUD_NAME="..."
-CLOUDINARY_API_KEY="..."
-CLOUDINARY_API_SECRET="..."
-
-# ─── Email ──────────────────────────────────────────────────
-EMAIL_HOST="smtp.gmail.com"
-EMAIL_PORT=587
-EMAIL_USER="noreply@yourdomain.com"
-EMAIL_PASSWORD="<app-password>"
-ADMIN_EMAIL="admin@yourdomain.com"
-
-# ─── Queue ──────────────────────────────────────────────────
-QUEUE_ENABLED=true
-QUEUE_PREFIX=styleai
-
-# ─── Seed ───────────────────────────────────────────────────
-SEED_ADMIN_EMAIL="admin@yourdomain.com"
-SEED_ADMIN_PASSWORD="<strong-password>"
-```
-
-### `frontend/.env`
-
-```env
-VITE_API_URL="https://api.yourdomain.com"
-VITE_PUBLIC_URL="https://app.yourdomain.com"
-```
-
-### `ai-services/.env`
-
-```env
-# ─── Security ───────────────────────────────────────────────
-INTERNAL_KEY="<same-as-backend-AI_INTERNAL_KEY>"
-
-# ─── LLM ────────────────────────────────────────────────────
-LLM_PROVIDER="groq"                         # groq | gemini | ollama
-GROQ_API_KEY="gsk_..."
-GROQ_TEXT_MODEL="llama-3.3-70b-versatile"
-
-# ─── Vision ─────────────────────────────────────────────────
-VISION_PROVIDER="gemini"
-GEMINI_API_KEY="AIza..."
-GEMINI_VISION_MODEL="gemini-2.0-flash"
-
-# ─── Image Generation ───────────────────────────────────────
-HF_API_TOKEN="hf_..."
-
-# ─── Local LLM (optional) ───────────────────────────────────
-OLLAMA_BASE_URL="http://localhost:11434"
-OLLAMA_MODEL="qwen2.5:7b"
-```
-
----
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
 | Tool | Version | Notes |
 |---|---|---|
-| Node.js | 20 LTS | Node 24 works but causes Vite/Rolldown hangs |
-| Python | 3.13+ | |
-| Docker Desktop | v2+ | For PostgreSQL + Redis |
-| Ollama | Latest | Optional — local LLM inference |
+| Node.js | 20 LTS | Newer major versions may cause Vite and Rolldown compatibility issues |
+| Python | 3.13 or later | Required for the AI service |
+| Docker Desktop | v2 or later | Runs PostgreSQL and Redis locally |
+| Ollama | Latest | Optional — only needed for local LLM inference |
 
 ### Step 1 — Clone
 
@@ -595,39 +366,41 @@ cd styleai
 
 ```bash
 docker-compose up -d
-# Starts:
-#   styleai-postgres  →  PostgreSQL 16 + pgvector  (port 5433)
-#   styleai-redis     →  Redis 7                   (port 6379)
-
-docker-compose ps   # verify both are healthy
+docker-compose ps
 ```
+
+This starts PostgreSQL 16 with the pgvector extension and Redis. Confirm both services show as healthy before proceeding.
 
 ### Step 3 — Backend
 
 ```bash
 cd backend
-cp .env.example .env          # fill in all values
+cp .env.example .env
 
 npm install
 npx prisma generate
 npx prisma db push
-npm run seed:admin            # creates SUPER_ADMIN from SEED_* env vars
+npm run seed
 npm run dev
-# → Server running on port 4000
 ```
+
+`npm run seed` creates the roles, permissions, and the initial admin account from the values in your `.env` file.
 
 ### Step 4 — AI Service
 
 ```bash
 cd ai-services
 python -m venv .venv
-source .venv/bin/activate     # Windows: .\.venv\Scripts\Activate.ps1
+
+# macOS and Linux
+source .venv/bin/activate
+
+# Windows
+.\.venv\Scripts\Activate.ps1
 
 pip install -r requirements.txt
-cp .env.example .env          # fill in all values
-
-uvicorn app.main:app --reload --port 8000
-# → Application startup complete
+cp .env.example .env
+uvicorn app.main:app --reload
 ```
 
 ### Step 5 — Frontend
@@ -638,17 +411,16 @@ cp .env.example .env
 
 npm install
 npm run dev
-# → VITE ready on port 3000
 ```
 
-### Step 6 — Verify Everything Works
+### Step 6 — Verify
 
 ```bash
-# Backend test suite (should print: Passed: 86 / Failed: 0)
+# Backend — should report 86 passed, 0 failed
 cd backend
 node src/scripts/test-everything.js
 
-# AI service tests
+# AI service — should report 10 passed
 cd ai-services
 pytest tests/ -v -m "not slow"
 ```
@@ -658,16 +430,64 @@ pytest tests/ -v -m "not slow"
 ```bash
 cd backend
 npx prisma studio
-# Opens database browser at http://localhost:5555
 ```
+
+Opens a visual database browser useful for inspecting seeded data and debugging schema changes.
 
 ---
 
-## 📡 API Reference
+## Environment Variables
 
-All routes are prefixed with `/api/v1`. Protected routes require `Authorization: Bearer <JWT>`.
+Each service ships with an `.env.example` file that documents every required variable with descriptions. Copy it to `.env` and fill in the values. Never commit `.env` files — they are excluded via `.gitignore`.
 
-| Domain | Endpoint Prefix |
+The table below lists variable categories, not individual variable names, to avoid exposing internal configuration surface.
+
+### Backend
+
+| Category | What It Covers |
+|---|---|
+| Database | PostgreSQL connection string and schema name |
+| Cache | Redis connection string |
+| Server | Environment mode and allowed origins |
+| Auth | JWT signing secret and OAuth state secret |
+| AI Service | Internal service base URL and shared authentication secret |
+| OAuth | Meta and Google app credentials and redirect URIs |
+| Stripe | Secret key and webhook signing secret |
+| JazzCash | Merchant credentials and integrity salt |
+| Easypaisa | Store ID and hash key |
+| Cash on Delivery | Enabled flag, minimum and maximum order amounts |
+| Cloudinary | Cloud name, API key, and API secret |
+| Email | SMTP host, port, user, and password or API key |
+| Queue | Enabled flag and key prefix |
+| Seed | Admin email and password for initial bootstrap |
+
+### AI Service
+
+| Category | What It Covers |
+|---|---|
+| Security | Shared internal key — must match the backend value |
+| LLM Provider | Provider selection (`groq`, `gemini`, or `ollama`) and API key |
+| Vision | Vision provider, Gemini API key, and model name |
+| Image Generation | HuggingFace API token |
+| Pollinations | Base URL for the free image generation fallback |
+| Ollama | Base URL and model name — only needed when using local inference |
+
+### Frontend
+
+| Variable | Description |
+|---|---|
+| `VITE_API_URL` | Backend API base URL |
+| `VITE_PUBLIC_URL` | Frontend public base URL |
+
+---
+
+## API Reference
+
+All routes are prefixed with `/api/v1`. Authenticated routes require an `Authorization: Bearer <token>` header.
+
+### Backend
+
+| Domain | Prefix |
 |---|---|
 | Authentication | `/api/v1/auth` |
 | Users | `/api/v1/users` |
@@ -675,217 +495,194 @@ All routes are prefixed with `/api/v1`. Protected routes require `Authorization:
 | Products | `/api/v1/products` |
 | Product AI Analysis | `/api/v1/products/:id/analyze` |
 | Influencers | `/api/v1/influencers` |
-| Influencer Search | `/api/v1/influencers/search` |
 | Matching | `/api/v1/matching` |
-| Match Recommendations | `/api/v1/matching/recommend` |
 | Campaigns | `/api/v1/campaigns` |
 | Offers | `/api/v1/offers` |
 | Content Generation | `/api/v1/content/generate` |
-| Image Generation | `/api/v1/images/generate` |
-| Knowledge Base (RAG) | `/api/v1/knowledge` |
+| Knowledge Base | `/api/v1/knowledge` |
 | Analytics | `/api/v1/analytics` |
 | Wallet | `/api/v1/wallet` |
 | Payments | `/api/v1/payments` |
 | Billing | `/api/v1/billing` |
 | Notifications | `/api/v1/notifications` |
 | Admin | `/api/v1/admin` |
-| AI Ops | `/api/v1/ai` |
+| AI Operations | `/api/v1/ai` |
 
-### AI Service Endpoints (Internal — `X-Internal-Key` required)
+### AI Service
+
+The AI service is internal-only. All requests require a shared authentication key set in the service's environment configuration. No AI service endpoints are publicly reachable.
 
 | Endpoint | Purpose |
 |---|---|
-| `GET  /health` | Health check |
-| `POST /api/v1/product/analyze` | Vision analysis → structured attributes |
-| `POST /api/v1/product/content` | Description + SEO generation |
-| `POST /api/v1/product/photography` | AI photography + angles |
-| `POST /api/v1/product/variants` | Variant generation |
-| `POST /api/v1/product/angles` | Shot angle recommendations |
-| `POST /api/v1/match/influencers` | 6-dimension influencer matching |
-| `POST /api/v1/content/platform` | Platform-specific ad copy |
+| `GET /health` | Service health check |
+| `POST /api/v1/product/analyze` | Vision analysis — returns structured product attributes |
+| `POST /api/v1/product/content` | Description, SEO, and FAQ generation |
+| `POST /api/v1/product/photography` | Shot-angle recommendations |
+| `POST /api/v1/product/variants` | Product variant generation |
+| `POST /api/v1/match/influencers` | 6-dimension influencer matching and scoring |
+| `POST /api/v1/content/platform` | Platform-specific ad copy generation |
 | `POST /api/v1/embeddings/embed` | Vector embedding generation |
-| `POST /api/v1/chat/text` | Text chat (assistant) |
+| `POST /api/v1/chat/text` | Text-based brand assistant response |
 
 ---
 
-## 🔒 Security
+## Security
 
 ### Multi-Tenancy
 
-Every database query is scoped by `organizationId` or `userId` at the Prisma ORM layer — not just the application layer. Brand A is architecturally prevented from accessing Brand B's products, campaigns, embeddings, or analytics.
+Every database query is scoped to a tenant at the ORM layer. Brand A cannot access Brand B's products, campaigns, embeddings, or analytics — not because the application checks permissions, but because the query predicate makes it structurally impossible.
 
-### Payment Security
+### Payment Integrity
 
-- **Stripe** — Webhook events verified via signature before processing.
-- **JazzCash / Easypaisa** — Callbacks verified via HMAC hash comparison.
-- **Wallet transactions** — Run inside ACID-compliant database transactions. `WalletTransaction` is the source of truth; `Wallet.balanceCache` is always derived, never trusted alone.
-- **Idempotency keys** — Enforced on all payment operations to prevent double-spend.
+Stripe webhook events are verified by signature before any processing begins. JazzCash and Easypaisa callbacks are verified via HMAC hash comparison. All wallet operations run inside ACID-compliant database transactions. Idempotency keys are enforced on every payment operation to prevent double-processing. The `WalletTransaction` table is the source of truth — the balance cache is always a derivative and is never the authority for financial decisions.
 
-### Auth & Access
+### Authentication and Access Control
 
-| Control | Implementation |
+| Control | Detail |
 |---|---|
-| Password hashing | bcrypt (10 rounds) |
-| JWT | HS256, 1h expiry + token versioning (logout-all-devices) |
-| Rate limiting | Redis-backed on login, signup, and password reset |
-| Account lockout | 5 failed attempts → 15-minute lock |
-| CSRF | JWT-signed OAuth state (10-min expiry) |
-| SQL injection | Prisma parameterizes all queries |
-| Audit trail | `writeAudit()` on all sensitive operations |
+| Password hashing | bcrypt |
+| JWT | Short-lived tokens with token versioning — supports logout across all devices |
+| Rate limiting | Redis-backed on login, signup, and password reset endpoints |
+| Account lockout | Temporary lockout after repeated authentication failures |
+| CSRF protection | JWT-signed OAuth state tokens with short expiry |
+| SQL injection | All queries parameterized through Prisma ORM — no raw string interpolation |
+| Audit trail | Immutable event log on all sensitive operations — user approvals, financial actions, admin changes |
 
-### ⚠️ Known Security Gap — TanStack CVE-2026-102989
+### Dependency Management
 
-**Issue:** Unauthenticated reflected XSS in server-function responses.
-**Patched in:** `@tanstack/react-start@1.168.60+`
-**Current version:** `1.168.32` (stable but unpatched)
-**Why not upgraded:** `1.168.60+` crashes SSR with `object is not iterable` (issue #8584).
-
-**Mitigation plan:**
-- Monitor for `1.168.61+` which is expected to fix both the crash and the CVE.
-- Before public production launch: upgrade or add WAF rules + strict CSP headers.
-- **Risk level:** Low for private/beta deployment. **Unacceptable for public launch.**
+Frontend dependencies are pinned to exact versions with no semver caret ranges. This prevents silent upgrades to patch releases that may introduce regressions. Any version bump is an explicit, reviewed change.
 
 ---
 
-## 🧪 Test Suite
+## Testing
 
-### Backend (`test-everything.js`)
-
-```
-══  1. Environment             ══  ✅
-══  2. File Structure          ══  ✅  29 files verified
-══  3. Database & Schema       ══  ✅  25 tables, all enums
-══  4. Authentication          ══  ✅  JWT, roles, lockout
-══  5. Payment Gateways        ══  ✅  Stripe + COD registered
-══  6. Wallet                  ══  ✅  Credit · insufficient-balance reject
-══  7. Test Data Setup         ══  ✅  Org, brand, 3 products
-══  8. COD Order Flow          ══  ✅  Full lifecycle + wallet credit
-══  9. Storefront Flow         ══  ✅  Apply → Approve → Visible → Toggle
-══ 10. AI Service              ══  ✅  (requires AI service running)
-══ 11. HTTP Endpoints          ══  ✅  (requires backend running)
-══ 12. Cleanup                 ══  ✅
-
-Result: Passed: 86  ·  Failed: 0
-```
+### Backend Test Suite
 
 ```bash
 cd backend
-node src/scripts/test-everything.js           # full run
-node src/scripts/test-everything.js --skip-ai # skip AI integration
-node src/scripts/test-everything.js --verbose # detailed output
+
+# Full suite
+node src/scripts/test-everything.js
+
+# Skip AI service integration checks
+node src/scripts/test-everything.js --skip-ai
+
+# Detailed per-check output
+node src/scripts/test-everything.js --verbose
 ```
 
-### AI Service (pytest)
+The suite runs 12 test groups covering environment validation, file structure, database schema and enums, JWT and RBAC, payment gateway registration, wallet credit and insufficient-balance handling, test data setup, COD order lifecycle, storefront visibility flow, AI service integration, HTTP endpoint connectivity, and teardown.
+
+**Current result: 86 passed, 0 failed.**
+
+### AI Service
 
 ```bash
 cd ai-services
 pytest tests/ -v -m "not slow"
-# Result: 10 passed, 1 deselected (slow marker)
 ```
+
+**Current result: 10 passed.**
 
 ### Frontend
 
 ```bash
 cd frontend
-npm run typecheck   # TypeScript validation
-npm run lint        # ESLint
-npm run build       # Production build verification
+
+# TypeScript validation
+npm run typecheck
+
+# ESLint
+npm run lint
+
+# Production build check
+npm run build
 ```
 
 ---
 
-## 📊 Current Status & Roadmap
+## Roadmap
 
-### Module Completion
+### Module Status
 
 | Module | Status |
 |---|---|
-| Authentication (JWT, OAuth, lockout, email verify) | ✅ Complete |
-| Admin approval workflow (PENDING → APPROVED/REJECTED) | ✅ Complete |
-| RBAC (6 roles, 37 permissions) | ✅ Complete |
-| Product CRUD + Cloudinary upload | ✅ Complete |
-| AI Product Analysis (Gemini Vision) | ✅ Complete |
-| AI Description Generator | ✅ Complete |
-| Influencer profiles + 10 platforms | ✅ Complete |
-| AI Matching (6-dimension scoring) | ✅ Complete |
-| Campaign lifecycle + content pipeline | ✅ Complete |
-| Campaign chat (per-campaign WebSocket) | ✅ Complete |
-| Wallet + escrow + dual-commission system | ✅ Complete |
-| Stripe subscriptions + COD + JazzCash + Easypaisa | ✅ Complete |
-| Agency multi-brand workspace | ✅ Complete |
-| Meta Ads integration | ✅ Complete |
-| B2C storefront + cart + checkout | ✅ Complete |
-| SEO (JSON-LD, sitemap, robots, OG tags) | ✅ Complete |
-| Admin panel (full) | ✅ Complete |
-| Audit logs | ✅ Complete |
-| RAG knowledge base | ✅ Complete |
-| AI Photography | ⚠️ 60% — needs paid image-to-image API |
-| Google Ads integration | ⚠️ Shell only — AdGroup + Keywords pending |
-| Shopify / WooCommerce import | ❌ Not yet |
+| Authentication — JWT, lockout, email verification | Complete |
+| Admin approval workflow | Complete |
+| RBAC — 6 roles, 37 permissions | Complete |
+| Product CRUD and cloud image upload | Complete |
+| AI product analysis — vision | Complete |
+| AI description generator | Complete |
+| Influencer profiles — 10 platform integrations | Complete |
+| AI matching — 6-dimension scoring | Complete |
+| Campaign lifecycle and content pipeline | Complete |
+| Campaign chat over WebSocket | Complete |
+| Wallet, escrow, and commission system | Complete |
+| Stripe, COD, JazzCash, and Easypaisa | Complete |
+| Agency multi-brand workspace | Complete |
+| Meta Ads integration | Complete |
+| B2C storefront, cart, and checkout | Complete |
+| SEO — JSON-LD, sitemap, OG tags | Complete |
+| Admin panel — full feature set | Complete |
+| Audit logs | Complete |
+| RAG knowledge base | Complete |
+| AI photography and image-to-image — Pollinations fallback active | Complete |
+| Google Ads — AdGroup and keyword management | In progress |
+| Shopify and WooCommerce product import | Not started |
 
-### Blockers for Public Launch
+### Pre-Launch Requirements
 
-| Blocker | Resolution |
+| Item | Required Action |
 |---|---|
-| TanStack XSS CVE-2026-102989 | Wait for `1.168.61+` or add WAF / strict CSP |
-| Meta App Review | `ads_management` Advanced Access — submit for review |
-| Google Ads API Access | Request Standard Access from Google |
-| Stripe production keys | Requires legal entity (LLC or equivalent) |
-| Permanent domain | Replace ngrok with real domain + Cloudflare |
+| Frontend dependency security patch | Upgrade TanStack Start once upstream SSR regression is resolved |
+| Meta App Review | Submit for `ads_management` Advanced Access |
+| Google Ads API | Apply for Standard Access |
+| Stripe production activation | Complete business entity verification |
+| Production domain | Configure DNS, TLS termination, and CDN |
 
-### Roadmap
+### Near-Term Development
 
-**P0 — Immediate**
-- Manual smoke test of full admin approval flow
-- Pin TanStack version in `package.json` (no `^` caret)
+- End-to-end smoke test of the full admin approval flow
+- Audit of all 21 transactional email templates for content and deliverability
+- Cron job to auto-cancel stale pending-payment orders
+- Shipment tracking UI — backend service is complete, frontend wiring is pending
+- Google Ads full campaign with AdGroup and Responsive Search Ads
 
-**P1 — 1–2 days**
-- Email notification audit (21 templates)
-- Auto-cancel stale `AWAITING_PAYMENT` orders (cron)
-- Shipment tracking UI (`services/campaigns/shipping.js` exists — needs wiring)
-- Google Ads full campaign (AdGroup + Keywords + RSA)
+### Post-Launch
 
-**P2 — Production Hardening**
-- TanStack upgrade to `1.168.61+`
-- Sentry + OpenTelemetry error tracking
-- GitHub Actions CI/CD pipeline
-- Switch `prisma db push` → `prisma migrate deploy`
-- Docker Compose production config
-
-**P3 — Post-Launch**
+- Sentry and OpenTelemetry for error tracking and distributed tracing
+- GitHub Actions CI/CD pipeline with automated test gates
+- Migration from `prisma db push` to versioned `prisma migrate deploy`
 - TikTok Ads integration
-- Fine-tuned fashion LLM (LoRA on Qwen2.5 / Llama-3)
-- Campaign outcome prediction ML model
-- A/B testing framework
-- Advanced real-time collaboration
+- Fine-tuned fashion LLM via LoRA on Qwen2.5
+- Campaign outcome prediction model
+- A/B testing framework for content variants
 
 ---
 
-## 🧠 Key Design Decisions
+## Design Decisions
 
 | Decision | Rationale |
 |---|---|
-| **Approval field on `User`, not separate table** | Auth middleware runs on every request — O(1) field check vs. JOIN latency. Stripe/Shopify/AWS use this same pattern. |
-| **`@default(APPROVED)` for existing users** | Zero disruption on migration — existing users never locked out when approval system goes live. |
-| **SHOPPER bypasses approval** | B2C conversion killer if gated. Approval is for business entities only. |
-| **Wallet ledger is source of truth** | `WalletTransaction` records every movement. `Wallet.balanceCache` is always derived, never the authority. |
-| **Ads created PAUSED by default** | Prevents accidental live spend. Users activate manually. |
-| **Payment Gateway class pattern** | Every gateway extends `PaymentGateway` abstract base class. Registry resolves by name. Adding a gateway = 1 file + 1 registry entry. |
-| **Node is the only DB writer** | AI service is stateless compute. Keeps DB as single source of truth, avoids race conditions, enables clean audit trails. |
-| **`styles.css` is single source of truth** | All design tokens in one file — no inline styles, no component-level CSS drift. |
-| **TanStack `1.168.32` pinned (no `^`)** | `1.168.60+` patches XSS but crashes SSR. Locked until `1.168.61+` resolves both. |
+| Approval status as a field on the User model | Auth middleware runs on every request. A single field read is O(1). A join to a separate approvals table is not. This is the same pattern used by Stripe, Shopify, and AWS Cognito. |
+| Existing users default to approved | Zero-disruption migration. No existing user is locked out when the approval system activates on a live database. |
+| Shoppers bypass the approval gate | B2C purchase conversion is incompatible with an async approval queue. The gate exists for business entities only. |
+| Wallet ledger as the source of truth | Every balance movement is recorded as an immutable `WalletTransaction`. The cached balance on the `Wallet` model is always derived and never trusted alone for financial decisions. |
+| Ads created in a paused state | Prevents accidental live spend during campaign setup. Activation requires an explicit user action after reviewing all settings. |
+| Payment gateway class abstraction | Every gateway — Stripe, JazzCash, Easypaisa, COD — extends a shared abstract base class and registers itself in a central registry. Adding a new payment method requires one implementation file and one registry entry. No other files change. |
+| AI service has no database access | The backend is the single DB writer. This eliminates race conditions, simplifies audit trails, and makes the AI service trivially replaceable or horizontally scalable. |
+| Single `styles.css` for all design tokens | No inline styles, no CSS modules, no component-level drift. One file governs the entire visual system. Any designer can find any token without reading component code. |
+| Frontend versions pinned without semver caret | Prevents silent upgrades to patch releases that break SSR. Every version bump is a deliberate, reviewed change with a known diff. |
+| Dynamic AI provider routing guard | Prevents local model names from being forwarded to cloud APIs and cloud model names from being sent to Ollama. Eliminates a class of 404 errors that surface when provider configuration changes without a corresponding model name update. |
 
 ---
 
-## 📄 License
+## License
 
-This project is **proprietary and confidential**.
-All rights reserved © StyleAI. Unauthorized use, reproduction, or distribution is strictly prohibited.
+This project is proprietary and confidential. All rights reserved © StyleAI. Unauthorized use, reproduction, or distribution is strictly prohibited.
 
 ---
 
 <div align="center">
-
-*Built for the future of fashion commerce.*
-
+<sub>Built for the future of fashion commerce.</sub>
 </div>

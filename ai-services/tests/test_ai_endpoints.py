@@ -53,9 +53,9 @@ def client():
         yield c
 
 
-# ═══════════════════════════════════════════════════════════════
+
 # HEALTH
-# ═══════════════════════════════════════════════════════════════
+
 
 def test_health(client):
     r = client.get(_HEALTH_PATH, timeout=5.0)
@@ -64,9 +64,9 @@ def test_health(client):
     assert isinstance(data, dict)
 
 
-# ═══════════════════════════════════════════════════════════════
+
 # MATCHING
-# ═══════════════════════════════════════════════════════════════
+
 
 def test_match_influencers(client):
     payload = {
@@ -100,9 +100,9 @@ def test_match_empty_candidates(client):
     assert r.status_code in (200, 400, 422)
 
 
-# ═══════════════════════════════════════════════════════════════
+
 # PLATFORM CONTENT
-# ═══════════════════════════════════════════════════════════════
+
 
 @pytest.mark.parametrize("platform", ["instagram", "tiktok", "youtube", "blog"])
 def test_platform_content(client, platform):
@@ -124,9 +124,9 @@ def test_platform_content_invalid_platform(client):
     assert r.status_code in (400, 422)
 
 
-# ═══════════════════════════════════════════════════════════════
+
 # PRODUCT CONTENT  — FIXED path: /api/v1/product/content
-# ═══════════════════════════════════════════════════════════════
+
 
 def test_product_content(client):
     payload = {"product_name": "Silk Evening Dress", "category": "Clothing", "tone": "luxury"}
@@ -136,9 +136,9 @@ def test_product_content(client):
     assert data.get("description") or data.get("caption") or data.get("product_name")
 
 
-# ═══════════════════════════════════════════════════════════════
+
 # PRODUCT ANALYZE (vision)  — FIXED path: /api/v1/product/analyze
-# ═══════════════════════════════════════════════════════════════
+
 
 @pytest.mark.slow
 def test_product_analyze(client):
@@ -150,9 +150,9 @@ def test_product_analyze(client):
     assert data.get("category") or data.get("attributes")
 
 
-# ═══════════════════════════════════════════════════════════════
+
 # AUTH / SECURITY
-# ═══════════════════════════════════════════════════════════════
+
 
 @pytest.mark.skipif(not INTERNAL_KEY, reason="Neither AI_INTERNAL_KEY nor INTERNAL_KEY set")
 def test_missing_internal_key_rejected():

@@ -1,7 +1,9 @@
 // frontend/src/routes/admin/storefront.tsx
 import { swalError, swalConfirm, swalSuccess, swalInfo } from "@/lib/swal";
-import { Type as TypeIcon } from "lucide-react";
+import { Type as TypeIcon, BookOpen } from "lucide-react";
 import type { Editorial } from "@/lib/admin/storefront";
+import type { EditorialStory } from "@/lib/editorial";
+import { journalApi } from "@/lib/admin/journal";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -31,7 +33,7 @@ export const Route = createFileRoute("/admin/storefront")({
 });
 
 function AdminStorefrontPage() {
-  const [tab, setTab] = useState<"hero" | "sections" | "brands" | "editorial">("brands");
+  const [tab, setTab] = useState<"hero" | "sections" | "brands" | "editorial" | "journal">("brands");
 
   return (
     <ProtectedRoute roles={["SUPER_ADMIN"]}>
@@ -53,16 +55,19 @@ function AdminStorefrontPage() {
             Hero slides
           </TabBtn>
           <TabBtn active={tab === "editorial"} onClick={() => setTab("editorial")} icon={TypeIcon}>
-            Editorial
+            How it Works
+          </TabBtn>
+          <TabBtn active={tab === "journal"} onClick={() => setTab("journal")} icon={BookOpen}>
+            Journal Stories
           </TabBtn>
         </nav>
 
-        {/*  Fixed — single render per tab */}
         <div className="mt-6">
           {tab === "hero" && <HeroManager />}
           {tab === "sections" && <SectionsManager />}
           {tab === "brands" && <BrandsManager />}
           {tab === "editorial" && <EditorialManager />}
+          {tab === "journal" && <JournalManager />}
         </div>
       </>
     </ProtectedRoute>
@@ -95,7 +100,134 @@ function TabBtn({
 }
 
 
-// BRANDS MANAGER
+
+function JournalManager() {
+  const [stories, setStories] = useState<EditorialStory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<EditorialStory | null>(null);
+
+ 
+    async function load() {
+    setLoading(true);
+    try {
+      const res = await journalApi.list();
+      setStories(res.stories || []);
+      setError(""); 
+    } catch (e: any) { 
+      setError(e?.message || "Failed to load"); 
+      setStories([]); 
+    }
+    finally { setLoading(false); }
+  }
+  
+  useEffect(() => { load(); }, []);
+
+  async function onDelete(s: EditorialStory) {
+    if (!(await swalConfirm("Delete story?", `"${s.title}" will be removed permanently.`))) return;
+    try {
+      await journalApi.remove(s.id);
+      swalSuccess("Story deleted");
+      load();
+    } catch (e: any) { swalError(e?.message); }
+  }
+
+  return (
+    <Panel>
+      <SectionTitle
+        title="Journal (Magazine)"
+        description="Manage editorial stories displayed on the homepage and read-all page."
+        action={<Button size="sm" onClick={() => { setEditing(null); setShowForm(true); }}><Plus /> Add Story</Button>}
+      />
+      {error && <div className="mb-4 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"><AlertCircle className="mt-0.5 size-4 shrink-0" /> {error}</div>}
+      {loading ? (
+        <div className="flex items-center justify-center py-12"><Loader2 className="mr-2 size-5 animate-spin text-muted-foreground" /><span className="text-sm text-muted-foreground">Loading…</span></div>
+      ) : stories.length === 0 ? (
+        <Empty icon={BookOpen} title="No stories yet" body="Add your first journal story." />
+      ) : (
+        <ul className="space-y-3">
+          {stories.map((s) => (
+            <li key={s.id} className="flex items-center gap-4 rounded-lg border border-border bg-background p-3">
+              <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-md bg-muted">
+                {s.coverImage ? <img src={s.coverImage} alt={s.title} className="size-16 object-cover" /> : <ImageIcon className="size-5 text-muted-foreground" />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{s.title}</p>
+                <p className="truncate text-xs text-muted-foreground">{s.category} · {s.publishedAt}</p>
+                {s.featured && <span className="mt-1 inline-block rounded bg-accent/15 px-2 py-0.5 text-[10px] uppercase text-accent font-bold">Featured</span>}
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button size="sm" variant="ghost" onClick={() => { setEditing(s); setShowForm(true); }}><Pencil className="size-4" /></Button>
+                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => onDelete(s)}><Trash2 className="size-4" /></Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {showForm && <JournalFormModal story={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
+    </Panel>
+  );
+}
+
+function JournalFormModal({ story, onClose, onSaved }: { story: EditorialStory | null; onClose: () => void; onSaved: () => void; }) {
+  const [form, setForm] = useState({
+    title: story?.title ?? "", slug: story?.slug ?? "", excerpt: story?.excerpt ?? "",
+    coverImage: story?.coverImage ?? "", category: story?.category ?? "Styling",
+    readTime: story?.readTime ?? "5 min read", author: story?.author ?? "StyleAI Team",
+    publishedAt: story?.publishedAt ?? new Date().toLocaleDateString("en-US", { day: 'numeric', month: 'long', year: 'numeric' }),
+    featured: story?.featured ?? false,
+    bodyString: story?.body?.join("\n\n") ?? "",
+    pullQuote: story?.pullQuote ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.title || !form.coverImage) return setError("Title and Cover Image are required.");
+    setSaving(true);
+    try {
+      const payload = {
+        ...form,
+        body: form.bodyString.split("\n").filter(p => p.trim() !== ""),
+      };
+      delete (payload as any).bodyString;
+      
+      if (story) await journalApi.update(story.id, payload);
+      else await journalApi.create(payload as any);
+      onSaved();
+    } catch (e: any) { setError(e?.message || "Save failed"); setSaving(false); }
+  }
+
+  return (
+    <div className="ui-overlay" role="dialog" aria-modal="true">
+      <form onSubmit={save} className="ui-panel ui-panel-md">
+        <div className="ui-panel-header"><h2 className="font-display text-xl font-medium">{story ? "Edit Story" : "Add Journal Story"}</h2></div>
+        <div className="ui-panel-body space-y-4 max-h-[70vh] overflow-y-auto">
+          {error && <div className="ui-error">{error}</div>}
+          <Field label="Title *"><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></Field>
+          <Field label="Slug (URL) *"><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="art-of-evening-dress" required /></Field>
+          <Field label="Cover Image URL *"><Input value={form.coverImage} onChange={(e) => setForm({ ...form, coverImage: e.target.value })} required /></Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Category"><select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as any })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"><option value="Styling">Styling</option><option value="Trends">Trends</option><option value="Craft">Craft</option><option value="Interview">Interview</option><option value="Lookbook">Lookbook</option></select></Field>
+            <Field label="Read Time"><Input value={form.readTime} onChange={(e) => setForm({ ...form, readTime: e.target.value })} /></Field>
+          </div>
+          <Field label="Short Excerpt"><Input value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} /></Field>
+          <Field label="Body (Separate paragraphs with a new line)"><textarea rows={6} value={form.bodyString} onChange={(e) => setForm({ ...form, bodyString: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></Field>
+          <Field label="Pull Quote (Optional)"><Input value={form.pullQuote} onChange={(e) => setForm({ ...form, pullQuote: e.target.value })} /></Field>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} className="size-4" /> Highlight as Featured Story on Homepage</label>
+        </div>
+        <div className="ui-panel-footer">
+          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Story"}</Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+
 
 const STATUS_STYLE: Record<StorefrontOptIn, string> = {
   NOT_REQUESTED: "bg-muted text-muted-foreground",
@@ -268,9 +400,6 @@ function BrandsManager() {
     </Panel>
   );
 }
-
-
-// REVIEW MODAL — shows application + approve/decline
 
 const PLACEMENT_LABEL: Record<string, string> = {
   ECOM: "E-commerce only",
@@ -523,9 +652,6 @@ function ReviewBrandModal({
   );
 }
 
-
-// HERO MANAGER
-
 function HeroManager() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [loading, setLoading] = useState(true);
@@ -716,9 +842,6 @@ function HeroFormModal({
     </div>
   );
 }
-
-
-// SECTIONS MANAGER
 
 function SectionsManager() {
   const [sections, setSections] = useState<SectionSummary[]>([]);
@@ -1117,9 +1240,6 @@ function ProductRow({ p, action, onClick }: { p: PickerProduct; action: "add" | 
   );
 }
 
-
-// EDITORIAL MANAGER — single block (upsert)
-
 function EditorialManager() {
   const [editorial, setEditorial] = useState<Editorial | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1290,9 +1410,6 @@ function EditorialManager() {
     </Panel>
   );
 }
-
-
-// HELPERS
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

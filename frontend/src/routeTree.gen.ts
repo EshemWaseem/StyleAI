@@ -16,6 +16,7 @@ import { Route as BillingRouteImport } from './routes/billing'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EditorialRouteImport } from './routes/editorial'
 import { Route as EngagementsRouteImport } from './routes/engagements'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
@@ -65,6 +66,7 @@ import { Route as BrandsIndexRouteImport } from './routes/brands.index'
 import { Route as BrandsBrandIdRouteImport } from './routes/brands.$brandId'
 import { Route as CampaignsIndexRouteImport } from './routes/campaigns.index'
 import { Route as CampaignsIdRouteImport } from './routes/campaigns.$id'
+import { Route as EditorialSlugRouteImport } from './routes/editorial.$slug'
 import { Route as InfluencerOffersRouteImport } from './routes/influencer.offers'
 import { Route as InfluencerPricingRouteImport } from './routes/influencer.pricing'
 import { Route as InfluencersIndexRouteImport } from './routes/influencers.index'
@@ -120,6 +122,11 @@ const CheckoutRoute = CheckoutRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EditorialRoute = EditorialRouteImport.update({
+  id: '/editorial',
+  path: '/editorial',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EngagementsRoute = EngagementsRouteImport.update({
@@ -367,6 +374,11 @@ const CampaignsIdRoute = CampaignsIdRouteImport.update({
   path: '/campaigns/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EditorialSlugRoute = EditorialSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => EditorialRoute,
+} as any)
 const InfluencerOffersRoute = InfluencerOffersRouteImport.update({
   id: '/influencer/offers',
   path: '/influencer/offers',
@@ -481,6 +493,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
+  '/editorial': typeof EditorialRouteWithChildren
   '/engagements': typeof EngagementsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/knowledge': typeof KnowledgeRoute
@@ -526,6 +539,7 @@ export interface FileRoutesByFullPath {
   '/agency/engagements': typeof AgencyEngagementsRoute
   '/brands/$brandId': typeof BrandsBrandIdRoute
   '/campaigns/$id': typeof CampaignsIdRoute
+  '/editorial/$slug': typeof EditorialSlugRoute
   '/influencer/offers': typeof InfluencerOffersRoute
   '/influencer/pricing': typeof InfluencerPricingRoute
   '/influencers/$slug': typeof InfluencersSlugRoute
@@ -560,6 +574,7 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
+  '/editorial': typeof EditorialRouteWithChildren
   '/engagements': typeof EngagementsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/knowledge': typeof KnowledgeRoute
@@ -604,6 +619,7 @@ export interface FileRoutesByTo {
   '/agency/engagements': typeof AgencyEngagementsRoute
   '/brands/$brandId': typeof BrandsBrandIdRoute
   '/campaigns/$id': typeof CampaignsIdRoute
+  '/editorial/$slug': typeof EditorialSlugRoute
   '/influencer/offers': typeof InfluencerOffersRoute
   '/influencer/pricing': typeof InfluencerPricingRoute
   '/influencers/$slug': typeof InfluencersSlugRoute
@@ -639,6 +655,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
+  '/editorial': typeof EditorialRouteWithChildren
   '/engagements': typeof EngagementsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/knowledge': typeof KnowledgeRoute
@@ -684,6 +701,7 @@ export interface FileRoutesById {
   '/agency/engagements': typeof AgencyEngagementsRoute
   '/brands/$brandId': typeof BrandsBrandIdRoute
   '/campaigns/$id': typeof CampaignsIdRoute
+  '/editorial/$slug': typeof EditorialSlugRoute
   '/influencer/offers': typeof InfluencerOffersRoute
   '/influencer/pricing': typeof InfluencerPricingRoute
   '/influencers/$slug': typeof InfluencersSlugRoute
@@ -720,6 +738,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/dashboard'
+    | '/editorial'
     | '/engagements'
     | '/forgot-password'
     | '/knowledge'
@@ -765,6 +784,7 @@ export interface FileRouteTypes {
     | '/agency/engagements'
     | '/brands/$brandId'
     | '/campaigns/$id'
+    | '/editorial/$slug'
     | '/influencer/offers'
     | '/influencer/pricing'
     | '/influencers/$slug'
@@ -799,6 +819,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/dashboard'
+    | '/editorial'
     | '/engagements'
     | '/forgot-password'
     | '/knowledge'
@@ -843,6 +864,7 @@ export interface FileRouteTypes {
     | '/agency/engagements'
     | '/brands/$brandId'
     | '/campaigns/$id'
+    | '/editorial/$slug'
     | '/influencer/offers'
     | '/influencer/pricing'
     | '/influencers/$slug'
@@ -877,6 +899,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/dashboard'
+    | '/editorial'
     | '/engagements'
     | '/forgot-password'
     | '/knowledge'
@@ -922,6 +945,7 @@ export interface FileRouteTypes {
     | '/agency/engagements'
     | '/brands/$brandId'
     | '/campaigns/$id'
+    | '/editorial/$slug'
     | '/influencer/offers'
     | '/influencer/pricing'
     | '/influencers/$slug'
@@ -957,6 +981,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
+  EditorialRoute: typeof EditorialRouteWithChildren
   EngagementsRoute: typeof EngagementsRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   KnowledgeRoute: typeof KnowledgeRoute
@@ -1076,6 +1101,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/editorial': {
+      id: '/editorial'
+      path: '/editorial'
+      fullPath: '/editorial'
+      preLoaderRoute: typeof EditorialRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/engagements': {
@@ -1421,6 +1453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CampaignsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/editorial/$slug': {
+      id: '/editorial/$slug'
+      path: '/$slug'
+      fullPath: '/editorial/$slug'
+      preLoaderRoute: typeof EditorialSlugRouteImport
+      parentRoute: typeof EditorialRoute
+    }
     '/influencer/offers': {
       id: '/influencer/offers'
       path: '/influencer/offers'
@@ -1571,6 +1610,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface EditorialRouteChildren {
+  EditorialSlugRoute: typeof EditorialSlugRoute
+}
+
+const EditorialRouteChildren: EditorialRouteChildren = {
+  EditorialSlugRoute: EditorialSlugRoute,
+}
+
+const EditorialRouteWithChildren = EditorialRoute._addFileChildren(
+  EditorialRouteChildren,
+)
+
 interface OrdersRouteChildren {
   OrdersIdRoute: typeof OrdersIdRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
@@ -1592,6 +1643,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
+  EditorialRoute: EditorialRouteWithChildren,
   EngagementsRoute: EngagementsRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   KnowledgeRoute: KnowledgeRoute,

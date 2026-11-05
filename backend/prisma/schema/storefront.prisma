@@ -2,7 +2,6 @@
 
 // Admin-controlled public storefront
 
-
 enum StorefrontSectionType {
   MANUAL
   AUTO
@@ -82,4 +81,25 @@ model StorefrontEditorial {
   updatedAt DateTime @updatedAt
 
   @@index([isActive])
+}
+
+//  — Journal / Magazine Stories
+model EditorialStory {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  coverImage  String
+  category    String
+  readTime    String
+  author      String
+  publishedAt String
+  featured    Boolean  @default(false)
+  body        String[] 
+  pullQuote   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([featured])
 }

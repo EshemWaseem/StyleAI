@@ -4,19 +4,15 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import {
   ArrowRight, Check, ChevronLeft, ChevronRight, Menu, Minus, Plus,
   Search, ShoppingBag, Sparkles, Trash2, Package, Palette, Store, UsersRound,
-  LogOut, User, PackageCheck
+  LogOut, User, PackageCheck, BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCart } from "@/lib/cart";
 import { useRole, getDashboardPath } from "@/lib/role";
@@ -34,6 +30,10 @@ import { CategoryGrid } from "@/components/shop/category-grid";
 import {
   CategoryGridSkeleton, ProductGridSkeleton,
 } from "@/components/ui/skeletons";
+
+// ✅ IMPORT JOURNAL API & FALLBACK DATA
+import { editorialStories, type EditorialStory } from "@/lib/editorial";
+import { journalApi } from "@/lib/admin/journal";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -60,16 +60,13 @@ export const Route = createFileRoute("/")({
   component: Storefront,
 });
 
-// ✅ HELPER: Resolves relative image paths to absolute backend URLs
 const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:4000").replace(/\/$/, "");
 
 function resolveImageUrl(url?: string | null) {
   if (!url) return "";
-  // Agar already http, https ya data URI hai toh waisa hi return karo
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
     return url;
   }
-  // Agar relative path hai (jaise /uploads/xyz.jpg) toh backend URL prepend karo
   return `${API_BASE}/${url.replace(/^\//, "")}`;
 }
 
@@ -82,7 +79,8 @@ const DEFAULT_EDITORIAL: StorefrontEditorial = {
 
 const SECTIONS = [
   { id: "shop", label: "Shop" },
-  { id: "edit", label: "Editorial" },
+  { id: "edit", label: "The Loop" },
+  { id: "magazine", label: "Journal" },
   { id: "creators", label: "Creators" },
 ] as const;
 
@@ -159,16 +157,29 @@ function Storefront() {
   const [sections, setSections] = useState<StorefrontSectionPublic[]>([]);
   const [editorial, setEditorial] = useState<StorefrontEditorial | null>(null);
   const [creators, setCreators] = useState<StorefrontCreator[]>([]);
-  
   const [storefrontLoading, setStorefrontLoading] = useState(true);
 
   const [genders, setGenders] = useState<GenderStat[]>([]);
   const [categoriesStat, setCategoriesStat] = useState<CategoryStat[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
+  // ✅ Journal State (Starts with local fallback, replaces via API)
+  const [journalStories, setJournalStories] = useState<EditorialStory[]>(editorialStories);
+
   const cart = useCart();
   const scrollTo = useSmoothScrollTo(NAV_OFFSET);
   const activeSection = useScrollSpy(SECTION_IDS, NAV_OFFSET);
+
+  // ✅ Fetch Dynamic Journal Data
+  useEffect(() => {
+    journalApi.list()
+      .then(res => { 
+        if (res.stories && res.stories.length > 0) {
+          setJournalStories(res.stories); 
+        }
+      })
+      .catch(() => {}); // silently fail, fallback is already active
+  }, []);
 
   useEffect(() => {
     publicProductsApi.brands().then((res) => setBrands(res.brands)).catch(() => {});
@@ -248,6 +259,15 @@ function Storefront() {
     [categoriesStat]
   );
 
+  // ✅ Dynamic Journal Computations
+  const mainStory = useMemo(() => {
+    return journalStories.find((s) => s.featured) || journalStories[0];
+  }, [journalStories]);
+
+  const otherStories = useMemo(() => {
+    return journalStories.filter((s) => s.id !== mainStory?.id).slice(0, 3);
+  }, [journalStories, mainStory]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
@@ -299,7 +319,6 @@ function Storefront() {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
-            
             {authLoading ? (
               <div className="hidden sm:block h-9 w-24 animate-pulse rounded-md bg-muted" />
             ) : user ? (
@@ -620,23 +639,130 @@ function Storefront() {
         ))}
 
         {!storefrontLoading && (
-          <section id="edit" className="scroll-mt-20 border-t border-border bg-card/50">
-            <div className={cn(CONTAINER, "py-12 sm:py-16")}>
-              <h2 className="max-w-lg font-display text-2xl font-medium tracking-tight sm:text-3xl">
-                {editorialToShow.title}
-              </h2>
-              <ol className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-3 sm:mt-8 sm:gap-y-4">
-                {editorialToShow.steps.map((step, i) => (
-                  <li key={`${step}-${i}`} className="flex items-center gap-3">
-                    <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm">
-                      {step}
-                    </span>
-                    {i < editorialToShow.steps.length - 1 && (
-                      <ArrowRight className="size-3.5 text-muted-foreground sm:size-4" aria-hidden="true" />
-                    )}
-                  </li>
-                ))}
-              </ol>
+          <section id="edit" className="scroll-mt-20 border-t border-border bg-background relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
+            <div className={cn(CONTAINER, "py-20 sm:py-28")}>
+              <div className="mb-16 flex flex-col items-center text-center">
+                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-6 shadow-sm">
+                  <Sparkles className="size-3 text-accent" /> The StyleAI Loop
+                </span>
+                <h2 className="max-w-2xl font-display text-3xl font-medium tracking-tight sm:text-4xl lg:text-5xl">
+                  {editorialToShow.title}
+                </h2>
+              </div>
+
+              <div className="relative mx-auto max-w-6xl">
+                <div className="grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-4">
+                  {editorialToShow.steps.map((rawStep, i) => {
+                    let num = `0${i + 1}`;
+                    let title = rawStep;
+                    let desc = "Experience seamless integration designed to elevate your brand.";
+
+                    if (rawStep.includes("|")) {
+                      const parts = rawStep.split("|");
+                      num = parts[0]?.trim() || num;
+                      title = parts[1]?.trim() || title;
+                      desc = parts[2]?.trim() || desc;
+                    }
+
+                    return (
+                      <div key={i} className="relative flex flex-col group">
+                        <div className="flex items-center gap-4 mb-6">
+                          <span className="font-display text-4xl font-light text-muted-foreground/30 transition-colors duration-500 group-hover:text-accent">
+                            {num}
+                          </span>
+                          <div className="h-[1px] flex-1 bg-border/60 group-hover:bg-accent/30 transition-colors duration-500" />
+                        </div>
+                        <h3 className="font-display text-xl font-medium text-foreground mb-3">{title}</h3>
+                        <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* VIP MAGAZINE SECTION (Dynamic) */}
+        {mainStory && (
+          <section id="magazine" className="scroll-mt-20 border-t border-border bg-card/20">
+            <div className={cn(CONTAINER, "py-16 sm:py-24")}>
+              
+              <div className="flex items-end justify-between mb-10 border-b border-border pb-6">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-accent mb-2 flex items-center gap-2">
+                    <BookOpen className="size-3.5" /> StyleAI Editorial
+                  </p>
+                  <h2 className="font-display text-3xl font-medium tracking-tight sm:text-4xl">
+                    The Journal
+                  </h2>
+                </div>
+                <Button variant="ghost" asChild className="hidden sm:flex hover:bg-transparent hover:text-accent group">
+                  <Link to="/editorial">
+                    Read all stories <ArrowRight className="ml-1 size-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
+                <Link
+                  to="/editorial/$slug"
+                  params={{ slug: mainStory.slug }}
+                  className="lg:col-span-7 group block"
+                >
+                  <div className="relative aspect-[4/3] sm:aspect-[16/9] overflow-hidden rounded-xl bg-muted mb-6">
+                    <img
+                      src={mainStory.coverImage}
+                      alt={mainStory.title}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-1 text-xs font-medium uppercase tracking-wider rounded-full">
+                      {mainStory.category}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground font-medium">
+                      {mainStory.publishedAt} · {mainStory.readTime}
+                    </p>
+                    <h3 className="font-display text-2xl sm:text-3xl font-medium leading-tight group-hover:text-accent transition-colors">
+                      {mainStory.title}
+                    </h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
+                      {mainStory.excerpt}
+                    </p>
+                  </div>
+                </Link>
+
+                <div className="lg:col-span-5 flex flex-col justify-between gap-6">
+                  {otherStories.map((story) => (
+                    <Link
+                      key={story.slug}
+                      to="/editorial/$slug"
+                      params={{ slug: story.slug }}
+                      className="group flex gap-4 sm:gap-6 items-center"
+                    >
+                      <div className="h-24 w-24 sm:h-32 sm:w-32 shrink-0 overflow-hidden rounded-lg bg-muted">
+                        <img
+                          src={story.coverImage}
+                          alt={story.title}
+                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-accent">
+                          {story.category}
+                        </p>
+                        <h4 className="font-display text-lg font-medium leading-tight group-hover:text-accent transition-colors line-clamp-2">
+                          {story.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">{story.readTime}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
             </div>
           </section>
         )}
@@ -971,7 +1097,6 @@ function HeroCarousel({
         {slides.map((slide, i) => (
           <img
             key={slide.id}
-            // ✅ YAHAN FIX HAI: resolveImageUrl use kiya hai
             src={resolveImageUrl(slide.imageUrl)}
             alt={slide.headline ?? ""}
             loading={i === 0 ? "eager" : "lazy"}
@@ -1017,7 +1142,7 @@ function HeroCarousel({
           </div>
         </div>
 
-        {/* LEFT ARROW (Far Left, Vertically Centered) */}
+        {/* LEFT ARROW */}
         {slides.length > 1 && (
           <button
             onClick={() => go((active - 1 + slides.length) % slides.length)}
@@ -1028,7 +1153,7 @@ function HeroCarousel({
           </button>
         )}
 
-        {/* RIGHT ARROW (Far Right, Vertically Centered) */}
+        {/* RIGHT ARROW */}
         {slides.length > 1 && (
           <button
             onClick={() => go((active + 1) % slides.length)}

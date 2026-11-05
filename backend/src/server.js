@@ -42,6 +42,7 @@ const knowledgeRoutes = require('./routes/knowledgeRoutes');
 const billingRoutes = require('./routes/billingRoutes');
 const recommendationsRoutes = require('./routes/recommendationsRoutes');
 const healthRoutes = require('./routes/healthRoutes');
+const journalRoutes = require('./routes/journalRoutes');
 
 const paymentRoutes = require('./routes/paymentRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
@@ -193,7 +194,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/assistant', assistantRoutes);
 app.use('/privacy', privacyRoutes);
-
+app.use('/api/editorial', journalRoutes);
 app.use('/api/courier', courierRoutes); 
 app.use(notFound);
 app.use(errorHandler);

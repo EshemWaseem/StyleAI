@@ -19,9 +19,9 @@ import { AppShell } from "../components/app-shell/index";
 
 const PUBLIC_PATHS = [
   "/",
-  "/shop",              
-  "/cart", 
-  "/why-styleai", 
+  "/shop",
+  "/cart",
+  "/why-styleai",
   "/login",
   "/register",
   "/forgot-password",
@@ -32,9 +32,9 @@ const PUBLIC_PATHS = [
   "/invite",
   "/payments/result",
   "/privacy",
+  "/editorial",
 ];
 
-// 🆕 YEH NAYE PATHS HAIN JAHAN SIDEBAR NAHI DIKHNI CHAHIYE
 const SHOPPER_PATHS = [
   "/orders",
   "/account",
@@ -48,7 +48,6 @@ function isPublicPath(pathname: string): boolean {
   });
 }
 
-// 🆕 Shopper paths check karne ke liye function
 function isShopperPath(pathname: string): boolean {
   return SHOPPER_PATHS.some((p) => {
     return pathname === p || pathname.startsWith(`${p}/`);
@@ -88,10 +87,10 @@ function ErrorComponent({
 }) {
   console.error(error);
   const router = useRouter();
+
   useEffect(() => {
-        // Log errors locally — swap for Sentry/Logtail later
-        console.error("[Root error boundary]", error);
-      }, [error]);
+    console.error("[Root error boundary]", error);
+  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -100,8 +99,7 @@ function ErrorComponent({
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back
-          home.
+          Something went wrong on our end. You can try refreshing or head back home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -217,10 +215,9 @@ function AppShellGate() {
   const navigate = useNavigate();
 
   const isPublic = isPublicPath(pathname);
-  const isShopperRoute = isShopperPath(pathname); // 🆕 Shopper route check
+  const isShopperRoute = isShopperPath(pathname);
   const isDashboard = pathname === "/dashboard";
 
-  // 🆕 Check karein ke user sirf SHOPPER hai ya nahi
   const isOnlyShopper = !!user && user.roles.includes("SHOPPER") && user.roles.every((r) => r === "SHOPPER");
 
   const redirectTarget: string | null = (() => {
@@ -247,19 +244,14 @@ function AppShellGate() {
     }
   }, [redirectTarget, navigate]);
 
-  // ─── INITIAL LOAD: only auth hydration shows loader
   if (loading) {
     return <FullScreenLoader />;
   }
 
-  // ─── LOGOUT TRANSITION: user just cleared, protected page — return null (no loader flash)
   if (!isPublic && !user) {
     return null;
   }
 
-  // ─── 👇 MAIN LOGIC CHANGE YAHAN HAI ───
-  // Agar Public page hai, YA Shopper page hai (/orders, /account), 
-  // YA user sirf Shopper hai (taake usay kabhi sidebar na dikhe) -> Bina Sidebar ke render karo
   if (isPublic || isShopperRoute || isOnlyShopper) {
     return (
       <div data-public-shell className="min-h-dvh">
@@ -268,7 +260,6 @@ function AppShellGate() {
     );
   }
 
-  // ─── APP SHELL (Sirf Brands, Influencers, Admins ke liye)
   return (
     <AppShell>
       <Outlet />
